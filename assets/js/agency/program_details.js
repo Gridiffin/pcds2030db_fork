@@ -256,7 +256,7 @@ class ProgramDetailsManager {
      */
     async checkForUpdates() {
         try {
-            const response = await fetch(`${APP_URL}/app/ajax/get_program_updates.php?program_id=${this.programId}`);
+            const response = await fetch(`${window.APP_URL}/app/ajax/get_program_updates.php?program_id=${this.programId}`);
             const data = await response.json();
             
             if (data.hasUpdates) {
@@ -427,7 +427,7 @@ class ProgramDetailsManager {
         try {
             this.showToast('Export Started', 'Preparing export...', 'info');
             
-            const response = await fetch(`${APP_URL}/app/ajax/export_program_data.php?program_id=${this.programId}`);
+            const response = await fetch(`${window.APP_URL}/app/ajax/export_program_data.php?program_id=${this.programId}`);
             const blob = await response.blob();
             
             const url = window.URL.createObjectURL(blob);

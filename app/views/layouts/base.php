@@ -57,7 +57,12 @@ $additionalStyles = $additionalStyles ?? [];
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     
-    <!-- 🚫 INDIVIDUAL CSS FILES REMOVED - USING VITE BUNDLES ONLY -->
+    <!-- Set global APP_URL JavaScript variable for URL helper functions -->
+    <script>
+        window.APP_URL = '<?php echo APP_URL; ?>';
+    </script>
+    
+    <!-- 🚫 INDIVIDUAL CSS FILES REMOVED - USING BUNDLES ONLY -->
     <!-- CSS Bundle - extracted from JS imports by Vite -->
     <?php if ($cssBundle): ?>
     <link rel="stylesheet" href="<?php echo APP_URL; ?>/dist/css/<?php echo htmlspecialchars($cssBundle); ?>.bundle.css">

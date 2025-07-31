@@ -1,4 +1,9 @@
 <?php
+// Start session FIRST before any output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 header('Content-Type: application/json');
 require_once dirname(__DIR__) . '/config/config.php';
 require_once dirname(__DIR__) . '/lib/db_connect.php';

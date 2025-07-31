@@ -1,4 +1,9 @@
 <?php
+// Start session FIRST before any output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 // AJAX handler for admin user tables
 require_once '../../config/config.php';
 require_once ROOT_PATH . 'app/lib/db_connect.php';

@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showProgramsLoading();
         
         // Build URL - always load all programs for the period, then filter on frontend
-        let url = `${APP_URL}/app/api/get_period_programs.php?period_id=${periodId}`;
+        let url = `${window.APP_URL}/app/api/get_period_programs.php?period_id=${periodId}`;
         
         // Log the API request for debugging
         console.log(`Requesting programs for period_id: ${periodId}`);
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get selected program IDs
         const programIds = selectedPrograms.map(p => p.program_id).join(',');
         
-        const url = `${APP_URL}/app/api/get_program_targets.php?period_id=${periodId}&selected_program_ids=${programIds}`;
+        const url = `${window.APP_URL}/app/api/get_program_targets.php?period_id=${periodId}&selected_program_ids=${programIds}`;
 
         fetch(url)
             .then(response => {
@@ -1667,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
             
             // Submit to report generation endpoint
-            fetch(`${APP_URL}/app/api/generate_report.php`, {
+            fetch(`${window.APP_URL}/app/api/generate_report.php`, {
                 method: 'POST',
                 body: formData
             })

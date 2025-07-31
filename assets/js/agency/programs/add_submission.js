@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const addTargetBtn = document.getElementById('add-target-btn');
     
     const programNumber = form.dataset.programNumber || '';
+    const programId = form.dataset.programId || '';
     
     if (periodSelect) {
         Array.from(periodSelect.options).forEach(option => {
@@ -187,7 +188,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Convert form submission to AJAX
     form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
+        // Validate target numbers
         if (targetsContainer) {
             const allCounterInputs = targetsContainer.querySelectorAll('.target-counter-input');
             let hasValidationErrors = false;
@@ -199,8 +204,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (hasValidationErrors) {
-                e.preventDefault();
-                // Assuming showToast is a global function
                 if (typeof showToast === 'function') {
                     showToast('Error', 'Please fix the target number validation errors before submitting.', 'danger');
                 }
@@ -208,20 +211,48 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
+        // Prepare form data
+        const formData = new FormData(form);
+        
+        // Add program_id to form data
+        formData.append('program_id', programId);
+        
+        // Add selected files to form data
         if (selectedFiles.length > 0) {
-            const oldInputs = form.querySelectorAll('input[type="file"][name="attachments[]"]');
-            oldInputs.forEach(input => input.remove());
-            
-            const dataTransfer = new DataTransfer();
-            selectedFiles.forEach(file => dataTransfer.items.add(file));
-            
-            const newInput = document.createElement('input');
-            newInput.type = 'file';
-            newInput.name = 'attachments[]';
-            newInput.multiple = true;
-            newInput.className = 'd-none';
-            newInput.files = dataTransfer.files;
-            form.appendChild(newInput);
+            selectedFiles.forEach(file => {
+                formData.append('attachments[]', file);
+            });
         }
+        
+        // Prepare targets data for JSON
+        const targets = [];
+        const targetTexts = formData.getAll('target_text[]');
+        const targetNumbers = formData.getAll('target_number[]');
+        const targetStatuses = formData.getAll('target_status[]');
+        const targetStatusDescriptions = formData.getAll('target_status_description[]');
+        
+        for (let i = 0; i < targetTexts.length; i++) {
+            if (targetTexts[i].trim()) {
+                targets.push({
+                    target_number: targetNumbers[i] || '',
+                    target_text: targetTexts[i].trim(),
+                    target_status: targetStatuses[i] || 'not_started',
+                    status_description: targetStatusDescriptions[i] || ''
+                });
+            }
+        }
+        
+        // Add targets as JSON
+        formData.append('targets_json', JSON.stringify(targets));
+        
+        // Show loading state
+        const submitButtons = form.querySelectorAll('button[type="submit"]');
+        submitButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        });
+        
+        // Submit the form normally (revert to original behavior)
+        form.submit();
     });
 }); 

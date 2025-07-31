@@ -1,4 +1,9 @@
 <?php
+// Start session FIRST before any output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 /**
  * Get Draft Reporting Periods for a Program
  * Returns available draft submissions for a specific program

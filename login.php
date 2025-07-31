@@ -5,6 +5,15 @@
  * Handles user authentication.
  */
 
+// Start session FIRST before any output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Temporary error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Define project root path for consistent file references
 if (!defined('PROJECT_ROOT_PATH')) {
     define('PROJECT_ROOT_PATH', rtrim(__DIR__, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
@@ -39,12 +48,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // Use the validate_login function which properly checks the is_active status
         $result = validate_login($username, $password);
-          if (isset($result['success'])) {            // Check user role using session variable (more robust than function)
-            if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
-                header('Location: ' . APP_URL . '/app/views/admin/dashboard/dashboard.php');
-            } else {
-                header('Location: ' . APP_URL . '/app/views/agency/dashboard/dashboard.php');
-            }
+          if (isset($result['success'])) {
+            // Set session variables from the returned user data
+            $_SESSION['user_id'] = $result['user']['user_id'];
+            $_SESSION['role'] = $result['user']['role'];
+            $_SESSION['agency_id'] = $result['user']['agency_id'];
+            $_SESSION['username'] = $result['user']['username'];
+            $_SESSION['fullname'] = $result['user']['fullname'];
+            
+            // Session already started at top of file
+            
+            // Use JavaScript redirect instead of header redirect to avoid header issues
+            $redirect_url = ($_SESSION['role'] === 'admin') 
+                ? APP_URL . '/app/views/admin/dashboard/dashboard.php'
+                : APP_URL . '/app/views/agency/dashboard/dashboard.php';
+            
+            echo "<script>window.location.href = '" . $redirect_url . "';</script>";
             exit;
         } else {
             $error = $result['error'] ?? "Invalid username or password.";
@@ -107,7 +126,7 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                         <div class="col-md-6 login-section">
                             <div class="login-content login-container"> <!-- Added login-container -->
                                 <div class="logo-container">
-                                    <img src="http://localhost/pcds2030_dashboard_fork/assets/images/sarawak_crest.png" alt="Sarawak Crest" class="logo-image">
+                                    <img src="<?php echo APP_URL; ?>/assets/images/sarawak_crest.png" alt="Sarawak Crest" class="logo-image">
                                 </div>
                                 
                                 <h3 class="login-title">Sign In</h3>
@@ -120,7 +139,7 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_session') {
                                     </div>
                                 <?php endif; ?>
                                 
-                                <form method="post" action="/pcds2030_dashboard_fork/login.php" id="loginForm" class="login-form"> <!-- Added login-form -->
+                                <form method="post" action="<?php echo APP_URL; ?>/login.php" id="loginForm" class="login-form"> <!-- Added login-form -->
                                     <div class="form-group mb-3">
                                         <label for="username">Username</label>
                                         <div class="input-group">

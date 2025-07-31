@@ -123,10 +123,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             error_log("Notification result for submission {$result['submission_id']}: " . ($notification_result ? 'SUCCESS' : 'FAILED'));
         }
         
-        $_SESSION['message'] = $result['message'];
-        $_SESSION['message_type'] = 'success';
-        header('Location: view_programs.php');
-        exit;
+        // Set success message and show redirecting modal
+        $message = $result['message'];
+        $messageType = 'success';
+        
+        // Add JavaScript to show redirecting modal
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Show success message first
+                showToast('Success', '" . addslashes($result['message']) . "', 'success');
+                
+                // Show redirecting modal after a short delay
+                setTimeout(function() {
+                    const redirectModal = document.createElement('div');
+                    redirectModal.innerHTML = `
+                        <div class='modal fade' tabindex='-1'>
+                            <div class='modal-dialog'>
+                                <div class='modal-content'>
+                                    <div class='modal-body text-center py-4'>
+                                        <i class='fas fa-check-circle text-success' style='font-size: 3rem;'></i>
+                                        <h5 class='mt-3'>Submission Created Successfully!</h5>
+                                        <p class='text-muted'>Redirecting to programs page...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(redirectModal);
+                    const tempModal = new bootstrap.Modal(redirectModal.querySelector('.modal'));
+                    tempModal.show();
+                    
+                    // Redirect after 2 seconds
+                    setTimeout(function() {
+                        window.location.href = 'view_programs.php';
+                    }, 2000);
+                }, 1000);
+            });
+        </script>";
+        
+        // Don't exit - let the page render with the message
     } else {
         $message = $result['error'] ?? 'An error occurred while creating the submission.';
         $messageType = 'danger';

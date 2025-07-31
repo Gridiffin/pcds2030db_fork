@@ -6,6 +6,11 @@
  * Supports both draft and final submission modes.
  */
 
+// Start session FIRST before any output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Define project root path
 if (!defined('PROJECT_ROOT_PATH')) {
     define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(__DIR__)), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);

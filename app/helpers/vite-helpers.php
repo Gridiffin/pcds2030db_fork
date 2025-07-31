@@ -50,7 +50,10 @@ function vite_assets($bundle_name = null) {
     
     // Determine the web-accessible path based on current request
     $app_base_path = '';
-    if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/pcds2030_dashboard_fork/') !== false) {
+    // Use BASE_URL from config if available, otherwise detect from REQUEST_URI
+    if (defined('BASE_URL') && BASE_URL !== '') {
+        $app_base_path = BASE_URL;
+    } elseif (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/pcds2030_dashboard_fork/') !== false) {
         $app_base_path = '/pcds2030_dashboard_fork';
     }
     

@@ -37,9 +37,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
         // Log failed deletion attempt - unauthorized
         log_audit_action('delete_program_failed', "Program ID: $program_id | Error: Unauthorized access - not program creator or focal user", 'failure', $user_id);
         
-        $_SESSION['message'] = 'You do not have permission to delete this program. Only program creators and focal users can delete programs.';
-        $_SESSION['message_type'] = 'danger';
-        header('Location: ' . APP_URL . '/app/views/agency/programs/view_programs.php');
+        // Return JSON response for AJAX requests
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'You do not have permission to delete this program. Only program creators and focal users can delete programs.'
+        ]);
         exit;
     }
     
@@ -57,9 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
         // Log failed deletion attempt - program not found
         log_audit_action('delete_program_failed', "Program ID: $program_id | Error: Program not found", 'failure', $user_id);
         
-        $_SESSION['message'] = 'Program not found.';
-        $_SESSION['message_type'] = 'danger';
-        header('Location: ' . APP_URL . '/app/views/agency/programs/view_programs.php');
+        // Return JSON response for AJAX requests
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Program not found.'
+        ]);
         exit;
     }
     
@@ -107,33 +113,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['program_id'])) {
         // Commit transaction
         $conn->commit();
         
-        $_SESSION['message'] = 'Program deleted successfully.';
-        $_SESSION['message_type'] = 'success';
-        
         // Log the successful deletion
         log_audit_action('delete_program', "Program Name: $program_name | Program ID: $program_id", 'success', $user_id);
         
         // Send notification for program deletion
         notify_program_deleted($program_id, $user_id, $program_data);
+        
+        // Return JSON response for AJAX requests
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'message' => 'Program deleted successfully.'
+        ]);
+        exit;
     } catch (Exception $e) {
         // Rollback on error
         $conn->rollback();
         
-        $_SESSION['message'] = 'Failed to delete program: ' . $e->getMessage();
-        $_SESSION['message_type'] = 'danger';
-        
         // Log the failed deletion attempt
         log_audit_action('delete_program_failed', "Program Name: $program_name | Program ID: $program_id | Error: " . $e->getMessage(), 'failure', $user_id);
+        
+        // Return JSON response for AJAX requests
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to delete program: ' . $e->getMessage()
+        ]);
+        exit;
     }
-    
-    // Redirect back to program list
-    header('Location: ' . APP_URL . '/app/views/agency/programs/view_programs.php');
-    exit;
 } else {
-    // Invalid request
-    $_SESSION['message'] = 'Invalid request.';
-    $_SESSION['message_type'] = 'danger';
-    header('Location: ' . APP_URL . '/app/views/agency/programs/view_programs.php');
+    // Invalid request - return JSON response for AJAX requests
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invalid request.'
+    ]);
     exit;
 }
 

@@ -1,4 +1,9 @@
 <?php
+// Start session FIRST before any output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 /**
  * AJAX endpoint to get detailed field changes for a specific audit log entry
  */

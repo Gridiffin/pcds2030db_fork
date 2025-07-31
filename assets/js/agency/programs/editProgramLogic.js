@@ -308,7 +308,7 @@ export function initEditProgram() {
         return;
     }
     
-    const apiUrl = `${APP_URL}/app/api/program_status.php`;
+            const apiUrl = `${window.APP_URL}/app/api/program_status.php`;
 
     initFormLogic();
     initStatusManagement(programId, apiUrl);

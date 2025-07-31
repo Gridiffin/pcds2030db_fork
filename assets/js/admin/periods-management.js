@@ -88,7 +88,7 @@ function loadPeriods() {
             <p class="mt-2 text-muted">Loading periods...</p>
         </div>
     `;
-      fetch(`${APP_URL}/app/ajax/periods_data.php`)
+              fetch(`${window.APP_URL}/app/ajax/periods_data.php`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -470,7 +470,7 @@ function savePeriod() {
             }
               // For new periods, check for duplicates
             $.ajax({
-                url: APP_URL + '/app/ajax/check_period_exists.php',
+                url: window.APP_URL + '/app/ajax/check_period_exists.php',
                 type: 'POST',
                 data: {
                     period_type: formData.period_type,
@@ -513,7 +513,7 @@ function submitPeriodData(formData, isUpdate = false) {
     const endpoint = isUpdate ? 'update_period.php' : 'save_period.php';
     
     $.ajax({
-        url: APP_URL + '/app/ajax/' + endpoint,
+                    url: window.APP_URL + '/app/ajax/' + endpoint,
         type: 'POST',
         data: formData,
         dataType: 'json',
@@ -709,7 +709,7 @@ function togglePeriodStatus(periodId, newStatus) {
     }
     
     $.ajax({
-        url: APP_URL + '/app/ajax/toggle_period_status.php',
+                    url: window.APP_URL + '/app/ajax/toggle_period_status.php',
         type: 'POST',
         data: {
             period_id: periodId,
@@ -813,7 +813,7 @@ function editPeriod(periodId) {
     }
     
     // Fetch period details from server
-    fetch(`${APP_URL}/app/ajax/periods_data.php?period_id=${periodId}`)
+            fetch(`${window.APP_URL}/app/ajax/periods_data.php?period_id=${periodId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -881,7 +881,7 @@ function deletePeriod(periodId) {
         deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     }
 
-    fetch(`${APP_URL}/app/ajax/delete_period.php`, {
+            fetch(`${window.APP_URL}/app/ajax/delete_period.php`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded', // Standard for form data
@@ -964,7 +964,7 @@ function checkDateOverlap(startDate, endDate, excludePeriodId = null) {
         const year = $('#year').val();
         
         $.ajax({
-            url: APP_URL + '/app/ajax/check_period_overlap.php',
+            url: window.APP_URL + '/app/ajax/check_period_overlap.php',
             type: 'POST',
             data: {
                 start_date: startDate,

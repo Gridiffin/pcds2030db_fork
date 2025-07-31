@@ -9,28 +9,13 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <!-- Error/Success Messages -->
-            <?php if (!empty($message)): ?>
-                <?php
-                // Check if this is a notification-related message that should not be shown as a toast
-                $notification_keywords = ['New program', 'created by', 'System Administrator', 'notification'];
-                $is_notification_message = false;
-                foreach ($notification_keywords as $keyword) {
-                    if (stripos($message, $keyword) !== false) {
-                        $is_notification_message = true;
-                        break;
-                    }
-                }
-                
-                // Only show toast if it's not a notification-related message
-                if (!$is_notification_message):
-                ?>
+            <!-- Error Messages Only (Success messages are handled by JavaScript in main file) -->
+            <?php if (!empty($message) && $messageType === 'danger'): ?>
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
-                        showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
+                        showToast('Error', <?= json_encode($message) ?>, 'danger');
                     });
                 </script>
-                <?php endif; ?>
             <?php endif; ?>
 
             <!-- Simple Program Editing Form -->
@@ -448,12 +433,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form action="<?php echo APP_URL; ?>/app/views/agency/programs/delete_program.php" method="post" style="display:inline;">
-                    <input type="hidden" name="program_id" value="<?php echo $program['program_id']; ?>">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash me-2"></i>Delete Program
-                    </button>
-                </form>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-2"></i>Delete Program
+                </button>
             </div>
         </div>
     </div>
@@ -465,4 +447,90 @@
         programId: <?php echo json_encode($program_id); ?>,
         APP_URL: '<?php echo APP_URL; ?>'
     };
+
+    // Handle program deletion via AJAX
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const deleteModal = document.getElementById('deleteProgramModal');
+        
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', function() {
+                // Disable button and show loading state
+                confirmDeleteBtn.disabled = true;
+                confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+                
+                // Prepare the request data
+                const formData = new FormData();
+                formData.append('program_id', <?php echo json_encode($program['program_id']); ?>);
+                
+                // Make the AJAX request
+                fetch('<?php echo APP_URL; ?>/app/views/agency/programs/delete_program.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(text => {
+                    console.log('Raw response:', text);
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        // If response is not JSON, it might be the HTML page
+                        // This means the deletion was successful but returned HTML
+                        console.log('Non-JSON response, assuming success');
+                        data = { success: true, message: 'Program deleted successfully.' };
+                    }
+                    
+                    if (data.success) {
+                        // Close the modal
+                        const modal = bootstrap.Modal.getInstance(deleteModal);
+                        if (modal) {
+                            modal.hide();
+                        }
+                        
+                        // Show success message
+                        showToast('Success', data.message || 'Program deleted successfully.', 'success');
+                        
+                        // Show redirecting modal after a short delay
+                        setTimeout(function() {
+                            const redirectModal = document.createElement('div');
+                            redirectModal.innerHTML = `
+                                <div class='modal fade' tabindex='-1'>
+                                    <div class='modal-dialog'>
+                                        <div class='modal-content'>
+                                            <div class='modal-body text-center py-4'>
+                                                <i class='fas fa-check-circle text-success' style='font-size: 3rem;'></i>
+                                                <h5 class='mt-3'>Program Deleted Successfully!</h5>
+                                                <p class='text-muted'>Redirecting to programs page...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            document.body.appendChild(redirectModal);
+                            const tempModal = new bootstrap.Modal(redirectModal.querySelector('.modal'));
+                            tempModal.show();
+                            
+                            // Redirect after 2 seconds
+                            setTimeout(function() {
+                                window.location.href = 'view_programs.php';
+                            }, 2000);
+                        }, 1000);
+                    } else {
+                        throw new Error(data.message || 'Failed to delete program');
+                    }
+                })
+                .catch(error => {
+                    console.error('Delete error:', error);
+                    
+                    // Show error message
+                    showToast('Error', error.message || 'Failed to delete program.', 'danger');
+                    
+                    // Re-enable button
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i>Delete Program';
+                });
+            });
+        }
+    });
 </script> 

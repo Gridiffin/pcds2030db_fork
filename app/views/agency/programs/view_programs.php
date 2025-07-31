@@ -33,18 +33,10 @@ $messageType = $_SESSION['message_type'] ?? 'info';
 // Check if showing created program message
 $show_created_message = isset($_GET['created']) && $_GET['created'] == '1';
 
-// Clear message from session
+// Clear message from session after retrieving it
 if (isset($_SESSION['message'])) {
     unset($_SESSION['message']);
     unset($_SESSION['message_type']);
-}
-
-// Additional cleanup: Clear any notification-related session messages that might have been set elsewhere
-if (isset($_SESSION['notification_message'])) {
-    unset($_SESSION['notification_message']);
-}
-if (isset($_SESSION['notification_type'])) {
-    unset($_SESSION['notification_type']);
 }
 
 // Get active initiatives for filtering
@@ -101,6 +93,9 @@ if ($agency_id !== null) {
 // Process programs and separate into appropriate arrays
 foreach ($programs as $program) {
     if (isset($program['latest_submission_id']) && $program['latest_submission_id']) {
+        // Debug logging for submission status
+        error_log("Program {$program['program_name']} (ID: {$program['program_id']}) - Submission ID: {$program['latest_submission_id']}, is_draft: " . ($program['is_draft'] ?? 'null'));
+        
         if (isset($program['is_draft']) && $program['is_draft']) {
             $programs_with_drafts[] = $program;
         } else {
@@ -140,10 +135,10 @@ $contentFile = __DIR__ . '/view_programs_content.php';
 // Load for all users since it contains submission selection functionality used by everyone
 $additionalScripts = [];
 
-$additionalScripts[] = APP_URL . '/assets/js/agency/finalization-tutorial.js';
-$additionalScripts[] = APP_URL . '/assets/js/agency/simple-finalize.js';
+$additionalScripts[] = '/assets/js/agency/finalization-tutorial.js';
+$additionalScripts[] = '/assets/js/agency/simple-finalize.js';
 if (is_focal_user()) {
-    $additionalScripts[] = APP_URL . '/assets/js/agency/unsubmit_submission.js';
+    $additionalScripts[] = '/assets/js/agency/unsubmit_submission.js';
 }
 
 // Include base layout - it will render header, nav, content, and footer

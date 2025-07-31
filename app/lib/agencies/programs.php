@@ -1573,8 +1573,10 @@ function create_program_submission($data) {
                             (program_id, period_id, is_draft, is_submitted, description, submitted_by, submitted_at)
                             VALUES (?, ?, ?, ?, ?, ?, ?)";
         
-        $is_draft = isset($_POST['save_as_draft']) ? 1 : 0;
-        $is_submitted = isset($_POST['submit']) ? 1 : 0;
+        // Since the add submission page only has "Save as Draft" button, 
+        // all submissions from this page should be saved as drafts
+        $is_draft = 1;
+        $is_submitted = 0;
         $submitted_by = $_SESSION['user_id'] ?? null;
         $submitted_at = date('Y-m-d H:i:s');
         
@@ -1631,10 +1633,9 @@ function create_program_submission($data) {
         // Commit transaction
         $conn->commit();
         
-        $action = $is_submitted ? 'submitted' : 'saved as draft';
         return [
             'success' => true, 
-            'message' => "Program submission successfully {$action}.",
+            'message' => "Program submission successfully saved as draft.",
             'submission_id' => $submission_id
         ];
         

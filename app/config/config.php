@@ -6,9 +6,16 @@
  * This file should be excluded from version control.
  */
 
+// Force session start immediately - fix for disabled sessions on production
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Get host once for all configurations
+$current_host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
 // Database configuration - Dynamic based on environment
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-if ($host === 'www.sarawakforestry.com' || $host === 'sarawakforestry.com') {
+if ($current_host === 'www.sarawakforestry.com' || $current_host === 'sarawakforestry.com') {
     // Production database settings
     define('DB_HOST', 'localhost:3306');
     define('DB_USER', 'sarawak3_admin1');
@@ -33,10 +40,10 @@ if (!defined('APP_URL')) {
     } else {
         // Detect the correct APP_URL based on current request
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         
         // Production cPanel detection first
-        if ($host === 'www.sarawakforestry.com' || $host === 'sarawakforestry.com') {
+        if ($current_host === 'www.sarawakforestry.com' || $current_host === 'sarawakforestry.com') {
+            // Force production path regardless of directory name
             define('APP_URL', 'https://www.sarawakforestry.com/pcds2030');
         } else {
             // Local development detection
@@ -79,7 +86,7 @@ if (!defined('APP_URL')) {
                 $app_path = '';
             }
             
-            define('APP_URL', $protocol . '://' . $host . $app_path);
+            define('APP_URL', $protocol . '://' . $current_host . $app_path);
         }
     }
 }
@@ -206,10 +213,9 @@ if (!defined('BASE_URL')) {
     if (php_sapi_name() === 'cli') {
         define('BASE_URL', '/pcds2030'); // Production path for CLI
     } else {
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        
         // Production cPanel detection first
-        if ($host === 'www.sarawakforestry.com' || $host === 'sarawakforestry.com') {
+        if ($current_host === 'www.sarawakforestry.com' || $current_host === 'sarawakforestry.com') {
+            // Force production path regardless of directory name
             define('BASE_URL', '/pcds2030');
         } else {
             // Local development detection
@@ -258,7 +264,7 @@ if (!defined('BASE_URL')) {
 }
 
 // Error reporting - disable for production to prevent headers already sent issues
-if ($_SERVER['HTTP_HOST'] === 'localhost' || strpos($_SERVER['HTTP_HOST'], 'laragon') !== false) {
+if ($current_host === 'localhost' || strpos($current_host, 'laragon') !== false) {
     // Development environment
     error_reporting(E_ALL);
     ini_set('display_errors', 1);

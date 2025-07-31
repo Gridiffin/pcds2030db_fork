@@ -16,28 +16,14 @@ require_once PROJECT_ROOT_PATH . '/app/helpers/vite-helpers.php';
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <!-- Error/Success Messages -->
-            <?php if (!empty($message)): ?>
-                <?php
-                // Check if this is a notification-related message that should not be shown as a toast
-                $notification_keywords = ['New program', 'created by', 'System Administrator', 'notification'];
-                $is_notification_message = false;
-                foreach ($notification_keywords as $keyword) {
-                    if (stripos($message, $keyword) !== false) {
-                        $is_notification_message = true;
-                        break;
-                    }
-                }
-                
-                // Only show toast if it's not a notification-related message
-                if (!$is_notification_message):
-                ?>
+            <!-- Error Messages Only (Success messages are handled by JavaScript in main file) -->
+            <?php if (!empty($message) && $messageType === 'danger'): ?>
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
                         // Wait for global functions to be available
                         function waitForToastFunctions() {
                             if (typeof window.showToast === 'function') {
-                                showToast('<?= ucfirst($messageType) ?>', <?= json_encode($message) ?>, '<?= $messageType ?>');
+                                showToast('Error', <?= json_encode($message) ?>, 'danger');
                             } else {
                                 setTimeout(waitForToastFunctions, 100);
                             }
@@ -45,7 +31,6 @@ require_once PROJECT_ROOT_PATH . '/app/helpers/vite-helpers.php';
                         waitForToastFunctions();
                     });
                 </script>
-                <?php endif; ?>
             <?php endif; ?>
 
             <!-- Program Info Card -->
@@ -219,7 +204,7 @@ require_once PROJECT_ROOT_PATH . '/app/helpers/vite-helpers.php';
                                         <ul class="list-unstyled mb-0 small">
                                             <li class="mb-2">
                                                 <i class="fas fa-calendar-plus text-primary me-2"></i>
-                                                Creates a new submission for the selected period
+                                                Creates a new draft submission for the selected period
                                             </li>
                                             <li class="mb-2">
                                                 <i class="fas fa-edit text-info me-2"></i>
@@ -231,7 +216,7 @@ require_once PROJECT_ROOT_PATH . '/app/helpers/vite-helpers.php';
                                             </li>
                                             <li>
                                                 <i class="fas fa-save text-success me-2"></i>
-                                                Save as draft or ask focal to submit when ready
+                                                Submission will appear in Draft Submissions tab
                                             </li>
                                         </ul>
                                     </div>
@@ -263,11 +248,10 @@ require_once PROJECT_ROOT_PATH . '/app/helpers/vite-helpers.php';
                                 Cancel
                             </a>
                             <div>
-                                <button type="submit" name="save_as_draft" value="1" class="btn btn-outline-primary me-2">
+                                <button type="submit" name="save_as_draft" value="1" class="btn btn-primary">
                                     <i class="fas fa-save me-2"></i>
-                                    Save as Draft
+                                    Create Submission (Draft)
                                 </button>
-                                <!-- Submit button removed -->
                             </div>
                         </div>
                     </form>

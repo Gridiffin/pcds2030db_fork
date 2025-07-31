@@ -172,11 +172,82 @@
     </div>
 </div>
 
-<!-- Hidden form for program deletion -->
-<form action="<?php echo APP_URL; ?>/app/views/agency/programs/delete_program.php" method="post" id="delete-program-details-form" style="display:none;">
-    <input type="hidden" name="program_id" value="<?php echo $program['program_id']; ?>">
-    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
-</form>
+<script>
+    // Handle program deletion via AJAX for program details page
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmDeleteBtn = document.getElementById('delete-program-confirm-btn');
+        const deleteModal = document.getElementById('deleteProgramModal');
+        
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', function() {
+                // Disable button and show loading state
+                confirmDeleteBtn.disabled = true;
+                confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+                
+                // Prepare the request data
+                const formData = new FormData();
+                formData.append('program_id', <?php echo json_encode($program['program_id']); ?>);
+                
+                // Make the AJAX request
+                fetch('<?php echo APP_URL; ?>/app/views/agency/programs/delete_program.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Close the modal
+                        const modal = bootstrap.Modal.getInstance(deleteModal);
+                        if (modal) {
+                            modal.hide();
+                        }
+                        
+                        // Show success message
+                        showToast('Success', data.message || 'Program deleted successfully.', 'success');
+                        
+                        // Show redirecting modal after a short delay
+                        setTimeout(function() {
+                            const redirectModal = document.createElement('div');
+                            redirectModal.innerHTML = `
+                                <div class='modal fade' tabindex='-1'>
+                                    <div class='modal-dialog'>
+                                        <div class='modal-content'>
+                                            <div class='modal-body text-center py-4'>
+                                                <i class='fas fa-check-circle text-success' style='font-size: 3rem;'></i>
+                                                <h5 class='mt-3'>Program Deleted Successfully!</h5>
+                                                <p class='text-muted'>Redirecting to programs page...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            document.body.appendChild(redirectModal);
+                            const tempModal = new bootstrap.Modal(redirectModal.querySelector('.modal'));
+                            tempModal.show();
+                            
+                            // Redirect after 2 seconds
+                            setTimeout(function() {
+                                window.location.href = '<?php echo APP_URL; ?>/app/views/agency/programs/view_programs.php';
+                            }, 2000);
+                        }, 1000);
+                    } else {
+                        throw new Error(data.message || 'Failed to delete program');
+                    }
+                })
+                .catch(error => {
+                    console.error('Delete error:', error);
+                    
+                    // Show error message
+                    showToast('Error', error.message || 'Failed to delete program.', 'danger');
+                    
+                    // Re-enable button
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i>Delete Program';
+                });
+            });
+        }
+    });
+</script>
 <?php endif; ?>
 
 <!-- Delete Submission Modal -->

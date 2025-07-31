@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('page', currentPage);
         formData.append('limit', 25);
         
-        fetch(APP_URL + '/app/ajax/load_audit_logs.php', {
+        fetch(window.APP_URL + '/app/ajax/load_audit_logs.php', {
             method: 'POST',
             body: formData,
             // Add proper headers to ensure consistent content type expectations
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showExportMessage(true, 'Preparing export...');
         
         // Make the request to export logs
-        fetch(APP_URL + '/app/ajax/export_audit_logs.php', {
+        fetch(window.APP_URL + '/app/ajax/export_audit_logs.php', {
             method: 'POST',
             body: formData
         })
@@ -630,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function() {
         bootstrapModal.show();
         
         // Fetch field changes
-        fetch(`${APP_URL}/app/ajax/get_audit_field_changes.php?audit_log_id=${auditId}`)
+        fetch(`${window.APP_URL}/app/ajax/get_audit_field_changes.php?audit_log_id=${auditId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {

@@ -1,4 +1,9 @@
 <?php
+// Start session FIRST before any output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 // app/ajax/admin_outcomes.php
 // AJAX endpoint for admin outcome detail editing
 

@@ -808,4 +808,21 @@ function get_entity_name($entity, $entity_id) {
     
     return null;
 }
+
+/**
+ * Wrapper function for log_audit_action to maintain compatibility
+ * 
+ * @param string $action The action being performed
+ * @param array $details Additional details about the action
+ * @param int $entity_id Entity ID for the action
+ * @return int|bool Audit log ID if logged successfully, false otherwise
+ */
+function log_audit($action, $details = [], $entity_id = null) {
+    // Convert array details to string if needed
+    $details_str = is_array($details) ? json_encode($details) : $details;
+    
+    // Call the main audit logging function
+    return log_audit_action($action, $details_str, 'success');
+}
+
 ?>

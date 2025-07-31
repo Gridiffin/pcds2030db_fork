@@ -1,4 +1,9 @@
 <?php
+// Start session FIRST before any output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 /**
  * AJAX endpoint for hierarchical program numbering
  * Returns the next available program number for an initiative

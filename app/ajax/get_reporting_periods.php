@@ -1,4 +1,9 @@
 <?php
+// Start session FIRST before any output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 // AJAX endpoint to get latest reporting periods and submission statuses for a program
 require_once '../config/config.php';
 require_once '../lib/db_connect.php';

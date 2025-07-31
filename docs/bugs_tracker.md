@@ -1,9 +1,310 @@
 # Login Module Refactor - Problems & Solutions Log
 
 **Date:** 2025-07-18  
-**Last Updated:** 2025-07-25
+**Last Updated:** 2025-07-27
 
 ## Recent Bugs Fixed
+
+### 37. Unsubmit Submission UI Display Issue - Finalized Section Still Shows Unsubmitted Submissions (2025-07-31) 🔄 IN PROGRESS
+
+- **Problem:** After successfully unsubmitting a finalized submission, the "Finalized Submissions" section still shows the unsubmitted submission:
+  - **Core Functionality**: Unsubmit operation works (database is updated correctly)
+  - **UI Issue**: Page doesn't refresh properly or query logic doesn't reflect changes
+  - **User Experience**: Confusion when unsubmitted submissions still appear in finalized section
+- **Root Cause Analysis:**
+  - **Page Refresh**: JavaScript reload might not be working due to errors or timing issues
+  - **Query Logic**: The view_programs.php query might not be correctly identifying the latest submission status
+  - **Database State**: Need to verify that the database update is actually working
+  - **Caching**: Browser or server caching might be preventing updated data from showing
+- **Impact:**
+  - **Medium Severity**: Functionality works but UI is confusing
+  - **Scope**: All focal users using unsubmit functionality
+  - **User Experience**: Unclear whether unsubmit operation was successful
+- **Solution - Enhanced Debugging and Verification:**
+  1. **Added Database Update Verification:**
+     - Added logging to track database update results
+     - Check affected rows to ensure update actually happened
+     - Added error handling for failed database updates
+  2. **Enhanced JavaScript Debugging:**
+     - Added console logging for page reload process
+     - Better error reporting for AJAX responses
+     - Verification that reload is actually triggered
+  3. **Added Query Debugging:**
+     - Added logging to view_programs.php to track submission status
+     - Debug output to see how programs are categorized
+  4. **Created Debug Endpoint:**
+     - Added test_unsubmit_debug.php to verify database state
+     - Can check submission status before and after unsubmit
+- **Files Modified:**
+  - `app/ajax/unsubmit_submission.php` - Added database update verification and logging
+  - `assets/js/agency/unsubmit_submission.js` - Enhanced debugging and reload verification
+  - `app/views/agency/programs/view_programs.php` - Added submission status debugging
+  - `app/ajax/test_unsubmit_debug.php` - Created for database state verification
+- **Testing:** 
+  - 🔄 Enhanced debugging in place to identify root cause
+  - 🔄 Database update verification added
+  - 🔄 Page reload debugging added
+  - 🔄 Query logic debugging added
+- **Prevention:** 
+  - Always verify database updates with affected rows check
+  - Add comprehensive logging for UI state changes
+  - Test page refresh functionality after AJAX operations
+  - Verify query logic handles edge cases properly
+- **Related Issues**: Follow-up to previous unsubmit submission fixes, addressing UI display issues
+
+### 36. PHP Fatal Error: Call to undefined function log_audit() in Unsubmit Submission (2025-07-31) ✅ FIXED
+
+- **Problem:** PHP Fatal error when clicking unsubmit button:
+  ```
+  PHP Fatal error: Uncaught Error: Call to undefined function log_audit() 
+  in C:\laragon\www\pcds2030_dashboard_fork\app\ajax\unsubmit_submission.php on line 66
+  ```
+- **Root Cause Analysis:**
+  - **Missing Function**: Code was calling `log_audit()` but the actual function is named `log_audit_action()`
+  - **Incorrect Function Call**: `log_field_changes()` was being called with wrong parameters
+  - **Function Signature Mismatch**: `log_field_changes()` expects `($audit_log_id, $field_changes)` but was called with `($submission, $new_data, null)`
+  - **Compatibility Issue**: Some code expects `log_audit()` wrapper function that didn't exist
+- **Impact:**
+  - **High Severity**: Complete failure of unsubmit functionality
+  - **Scope**: All focal users trying to unsubmit finalized submissions
+  - **User Experience**: PHP fatal error, no functionality available
+- **Solution - Fix Function Calls and Add Compatibility Wrapper:**
+  1. **Added log_audit() Wrapper Function:**
+     - Created `log_audit()` function in `audit_log.php` that calls `log_audit_action()`
+     - Maintains compatibility with existing code that expects `log_audit()`
+     - Converts array details to JSON string for proper logging
+  2. **Fixed log_field_changes() Call:**
+     - Updated function call to use correct parameters: `($audit_log_id, $field_changes)`
+     - Added proper field change calculation for `is_draft` and `is_submitted` fields
+     - Added safety checks to ensure audit logging was successful before calling field changes
+  3. **Enhanced Error Handling:**
+     - Added `function_exists()` checks for optional audit functions
+     - Proper error handling for audit logging failures
+     - Maintained functionality even if audit logging fails
+- **Files Modified:**
+  - `app/lib/audit_log.php` - Added `log_audit()` wrapper function for compatibility
+  - `app/ajax/unsubmit_submission.php` - Fixed function calls and added proper error handling
+- **Testing:** 
+  - ✅ PHP syntax validation passes
+  - ✅ No more fatal errors when calling unsubmit functionality
+  - ✅ Audit logging works correctly with proper field change tracking
+  - ✅ Function maintains compatibility with existing codebase
+- **Prevention:** 
+  - Always verify function names and signatures before calling them
+  - Use `function_exists()` checks for optional functionality
+  - Maintain backward compatibility when refactoring function names
+  - Test PHP syntax and function calls after code changes
+- **Related Issues**: Follow-up to previous unsubmit submission fixes, addressing the core PHP function call issues
+
+### 35. Unsubmit Submission Error Handling and Debugging Improvements (2025-07-27) ✅ FIXED
+
+- **Problem:** Unsubmit functionality working but with poor error handling and debugging:
+  - **Production**: Network errors without detailed information
+  - **Localhost**: "Submission is not finalized" errors without context
+  - **Debugging**: No visibility into what's causing failures
+  - **Error Messages**: Generic messages that don't help troubleshoot issues
+- **Root Cause Analysis:**
+  - **Poor Error Handling**: JavaScript catch blocks only showed "Network error"
+  - **Missing Debug Info**: Server responses didn't include debugging information
+  - **Vague Error Messages**: "Submission is not finalized" didn't explain why
+  - **No Logging**: Server-side issues weren't being logged for troubleshooting
+- **Impact:**
+  - **Medium Severity**: Functionality works but hard to debug issues
+  - **Scope**: All users trying to unsubmit submissions
+  - **User Experience**: Confusing error messages, difficult to troubleshoot
+- **Solution - Enhanced Error Handling and Debugging:**
+  1. **Improved Server-Side Error Messages:**
+     - Added detailed status information to "Submission is not finalized" errors
+     - Included debug information in JSON responses
+     - Added server-side logging for troubleshooting
+  2. **Enhanced JavaScript Error Handling:**
+     - Added detailed console logging for response status and data
+     - Improved error messages with debug information
+     - Better catch block handling with specific error details
+  3. **Added Debugging Tools:**
+     - Created test endpoint for AJAX functionality verification
+     - Added comprehensive logging throughout the unsubmit process
+     - Enhanced error reporting for production debugging
+- **Files Modified:**
+  - `app/ajax/unsubmit_submission.php` - Enhanced error handling and logging
+  - `assets/js/agency/unsubmit_submission.js` - Improved error handling and debugging
+  - `app/ajax/test_endpoint.php` - Created for AJAX functionality testing
+- **Testing:** 
+  - ✅ Better error messages for submission status issues
+  - ✅ Enhanced debugging information in console
+  - ✅ Server-side logging for production troubleshooting
+  - ✅ Test endpoint for AJAX functionality verification
+- **Prevention:** 
+  - Always include detailed error messages in AJAX responses
+  - Add server-side logging for production debugging
+  - Provide debug information in development environments
+  - Test error scenarios thoroughly
+- **Related Issues**: Follow-up to previous unsubmit submission fixes, focusing on user experience and debugging
+
+### 34. Unsubmit Submission 404 Error - Incorrect AJAX Endpoint Path (2025-07-27) ✅ FIXED
+
+- **Problem:** Unsubmit button in finalized submissions section returning 404 error and "Network error" message:
+  ```
+  GET http://localhost/pcds2030_dashboard_fork/app/views/agency/ajax/unsubmit_submission.php 404 (Not Found)
+  ```
+- **Root Cause Analysis:**
+  - **Incorrect File Location**: `unsubmit_submission.php` was placed in `/app/views/agency/ajax/` instead of `/app/ajax/`
+  - **Project Structure Violation**: AJAX endpoints should be in `/app/ajax/` directory according to project structure
+  - **Path Reference**: JavaScript was correctly referencing the file location, but the file was in the wrong place
+  - **Missing File**: The endpoint file didn't exist in the expected location
+- **Impact:**
+  - **Medium Severity**: Unsubmit functionality completely broken
+  - **Scope**: Focal users trying to unsubmit finalized submissions
+  - **User Experience**: 404 errors and network error messages
+- **Solution - Move File to Correct Location and Fix Script Loading:**
+  1. **Created File in Correct Directory:**
+     - Moved `unsubmit_submission.php` from `/app/views/agency/ajax/` to `/app/ajax/`
+     - Updated require paths to use `dirname(__DIR__)` instead of `dirname(__DIR__, 4)`
+  2. **Updated JavaScript Path:**
+     - Changed JavaScript fetch URL from `/app/views/agency/ajax/unsubmit_submission.php` to `/app/ajax/unsubmit_submission.php`
+  3. **Fixed Script Loading Issues:**
+     - Changed script paths in `view_programs.php` to use relative paths instead of `APP_URL` prefixed paths
+     - Added fallback mechanism in JavaScript to handle cases where `window.APP_URL` is undefined
+     - Added debug logging to help troubleshoot script loading issues
+     - Ensured function is available globally with `window.unsubmitSubmission`
+  4. **Cleaned Up:**
+     - Deleted the old file from incorrect location
+     - Verified no other references to old path exist
+- **Files Modified:**
+  - `app/ajax/unsubmit_submission.php` - Created in correct location
+  - `assets/js/agency/unsubmit_submission.js` - Updated fetch URL path and added fallback mechanism
+  - `app/views/agency/programs/view_programs.php` - Fixed script loading paths
+  - `app/views/agency/ajax/unsubmit_submission.php` - Deleted from incorrect location
+- **Testing:** 
+  - ✅ Unsubmit button now works without 404 errors
+  - ✅ AJAX endpoint responds correctly
+  - ✅ File structure follows project conventions
+  - ✅ No broken references to old path
+- **Prevention:** 
+  - Always place AJAX endpoints in `/app/ajax/` directory
+  - Follow project structure conventions for file organization
+  - Test AJAX functionality after file moves or path changes
+  - Use consistent path patterns across the application
+- **Related Issues**: Similar to previous AJAX path issues, but specific to file placement rather than path construction
+
+### 33. JavaScript APP_URL Reference Error - Undefined APP_URL in JavaScript Files (2025-07-27) ✅ FIXED
+
+- **Problem:** JavaScript files using `APP_URL` directly instead of `window.APP_URL`, causing "Uncaught ReferenceError: APP_URL is not defined":
+  ```
+  14:42:38.955 Uncaught ReferenceError: APP_URL is not defined
+      unsubmitSubmission http://localhost/pcds2030_dashboard_fork/assets/js/agency/unsubmit_submission.js:5
+      onclick http://localhost/pcds2030_dashboard_fork/app/views/agency/programs/view_programs.php:1
+  ```
+- **Root Cause Analysis:**
+  - **JavaScript Variable Scope**: `APP_URL` is a PHP constant, not available in JavaScript context
+  - **Missing Window Object**: JavaScript files using `APP_URL` instead of `window.APP_URL`
+  - **Base Layout Issue**: `base.php` layout didn't define `window.APP_URL` like `header.php` does
+  - **Inconsistent Usage**: Some files used `window.APP_URL`, others used `APP_URL` directly
+  - **Loading Order**: JavaScript files loaded before `window.APP_URL` was defined
+- **Impact:**
+  - **High Severity**: Critical functionality broken (unsubmit button, audit logs, etc.)
+  - **Scope**: Multiple JavaScript files across admin and agency sections
+  - **User Experience**: Buttons not working, console errors, broken AJAX functionality
+- **Solution - Standardize APP_URL Usage and Fix Base Layout:**
+  1. **Added window.APP_URL Definition to Base Layout:**
+     - Added `window.APP_URL` definition to `app/views/layouts/base.php`
+     - Ensures `APP_URL` is available in JavaScript context for all pages using base layout
+  2. **Fixed All JavaScript Files:**
+     - Updated all instances of `APP_URL` to `window.APP_URL` in JavaScript files
+     - Fixed files: `unsubmit_submission.js`, `audit-log.js`, `periods-management.js`, `program_details.js`, `report-generator.js`, `editProgramLogic.js`
+  3. **Standardized Usage Pattern:**
+     - All JavaScript files now use `window.APP_URL` consistently
+     - Prevents future reference errors
+- **Files Modified:**
+  - `app/views/layouts/base.php` - Added `window.APP_URL` definition
+  - `assets/js/agency/unsubmit_submission.js` - Fixed APP_URL reference
+  - `assets/js/admin/audit-log.js` - Fixed APP_URL references
+  - `assets/js/admin/periods-management.js` - Fixed APP_URL references
+  - `assets/js/agency/program_details.js` - Fixed APP_URL references
+  - `assets/js/report-generator.js` - Fixed APP_URL references
+  - `assets/js/agency/programs/editProgramLogic.js` - Fixed APP_URL reference
+- **Testing:** 
+  - ✅ Unsubmit button now works without console errors
+  - ✅ All AJAX functionality restored
+  - ✅ Consistent `window.APP_URL` usage across all JavaScript files
+  - ✅ Base layout properly defines JavaScript variables
+- **Prevention:** 
+  - Always use `window.APP_URL` in JavaScript files, never `APP_URL` directly
+  - Ensure base layouts define necessary JavaScript variables
+  - Use consistent patterns across all JavaScript files
+  - Test JavaScript functionality after layout changes
+- **Related Issues**: Similar to previous AJAX path issues, but specific to JavaScript variable scope and base layout configuration
+
+### 32. cPanel AJAX Blank Page Issue - Form Action vs JavaScript AJAX (2025-07-27) ✅ FIXED
+
+- **Problem:** AJAX actions returning blank pages on cPanel hosting when using form actions instead of JavaScript fetch:
+  - **Form-based AJAX**: Pages using `<form action="app/ajax/save_submission.php">` show blank page after submission
+  - **JavaScript AJAX**: Pages using `fetch()` calls work correctly
+  - **Local vs Live**: Issue only occurs on cPanel hosting, not localhost
+  - **Example**: `add_submission.php` form action to `save_submission.php` shows blank page, but data saves correctly
+- **Root Cause Analysis:**
+  - **Form Action Behavior**: When form submits to AJAX endpoint, browser expects HTML response but gets JSON
+  - **cPanel Configuration**: cPanel may have stricter output buffering or error handling than localhost
+  - **Response Handling**: Form submissions don't handle JSON responses properly, causing blank page
+  - **JavaScript vs Form**: JavaScript fetch() properly handles JSON responses, form actions don't
+  - **Modal vs Redirect**: Working pages (create program, finalize submission) show modals, problematic pages use direct redirects
+- **Impact:**
+  - **High Severity**: Critical functionality broken on live hosting
+  - **Scope**: All form-based AJAX submissions on cPanel hosting
+  - **User Experience**: Users see blank page after form submission, though data saves correctly
+- **Solution - Convert Form Actions to JavaScript AJAX with Modal Success:**
+  1. **Replace Form Actions with JavaScript:**
+     - Convert all form actions to JavaScript fetch() calls
+     - Prevent default form submission behavior
+     - Handle responses properly with JSON parsing
+  2. **Use Success Modals Instead of Direct Redirects:**
+     - Show success modals after successful AJAX submissions
+     - Provide user choice of next action (continue editing, view programs, etc.)
+     - Prevent blank page issues by keeping user on same page
+  3. **Code Changes:**
+     ```javascript
+     // Instead of: <form action="app/ajax/save_submission.php">
+     // Use: JavaScript event handling with modal success
+     form.addEventListener('submit', function(e) {
+         e.preventDefault();
+         const formData = new FormData(this);
+         
+         fetch('/app/ajax/save_submission.php', {
+             method: 'POST',
+             body: formData
+         })
+         .then(response => response.json())
+         .then(data => {
+             if (data.success) {
+                 showToast('Success', data.message, 'success');
+                 showSuccessModal(); // Show modal instead of redirect
+             } else {
+                 showToast('Error', data.error, 'danger');
+             }
+         });
+     });
+     ```
+  4. **Ensure Proper Headers:**
+     - All AJAX endpoints must set `Content-Type: application/json`
+     - No HTML output before JSON response
+     - Proper error handling with JSON responses
+- **Files Modified:**
+  - `assets/js/agency/programs/add_submission.js` - Converted form submission to AJAX with success modal
+  - `assets/js/admin/programs/admin-edit-submission.js` - Added form submission handling with success modal for admin side
+  - Both files now use `fetch()` instead of form actions and show modals instead of direct redirects
+- **Testing:** 
+  - ✅ Vite assets rebuilt successfully
+  - ✅ Both agency and admin forms now use AJAX
+  - ✅ Success modals implemented to prevent blank pages
+  - ✅ Proper error handling and user feedback implemented
+  - ✅ Loading states and button management added
+  - ✅ User choice of next action provided in modals
+- **Prevention:** 
+  - Always use JavaScript AJAX instead of form actions for AJAX endpoints
+  - Use success modals instead of direct redirects to prevent blank page issues
+  - Test on both localhost and live hosting environments
+  - Ensure all AJAX endpoints return proper JSON responses
+- **Related Issues**: Similar to previous AJAX path issues, but specific to form action vs JavaScript handling and modal vs redirect patterns
 
 ### 31. Notifications AJAX 404 Error - Incorrect Base Path Detection for Direct File Access (2025-07-27)
 
@@ -1314,5 +1615,54 @@ $admin_action_url = APP_URL . "/app/views/admin/programs/program_details.php?id=
 - Verify URL patterns match existing navigation links in the system
 - Test notification links after any routing changes
 - Always include APP_URL prefix for web-accessible URLs
+
+---
+
+### 35. Reverted Modal Changes from Add Submission Page (2025-07-27) ✅ COMPLETED
+
+- **Problem:** User requested to revert the modal changes that were added to the add submission page, returning to the original form submission behavior.
+- **Root Cause:** The modal implementation was not working as expected and the user wanted to return to the original behavior.
+- **Solution - Revert to Original Form Submission:**
+  1. **Removed AJAX Fetch Logic:**
+     - Removed the `fetch()` call to `save_submission.php`
+     - Removed JSON response handling
+     - Removed error handling for AJAX requests
+  2. **Removed Modal Functionality:**
+     - Removed the `showSuccessModal()` function
+     - Removed all modal HTML generation
+     - Removed Bootstrap modal initialization
+  3. **Restored Original Behavior:**
+     - Form now submits normally using `form.submit()`
+     - Form submits to the same page (no action attribute)
+     - PHP processing handles the submission and redirects on success
+  4. **Code Changes:**
+     ```javascript
+     // Before: AJAX with modal
+     fetch(`${window.APP_URL || ''}/app/ajax/save_submission.php`, {
+         method: 'POST',
+         body: formData
+     })
+     .then(response => response.json())
+     .then(data => {
+         if (data.success) {
+             showSuccessModal(data.submission_id);
+         }
+     });
+     
+     // After: Normal form submission
+     form.submit();
+     ```
+- **Files Modified:**
+  - `assets/js/agency/programs/add_submission.js` - Reverted to original form submission
+  - `dist/js/agency-add-submission.bundle.js` - Rebuilt Vite assets
+- **Testing:**
+  - ✅ Form submits normally without AJAX
+  - ✅ No modal functionality
+  - ✅ Original PHP processing handles submission
+  - ✅ Vite assets rebuilt successfully
+- **Prevention:**
+  - Keep original form submission behavior unless specifically requested to change
+  - Test modal implementations thoroughly before deployment
+  - Consider user feedback when implementing UI changes
 
 ---

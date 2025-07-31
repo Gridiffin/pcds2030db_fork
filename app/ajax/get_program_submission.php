@@ -1,4 +1,9 @@
 <?php
+// Start session FIRST before any output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 /**
  * Get Program Submission for a Period (AJAX)
  * Returns program submission data for a given program_id and period_id.

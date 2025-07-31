@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize auto-save functionality
     initializeAutoSave();
     
+    // Initialize form submission handling
+    initializeFormSubmission();
+    
     console.log('Admin edit submission page initialized');
 });
 
@@ -101,14 +104,15 @@ function addNewTarget() {
                 <textarea class="form-control" name="targets[${targetIndex}][target_description]" rows="3" placeholder="Describe the target..."></textarea>
             </div>
             
-            <div class="mb-3">
-                <label class="form-label">Status Description</label>
-                <textarea class="form-control" name="targets[${targetIndex}][status_description]" rows="2" placeholder="Describe current status..."></textarea>
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label">Remarks</label>
-                <textarea class="form-control" name="targets[${targetIndex}][remarks]" rows="2" placeholder="Additional remarks..."></textarea>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status Description</label>
+                    <textarea class="form-control" name="targets[${targetIndex}][status_description]" rows="2" placeholder="Current status and achievements..."></textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Remarks</label>
+                    <textarea class="form-control" name="targets[${targetIndex}][remarks]" rows="2" placeholder="Additional remarks..."></textarea>
+                </div>
             </div>
             
             <div class="row">
@@ -127,26 +131,27 @@ function addNewTarget() {
     targetContainer.insertAdjacentHTML('beforeend', targetHtml);
     
     // Initialize remove button for the new target
-    initializeRemoveButtons();
+    const newTarget = targetContainer.lastElementChild;
+    const removeBtn = newTarget.querySelector('.remove-target-btn');
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function() {
+            newTarget.remove();
+            updateTargetNumbers();
+        });
+    }
     
-    // Update target numbers
     updateTargetNumbers();
 }
 
 /**
- * Initialize remove target buttons
+ * Initialize remove buttons for existing targets
  */
 function initializeRemoveButtons() {
     const removeButtons = document.querySelectorAll('.remove-target-btn');
     removeButtons.forEach(button => {
-        button.replaceWith(button.cloneNode(true)); // Remove existing listeners
-    });
-    
-    // Add new listeners
-    document.querySelectorAll('.remove-target-btn').forEach(button => {
         button.addEventListener('click', function() {
             const targetItem = this.closest('.target-item');
-            if (confirm('Are you sure you want to remove this target?')) {
+            if (targetItem) {
                 targetItem.remove();
                 updateTargetNumbers();
             }
@@ -155,17 +160,16 @@ function initializeRemoveButtons() {
 }
 
 /**
- * Update target numbers after add/remove
+ * Update target numbers after adding/removing targets
  */
 function updateTargetNumbers() {
     const targetItems = document.querySelectorAll('.target-item');
     targetItems.forEach((item, index) => {
-        const targetNumber = index + 1;
-        const heading = item.querySelector('h6');
-        if (heading) {
-            heading.textContent = `Target ${targetNumber}`;
+        const title = item.querySelector('h6');
+        if (title) {
+            title.textContent = `Target ${index + 1}`;
         }
-        item.setAttribute('data-target-index', targetNumber);
+        item.setAttribute('data-target-index', index + 1);
     });
 }
 
@@ -178,27 +182,24 @@ function initializeFormValidation() {
         form.addEventListener('submit', function(e) {
             if (!validateForm()) {
                 e.preventDefault();
-                showToast('Error', 'Please fix the validation errors before submitting.', 'error');
+                return false;
             }
         });
     }
 }
 
 /**
- * Validate form fields
+ * Validate form before submission
  */
 function validateForm() {
     let isValid = true;
-    const requiredFields = document.querySelectorAll('[required]');
     
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            field.classList.add('is-invalid');
-            isValid = false;
-        } else {
-            field.classList.remove('is-invalid');
-        }
-    });
+    // Basic validation - can be extended as needed
+    const description = document.getElementById('description');
+    if (description && description.value.trim() === '') {
+        showToast('Validation Error', 'Please provide a submission description.', 'warning');
+        isValid = false;
+    }
     
     return isValid;
 }
@@ -209,9 +210,11 @@ function validateForm() {
 function initializeAutoSave() {
     const form = document.getElementById('editSubmissionForm');
     if (form) {
-        const inputs = form.querySelectorAll('input, textarea, select');
-        inputs.forEach(input => {
-            input.addEventListener('change', debounce(autoSave, 2000));
+        // Auto-save on form changes
+        const formElements = form.querySelectorAll('input, textarea, select');
+        formElements.forEach(element => {
+            element.addEventListener('change', debounce(autoSave, 2000));
+            element.addEventListener('blur', debounce(autoSave, 2000));
         });
     }
 }
@@ -221,43 +224,62 @@ function initializeAutoSave() {
  */
 function autoSave() {
     const form = document.getElementById('editSubmissionForm');
-    if (form) {
-        const formData = new FormData(form);
-        formData.append('auto_save', '1');
-        
-        fetch(form.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log('Auto-saved successfully');
-                // Optionally show a subtle indicator
-                showAutoSaveIndicator();
-            }
-        })
-        .catch(error => {
-            console.error('Auto-save failed:', error);
-        });
-    }
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    
+    // Add auto-save indicator
+    formData.append('auto_save', '1');
+    
+    fetch(`${window.APP_URL || ''}/app/ajax/save_submission.php`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAutoSaveIndicator('Auto-saved successfully');
+        } else {
+            console.warn('Auto-save failed:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Auto-save error:', error);
+    });
 }
 
 /**
  * Show auto-save indicator
  */
-function showAutoSaveIndicator() {
-    const indicator = document.getElementById('autoSaveIndicator');
-    if (indicator) {
-        indicator.style.display = 'inline';
-        setTimeout(() => {
-            indicator.style.display = 'none';
-        }, 2000);
+function showAutoSaveIndicator(message) {
+    // Create or update auto-save indicator
+    let indicator = document.getElementById('auto-save-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'auto-save-indicator';
+        indicator.className = 'position-fixed top-0 end-0 p-3';
+        indicator.style.zIndex = '9999';
+        document.body.appendChild(indicator);
     }
+    
+    indicator.innerHTML = `
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        if (indicator) {
+            indicator.remove();
+        }
+    }, 3000);
 }
 
 /**
- * Debounce function
+ * Debounce function for auto-save
  */
 function debounce(func, wait) {
     let timeout;
@@ -272,20 +294,120 @@ function debounce(func, wait) {
 }
 
 /**
+ * Initialize form submission handling
+ */
+function initializeFormSubmission() {
+    const form = document.getElementById('editSubmissionForm');
+    if (!form) return;
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
+        // Validate form
+        if (!validateForm()) {
+            return false;
+        }
+        
+        // Prepare form data
+        const formData = new FormData(form);
+        
+        // Show loading state
+        const submitButtons = form.querySelectorAll('button[type="submit"]');
+        submitButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        });
+        
+        // Make AJAX request
+        fetch(`${window.APP_URL || ''}/app/ajax/save_submission.php`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', data.message, 'success');
+                // Show success modal instead of direct redirect
+                showSuccessModal();
+            } else {
+                showToast('Error', data.error || 'An error occurred while saving the submission.', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error', 'An error occurred while saving the submission.', 'danger');
+        })
+        .finally(() => {
+            // Reset button states
+            submitButtons.forEach(btn => {
+                btn.disabled = false;
+                if (btn.name === 'save_as_draft') {
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>Save as Draft';
+                } else if (btn.name === 'finalize_submission') {
+                    btn.innerHTML = '<i class="fas fa-lock me-2"></i>Finalize Submission';
+                } else {
+                    btn.innerHTML = '<i class="fas fa-check me-2"></i>Submit';
+                }
+            });
+        });
+    });
+}
+
+/**
+ * Show success modal
+ */
+function showSuccessModal() {
+    // Create modal HTML
+    const modalHtml = `
+        <div class="modal fade" id="adminSubmissionSuccessModal" tabindex="-1" aria-labelledby="adminSubmissionSuccessModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="adminSubmissionSuccessModalLabel">
+                            <i class="fas fa-check-circle me-2"></i>Submission Updated Successfully!
+                        </h5>
+                    </div>
+                    <div class="modal-body text-center py-4">
+                        <div class="mb-4">
+                            <i class="fas fa-file-alt text-success" style="font-size: 3rem;"></i>
+                        </div>
+                        <h6 class="mb-3">The submission has been updated!</h6>
+                        <p class="text-muted mb-4">Would you like to continue editing or return to the programs list?</p>
+                    </div>
+                    <div class="modal-footer justify-content-center border-0 pb-4">
+                        <button type="button" class="btn btn-success me-2" onclick="window.location.reload()">
+                            <i class="fas fa-edit me-1"></i>Continue Editing
+                        </button>
+                        <a href="${window.APP_URL || ''}/app/views/admin/programs/programs.php" class="btn btn-outline-secondary">
+                            <i class="fas fa-list me-1"></i>View All Programs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('adminSubmissionSuccessModal'));
+    modal.show();
+    
+    // Remove modal from DOM after it's hidden
+    document.getElementById('adminSubmissionSuccessModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
  * Show toast notification
  */
 function showToast(title, message, type = 'info') {
     if (typeof window.showToast === 'function') {
         window.showToast(title, message, type);
     } else {
-        alert(`${title}: ${message}`);
+        // Fallback toast implementation
+        console.log(`${title}: ${message}`);
     }
 }
-
-// Export functions for global access
-window.AdminEditSubmission = {
-    addNewTarget,
-    updateTargetNumbers,
-    validateForm,
-    autoSave
-};

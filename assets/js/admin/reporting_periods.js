@@ -373,7 +373,7 @@ if (!window.reportingPeriodsInitialized) {
                 this.disabled = true;
                 this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
 
-                fetch(`${APP_URL}/app/ajax/save_period.php`, {
+                fetch(`${window.APP_URL}/app/ajax/save_period.php`, {
                     method: 'POST',
                     body: formData
                 })
