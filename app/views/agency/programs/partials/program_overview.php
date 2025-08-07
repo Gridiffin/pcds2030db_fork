@@ -71,6 +71,51 @@ $status_info = get_program_status_info($status);
             <div class="col-md-6 mb-3">
                 <div class="info-item">
                     <div class="info-icon">
+                        <i class="fas fa-star text-warning"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Program Rating</div>
+                        <div class="info-value">
+                            <?php 
+                            $program_rating = $program['rating'] ?? 'not_started';
+                            if (function_exists('get_rating_badge')): ?>
+                                <?php echo get_rating_badge($program_rating); ?>
+                            <?php else: 
+                                // Fallback display if rating helper functions are not available
+                                $rating_labels = [
+                                    'monthly_target_achieved' => 'Monthly Target Achieved',
+                                    'on_track_for_year' => 'On Track for Year',
+                                    'severe_delay' => 'Severe Delays',
+                                    'not_started' => 'Not Started'
+                                ];
+                                $rating_classes = [
+                                    'monthly_target_achieved' => 'success',
+                                    'on_track_for_year' => 'warning',
+                                    'severe_delay' => 'danger',
+                                    'not_started' => 'secondary'
+                                ];
+                                $rating_icons = [
+                                    'monthly_target_achieved' => 'check-circle',
+                                    'on_track_for_year' => 'calendar-check',
+                                    'severe_delay' => 'exclamation-circle',
+                                    'not_started' => 'clock'
+                                ];
+                                $label = $rating_labels[$program_rating] ?? 'Unknown';
+                                $class = $rating_classes[$program_rating] ?? 'secondary';
+                                $icon = $rating_icons[$program_rating] ?? 'clock';
+                            ?>
+                                <span class="badge bg-<?php echo $class; ?> py-2 px-3">
+                                    <i class="fas fa-<?php echo $icon; ?> me-1"></i>
+                                    <?php echo $label; ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="info-item">
+                    <div class="info-icon">
                         <i class="fas fa-project-diagram text-warning"></i>
                     </div>
                     <div class="info-content">

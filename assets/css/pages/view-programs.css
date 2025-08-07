@@ -556,6 +556,48 @@
     }
 }
 
+/* Program Rating Info Styles for Program Boxes */
+.rating-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.rating-info .rating-label {
+    font-weight: 600;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.rating-info .rating-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.rating-info .rating-badge i {
+    font-size: 0.8rem;
+}
+
+.rating-info .text-success {
+    color: #198754 !important;
+}
+
+.rating-info .text-warning {
+    color: #ffc107 !important;
+}
+
+.rating-info .text-danger {
+    color: #dc3545 !important;
+}
+
+.rating-info .text-secondary {
+    color: #6c757d !important;
+}
+
 /* Enhanced Responsive Design */
 @media (max-width: 768px) {
     .table thead th {

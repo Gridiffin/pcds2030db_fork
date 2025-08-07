@@ -155,9 +155,40 @@
                                         Current status of this program
                                     </div>
                                 </div>
+                                
+                                <!-- Program Rating - Only visible to focal users -->
+                                <div class="mb-4">
+                                    <label for="rating" class="form-label">
+                                        <i class="fas fa-star me-2"></i>
+                                        Program Rating <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="rating" name="rating" required>
+                                        <option value="">Select a rating</option>
+                                        <?php 
+                                        $current_rating = $_POST['rating'] ?? $program['rating'] ?? 'not_started';
+                                        $rating_options = [
+                                            'monthly_target_achieved' => 'Monthly Target Achieved',
+                                            'on_track_for_year' => 'On Track for Year', 
+                                            'severe_delay' => 'Severe Delays',
+                                            'not_started' => 'Not Started'
+                                        ];
+                                        foreach ($rating_options as $value => $label): 
+                                        ?>
+                                            <option value="<?php echo htmlspecialchars($value); ?>" <?php echo $current_rating == $value ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($label); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Rate the current performance of this program
+                                    </div>
+                                </div>
                                 <?php else: ?>
                                 <!-- Hidden status field for non-focal users -->
                                 <input type="hidden" name="status" value="<?php echo htmlspecialchars($program['status'] ?? 'active'); ?>">
+                                <!-- Hidden rating field for non-focal users -->
+                                <input type="hidden" name="rating" value="<?php echo htmlspecialchars($program['rating'] ?? 'not_started'); ?>">
                                 <?php endif; ?>
                             </div>
 
@@ -332,10 +363,16 @@
                                                 <i class="fas fa-hashtag text-info me-2"></i>
                                                 Program number
                                             </li>
-                                            <li>
+                                            <li class="mb-2">
                                                 <i class="fas fa-calendar text-warning me-2"></i>
                                                 Timeline dates
                                             </li>
+                                            <?php if (is_focal_user()): ?>
+                                            <li class="mb-2">
+                                                <i class="fas fa-star text-success me-2"></i>
+                                                Program rating and status
+                                            </li>
+                                            <?php endif; ?>
                                         </ul>
                                         <hr>
                                         <div class="alert alert-info mb-0">

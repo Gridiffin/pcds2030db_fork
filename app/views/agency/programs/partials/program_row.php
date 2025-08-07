@@ -244,6 +244,57 @@ if ($is_draft) {
             </div>
             <?php endif; ?>
 
+            <!-- Program Rating -->
+            <?php if ($show_rating): ?>
+            <div class="rating-info">
+                <?php 
+                $program_rating = $program['rating'] ?? 'not_started';
+                
+                // Use rating helper functions for consistent display
+                if (function_exists('get_rating_badge')):
+                    $rating_badge = get_rating_badge($program_rating);
+                    // Extract the content inside the badge span to get just the icon and text
+                    if (preg_match('/<span[^>]*>(.*?)<\/span>/', $rating_badge, $matches)) {
+                        $badge_content = $matches[1];
+                    } else {
+                        $badge_content = $rating_badge;
+                    }
+                ?>
+                    <span class="rating-label">Rating:</span>
+                    <span class="rating-badge"><?php echo $badge_content; ?></span>
+                <?php else: 
+                    // Fallback display if rating helper functions are not available
+                    $rating_labels = [
+                        'monthly_target_achieved' => 'Monthly Target Achieved',
+                        'on_track_for_year' => 'On Track for Year',
+                        'severe_delay' => 'Severe Delays',
+                        'not_started' => 'Not Started'
+                    ];
+                    $rating_classes = [
+                        'monthly_target_achieved' => 'success',
+                        'on_track_for_year' => 'warning',
+                        'severe_delay' => 'danger',
+                        'not_started' => 'secondary'
+                    ];
+                    $rating_icons = [
+                        'monthly_target_achieved' => 'check-circle',
+                        'on_track_for_year' => 'calendar-check',
+                        'severe_delay' => 'exclamation-circle',
+                        'not_started' => 'clock'
+                    ];
+                    $label = $rating_labels[$program_rating] ?? 'Unknown';
+                    $class = $rating_classes[$program_rating] ?? 'secondary';
+                    $icon = $rating_icons[$program_rating] ?? 'clock';
+                ?>
+                    <span class="rating-label">Rating:</span>
+                    <span class="rating-badge">
+                        <i class="fas fa-<?php echo $icon; ?> me-1 text-<?php echo $class; ?>"></i>
+                        <span class="text-<?php echo $class; ?>"><?php echo $label; ?></span>
+                    </span>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
             <!-- Last Updated -->
             <div class="date-info">
                 <?php 

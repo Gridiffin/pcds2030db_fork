@@ -71,7 +71,44 @@
                     </div>
                 </div>
                 
-                <p class="mt-3 mb-0">This action cannot be undone.</p>
+                <!-- Program Rating Selection -->
+                <div class="mt-3">
+                    <label for="programRating" class="form-label">
+                        <i class="fas fa-star me-2"></i>
+                        Update Program Rating
+                    </label>
+                    <select class="form-select" id="programRating" required>
+                        <option value="<?php echo htmlspecialchars($program['rating'] ?? 'not_started'); ?>" selected>
+                            <?php 
+                            $current_rating = $program['rating'] ?? 'not_started';
+                            switch($current_rating) {
+                                case 'monthly_target_achieved':
+                                    echo 'Monthly Target Achieved';
+                                    break;
+                                case 'on_track_for_year':
+                                    echo 'On Track for Year';
+                                    break;
+                                case 'severe_delay':
+                                    echo 'Severe Delays';
+                                    break;
+                                case 'not_started':
+                                default:
+                                    echo 'Not Started';
+                                    break;
+                            }
+                            ?> (Current)
+                        </option>
+                        <option value="monthly_target_achieved">Monthly Target Achieved</option>
+                        <option value="on_track_for_year">On Track for Year</option>
+                        <option value="severe_delay">Severe Delays</option>
+                        <option value="not_started">Not Started</option>
+                    </select>
+                    <div class="form-text">
+                        Choose the appropriate rating for this program before finalizing the submission.
+                    </div>
+                </div>
+                
+                <p class="mt-3 mb-0 text-muted">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -140,11 +177,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            // Get the selected program rating
+            const programRating = document.getElementById('programRating').value;
+            
+            if (!programRating) {
+                alert('Please select a program rating before finalizing.');
+                finalizeButtons.forEach(btn => {
+                    if (btn.tagName === 'A') {
+                        btn.style.pointerEvents = 'auto';
+                        btn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Finalize Submission';
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Finalize Submission';
+                    }
+                });
+                return;
+            }
+            
             // Make the finalization request
             const payload = {
                 submission_id: submissionId,
                 program_id: params.programId,
-                period_id: params.periodId
+                period_id: params.periodId,
+                program_rating: programRating
             };
             
             console.log('Sending finalization request with payload:', payload);

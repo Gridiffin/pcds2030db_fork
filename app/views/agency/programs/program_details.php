@@ -19,6 +19,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_details_data.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/program_status_helpers.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
 
 // Verify user is an agency
 if (!is_agency()) {

@@ -36,9 +36,17 @@ $input = json_decode(file_get_contents('php://input'), true);
 $submission_id = (int)($input['submission_id'] ?? 0);
 $program_id = (int)($input['program_id'] ?? 0);
 $period_id = (int)($input['period_id'] ?? 0);
+$program_rating = isset($input['program_rating']) ? trim($input['program_rating']) : '';
 
 if (!$submission_id || !$program_id || !$period_id) {
     echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
+    exit;
+}
+
+// Validate program rating if provided
+$valid_ratings = ['monthly_target_achieved', 'on_track_for_year', 'severe_delay', 'not_started'];
+if ($program_rating && !in_array($program_rating, $valid_ratings)) {
+    echo json_encode(['success' => false, 'message' => 'Invalid program rating provided']);
     exit;
 }
 
@@ -81,6 +89,30 @@ try {
             ]
         ]);
         exit;
+    }
+    
+    // Update program rating if provided
+    if ($program_rating) {
+        $rating_query = "
+            UPDATE programs 
+            SET 
+                rating = ?,
+                updated_at = NOW()
+            WHERE program_id = ?
+        ";
+        
+        $rating_stmt = $conn->prepare($rating_query);
+        if (!$rating_stmt) {
+            throw new Exception("Rating update prepare failed: " . $conn->error);
+        }
+        
+        $rating_stmt->bind_param('si', $program_rating, $program_id);
+        $rating_stmt->execute();
+        
+        if ($rating_stmt->affected_rows === 0) {
+            // Program might not exist or rating is the same
+            error_log("Warning: Program rating update affected 0 rows for program_id: $program_id");
+        }
     }
     
     // Update submission to finalized
@@ -128,6 +160,9 @@ try {
         ";
         
         $details = "Finalized submission ID: $submission_id for program ID: $program_id, period ID: $period_id";
+        if ($program_rating) {
+            $details .= " and updated program rating to: $program_rating";
+        }
         $ip_address = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
         
         $log_stmt = $conn->prepare($log_query);
