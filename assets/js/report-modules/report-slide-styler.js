@@ -1360,7 +1360,7 @@ if (typeof window.ReportStyler !== 'undefined') {
                         text: line,
                         options: {
                             bullet: { type: 'bullet' },
-                            fontSize: 7,
+                            fontSize: 5,
                             fontFace: defaultFont,
                             color: themeColors.text
                         }
@@ -1372,7 +1372,7 @@ if (typeof window.ReportStyler !== 'undefined') {
                     targetTextObjects = [{ 
                         text: 'N/A', 
                         options: { 
-                            fontSize: 7, 
+                            fontSize: 5, 
                             fontFace: defaultFont, 
                             color: themeColors.lightText,
                             italic: true
@@ -1457,7 +1457,7 @@ currentXPos += colWidths[1];                /**
                         text: line,
                         options: {
                             bullet: { type: 'bullet' },
-                            fontSize: 7,
+                            fontSize: 5,
                             fontFace: defaultFont,
                             color: themeColors.text
                         }
@@ -1469,7 +1469,7 @@ currentXPos += colWidths[1];                /**
                     statusTextObjects = [{ 
                         text: 'N/A', 
                         options: { 
-                            fontSize: 7, 
+                            fontSize: 5, 
                             fontFace: defaultFont, 
                             color: themeColors.lightText,
                             italic: true

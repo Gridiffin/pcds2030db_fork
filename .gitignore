@@ -10,3 +10,6 @@ dist/
 
 # GitHub specific folders
 .github/
+
+# misc
+.internstuff/
