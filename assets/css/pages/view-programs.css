@@ -598,6 +598,163 @@
     color: #6c757d !important;
 }
 
+/* Info tooltip icon styles */
+.status-info .fa-info-circle,
+.rating-info .fa-info-circle {
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.status-info .fa-info-circle:hover,
+.rating-info .fa-info-circle:hover {
+    opacity: 1;
+    color: #0d6efd !important;
+}
+
+/* Enhanced Tooltip Styles - Completely disable all animations and transitions */
+div.tooltip {
+    z-index: 99999 !important;
+    font-family: 'Poppins', sans-serif !important;
+    position: absolute !important;
+    /* Completely remove all animations, transitions, and transforms */
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    -webkit-animation: none !important;
+    -webkit-transition: none !important;
+    -webkit-transform: none !important;
+    -moz-animation: none !important;
+    -moz-transition: none !important;
+    -moz-transform: none !important;
+    -o-animation: none !important;
+    -o-transition: none !important;
+    -o-transform: none !important;
+    -ms-animation: none !important;
+    -ms-transition: none !important;
+    -ms-transform: none !important;
+}
+
+div.tooltip.show {
+    opacity: 1 !important;
+    display: block !important;
+    visibility: visible !important;
+    /* Completely remove all animations, transitions, and transforms */
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    -webkit-animation: none !important;
+    -webkit-transition: none !important;
+    -webkit-transform: none !important;
+    -moz-animation: none !important;
+    -moz-transition: none !important;
+    -moz-transform: none !important;
+    -o-animation: none !important;
+    -o-transition: none !important;
+    -o-transform: none !important;
+    -ms-animation: none !important;
+    -ms-transition: none !important;
+    -ms-transform: none !important;
+}
+
+/* Force visible class for tooltips - disable all animations */
+div.tooltip.tooltip-force-visible {
+    opacity: 1 !important;
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+    /* Completely remove all animations, transitions, and transforms */
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    -webkit-animation: none !important;
+    -webkit-transition: none !important;
+    -webkit-transform: none !important;
+    -moz-animation: none !important;
+    -moz-transition: none !important;
+    -moz-transform: none !important;
+    -o-animation: none !important;
+    -o-transition: none !important;
+    -o-transform: none !important;
+    -ms-animation: none !important;
+    -ms-transition: none !important;
+    -ms-transform: none !important;
+}
+
+/* Disable Bootstrap tooltip fade animation */
+div.tooltip.fade {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    -webkit-animation: none !important;
+    -webkit-transition: none !important;
+    -moz-animation: none !important;
+    -moz-transition: none !important;
+    -o-animation: none !important;
+    -o-transition: none !important;
+    -ms-animation: none !important;
+    -ms-transition: none !important;
+}
+
+/* Remove any Bootstrap tooltip transitions from all child elements */
+div.tooltip *,
+div.tooltip *:before,
+div.tooltip *:after {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    -webkit-animation: none !important;
+    -webkit-transition: none !important;
+    -webkit-transform: none !important;
+    -moz-animation: none !important;
+    -moz-transition: none !important;
+    -moz-transform: none !important;
+    -o-animation: none !important;
+    -o-transition: none !important;
+    -o-transform: none !important;
+    -ms-animation: none !important;
+    -ms-transition: none !important;
+    -ms-transform: none !important;
+}
+
+div.tooltip .tooltip-inner {
+    max-width: 300px !important;
+    padding: 8px 12px !important;
+    background-color: #212529 !important;
+    color: #fff !important;
+    border-radius: 6px !important;
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
+    text-align: left !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+    display: block !important;
+    opacity: 1 !important;
+}
+
+.tooltip .tooltip-arrow::before {
+    border-top-color: rgba(33, 37, 41, 0.95) !important;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: rgba(33, 37, 41, 0.95) !important;
+}
+
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: rgba(33, 37, 41, 0.95) !important;
+}
+
+.tooltip.bs-tooltip-start .tooltip-arrow::before {
+    border-left-color: rgba(33, 37, 41, 0.95) !important;
+}
+
+.tooltip.bs-tooltip-end .tooltip-arrow::before {
+    border-right-color: rgba(33, 37, 41, 0.95) !important;
+}
+
+/* Ensure tooltip triggers are properly positioned */
+[data-bs-toggle="tooltip"] {
+    position: relative !important;
+}
+
 /* Enhanced Responsive Design */
 @media (max-width: 768px) {
     .table thead th {

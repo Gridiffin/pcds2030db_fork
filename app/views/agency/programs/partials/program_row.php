@@ -240,7 +240,14 @@ if ($is_draft) {
             <?php if ($show_rating): ?>
             <div class="status-info">
                 <div class="status-circle <?php echo $status_map[$current_status]['circle_class']; ?>"></div>
-                <span class="status-text"><?php echo $status_map[$current_status]['label']; ?></span>
+                <span class="status-text" 
+                      data-bs-toggle="tooltip" 
+                      data-bs-placement="top" 
+                      data-bs-html="true"
+                      title="<strong>Status Information:</strong><br>Status is the current progress of this program and this will only be used by the users in your agency."
+                      style="cursor: help;">
+                    <?php echo $status_map[$current_status]['label']; ?>
+                </span>
             </div>
             <?php endif; ?>
 
@@ -261,7 +268,14 @@ if ($is_draft) {
                     }
                 ?>
                     <span class="rating-label">Rating:</span>
-                    <span class="rating-badge"><?php echo $badge_content; ?></span>
+                    <span class="rating-badge" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="top" 
+                          data-bs-html="true"
+                          title="<strong>Rating Information:</strong><br>Rating is the performance of the whole program that will be shown in the report slide to MUDeNR."
+                          style="cursor: help;">
+                        <?php echo $badge_content; ?>
+                    </span>
                 <?php else: 
                     // Fallback display if rating helper functions are not available
                     $rating_labels = [
@@ -287,7 +301,12 @@ if ($is_draft) {
                     $icon = $rating_icons[$program_rating] ?? 'clock';
                 ?>
                     <span class="rating-label">Rating:</span>
-                    <span class="rating-badge">
+                    <span class="rating-badge" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="top" 
+                          data-bs-html="true"
+                          title="<strong>Rating Information:</strong><br>Rating is the performance of the whole program that will be shown in the report slide to MUDeNR."
+                          style="cursor: help;">
                         <i class="fas fa-<?php echo $icon; ?> me-1 text-<?php echo $class; ?>"></i>
                         <span class="text-<?php echo $class; ?>"><?php echo $label; ?></span>
                     </span>
