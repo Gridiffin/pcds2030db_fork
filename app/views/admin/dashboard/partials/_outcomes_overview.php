@@ -5,7 +5,21 @@
  * @var array $outcomes_stats Statistics related to outcomes.
  */
 require_once ROOT_PATH . 'app/lib/admins/outcomes.php';
-$outcomes = get_all_outcomes();
+
+// Use pre-fetched outcomes from parent scope when available
+$all_outcomes = isset($all_outcomes) ? $all_outcomes : get_all_outcomes();
+$admin_chart_outcomes = isset($admin_chart_outcomes)
+    ? $admin_chart_outcomes
+    : array_values(array_filter($all_outcomes, function($o){
+        $t = strtolower($o['type'] ?? '');
+        return in_array($t, ['chart','graph']);
+    }));
+$admin_kpi_outcomes = isset($admin_kpi_outcomes)
+    ? $admin_kpi_outcomes
+    : array_values(array_filter($all_outcomes, function($o){
+        $t = strtolower($o['type'] ?? '');
+        return $t === 'kpi';
+    }));
 ?>
 <div class="row mb-4">
     <div class="col-12">
@@ -109,77 +123,148 @@ $outcomes = get_all_outcomes();
                         </div>
                     </div>
                 </div>
-                <!-- Outcome Line Charts -->
-                <div class="row mt-4">
-                    <?php foreach ($outcomes as $outcome): ?>
-                        <?php
-                        $data = $outcome['data'] ?? [];
-                        $columns = $data['columns'] ?? [];
-                        $rows = $data['rows'] ?? [];
-                        $has_data = !empty($columns) && !empty($rows);
-                        ?>
-                        <?php if ($has_data): ?>
-                        <div class="col-md-6 col-lg-4 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h6 class="card-title mb-2"><?php echo htmlspecialchars($outcome['title']); ?></h6>
-                                    <div class="chart-canvas-container">
-                                        <canvas id="outcomeChart_<?php echo $outcome['id']; ?>" class="chart-canvas" height="200"></canvas>
-                                    </div>
-                                    <pre style="font-size:12px; background:#f8f9fa; border:1px solid #eee; padding:8px; margin-top:10px; max-height:200px; overflow:auto;">
-Columns:
-<?php print_r($columns); ?>
-Rows:
-<?php print_r($rows); ?>
-</pre>
-                                </div>
+                <!-- Outcome Graphs and KPIs -->
+                <div class="row mt-4 g-4">
+                    <div class="col-12">
+                        <div class="card h-100">
+                            <div class="card-header"><h6 class="m-0"><i class="fas fa-chart-line me-1"></i>Outcome Graphs</h6></div>
+                            <div class="card-body">
+                                <div id="adminOutcomeGraphs" class="row g-4"></div>
                             </div>
                         </div>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
+                    </div>
+                    <div class="col-12">
+                        <div class="card h-100">
+                            <div class="card-header"><h6 class="m-0"><i class="fas fa-gauge-high me-1"></i>KPIs</h6></div>
+                            <div class="card-body">
+                                <div id="adminKpiOutcomes" class="row g-3"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div> 
-<?php if (!empty($outcomes)): ?>
-<script src="<?php echo asset_url('js/charts', 'outcomes-chart.js'); ?>"></script>
 <script>
-<?php foreach ($outcomes as $outcome):
-    $data = $outcome['data'] ?? [];
-    $columns = $data['columns'] ?? [];
-    $rows = $data['rows'] ?? [];
-    $has_data = !empty($columns) && !empty($rows);
-    if (!$has_data) continue;
-    // Prepare labels (months) and datasets (years)
-    $labels = array_map(function($row) { return $row['month'] ?? ''; }, $rows);
-    $datasets = [];
-    foreach ($columns as $year) {
-        if ($year === 'month') continue;
-        $datasets[] = [
-            'label' => $year,
-            'data' => array_map(function($row) use ($year) { return isset($row[$year]) ? floatval($row[$year]) : null; }, $rows),
-            'fill' => false,
-            'borderColor' => 'rgba(54, 162, 235, 1)',
-            'tension' => 0.1
-        ];
-    }
-?>
-(function() {
-    var ctx = document.getElementById('outcomeChart_<?php echo $outcome['id']; ?>').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: <?php echo json_encode($labels); ?>,
-            datasets: <?php echo json_encode($datasets); ?>
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: true } },
-            scales: { x: { display: true }, y: { display: true } }
+// Provide data for admin charts/KPIs
+window.adminDashboardOutcomes = {
+    charts: <?php echo json_encode($admin_chart_outcomes); ?>,
+    kpis: <?php echo json_encode($admin_kpi_outcomes); ?>
+};
+
+(function initAdminOutcomes(){
+    const graphRoot = document.getElementById('adminOutcomeGraphs');
+    const kpiRoot = document.getElementById('adminKpiOutcomes');
+    const data = window.adminDashboardOutcomes || {charts:[], kpis:[]};
+    let tries = 0; const max = 50;
+    function ensureAndRender(){
+        if (typeof Chart === 'undefined') { tries++; if (tries < max) return setTimeout(ensureAndRender, 100); }
+        // Graphs
+        if (graphRoot){
+            if (!data.charts || data.charts.length === 0){
+                graphRoot.innerHTML = '<div class="text-muted py-3 text-center">No outcome graphs to display</div>';
+            } else {
+                graphRoot.innerHTML = '';
+                const chartElems = [];
+                data.charts.forEach((o, idx) => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-6 col-lg-4';
+                    col.innerHTML = '<div class="card h-100"><div class="card-body">'
+                        + '<h6 class="card-title mb-2">' + escapeHtml(o.title || o.code || 'Outcome') + '</h6>'
+                        + '<div style="position:relative;height:220px"><canvas id="adminOutcomeChart_'+idx+'" data-chart-index="'+idx+'"></canvas></div>'
+                        + '</div></div>';
+                    graphRoot.appendChild(col);
+                    try {
+                        const series = transformOutcomeToSeries(o);
+                        if (series){
+                            const canvas = col.querySelector('canvas');
+                            canvas._series = series; // attach for lazy render
+                            chartElems.push(canvas);
+                        } else {
+                            col.querySelector('.card-body').insertAdjacentHTML('beforeend','<div class="text-muted">No data</div>');
+                        }
+                    } catch(e){ console.error('Admin outcome render failed', e); }
+                });
+                // Lazy render charts when they become visible to reduce main-thread jank
+                if (chartElems.length){
+                    const chartsMap = new Map();
+                    const renderChart = (canvas) => {
+                        if (!canvas || chartsMap.has(canvas)) return;
+                        const series = canvas._series;
+                        if (!series || typeof Chart === 'undefined') return;
+                        const ctx = canvas.getContext('2d');
+                        const chart = new Chart(ctx, { type:'line', data:{ labels: series.labels, datasets: series.datasets }, options:{
+                            responsive:true, maintainAspectRatio:false,
+                            animation: { duration: 300 },
+                            plugins:{ legend:{ position:'bottom' } },
+                            scales:{ y:{ beginAtZero:true } }
+                        }});
+                        chartsMap.set(canvas, chart);
+                    };
+                    if ('IntersectionObserver' in window){
+                        const io = new IntersectionObserver((entries) => {
+                            entries.forEach(entry => { if (entry.isIntersecting){ renderChart(entry.target); io.unobserve(entry.target); } });
+                        }, { root:null, rootMargin:'100px', threshold:0.01 });
+                        chartElems.forEach(c => io.observe(c));
+                    } else {
+                        // Fallback: stagger rendering
+                        let i = 0; const step = () => { if (i < chartElems.length){ renderChart(chartElems[i++]); setTimeout(step, 50); } }; step();
+                    }
+                }
+            }
         }
-    });
+        // KPIs
+        if (kpiRoot){
+            if (!data.kpis || data.kpis.length === 0){
+                kpiRoot.innerHTML = '<div class="text-muted py-3 text-center">No KPI outcomes to display</div>';
+            } else {
+                kpiRoot.innerHTML = '';
+                data.kpis.forEach((o) => {
+                    const items = Array.isArray(o.data) ? o.data : (Array.isArray(o.data?.items) ? o.data.items : (o.data ? [o.data] : []));
+                    if (!items.length) return;
+                    const header = document.createElement('div');
+                    header.className = 'col-12';
+                    header.innerHTML = '<div class="small text-muted mt-1 mb-1">' + escapeHtml(o.title || o.code || 'KPI') + '</div>';
+                    kpiRoot.appendChild(header);
+                    items.forEach((entry) => {
+                        const valueRaw = entry && (entry.value ?? entry.current ?? entry.kpi);
+                        const unit = entry && (entry.unit ?? entry.suffix) || '';
+                        const extra = entry && entry.extra ? ' <span class="d-block small text-muted">' + escapeHtml(entry.extra) + '</span>' : '';
+                        const desc = entry && entry.description ? '<div class="small text-muted">' + escapeHtml(entry.description) + '</div>' : '';
+                        const formatted = formatValue(valueRaw);
+                        const card = document.createElement('div');
+                        card.className = 'col-sm-6 col-md-4 col-lg-3';
+                        card.innerHTML = '<div class="card h-100 text-center">'
+                            + '<div class="card-body">'
+                            + '<div class="text-forest-medium mb-2"><i class="fas fa-bullseye"></i></div>'
+                            + '<div class="h4">' + escapeHtml(formatted) + (unit ? ' ' + escapeHtml(unit) : '') + '</div>'
+                            + desc + extra
+                            + '</div></div>';
+                        kpiRoot.appendChild(card);
+                    });
+                });
+            }
+        }
+    }
+    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
+    function formatValue(v){ if (v===null||v===undefined) return '-'; if (typeof v==='number') return v.toLocaleString(); const n=Number(v); return Number.isFinite(n)?n.toLocaleString():String(v); }
+    function chartColor(i){ const p=['#11998e','#2f80ed','#f2994a','#eb5757','#9b51e0','#27ae60']; return p[i%p.length]; }
+    function transformOutcomeToSeries(outcome){
+        const d = outcome.data || {};
+        if (d && Array.isArray(d.rows) && Array.isArray(d.columns) && d.columns.length){
+            const labels = d.rows.map(r => r.month || r.label || r.date || '');
+            const datasets = d.columns.map((col,i)=>({ label:String(col), data:d.rows.map(r=>Number(r[col])||0), borderColor:chartColor(i), backgroundColor:'transparent', tension:0.3 }));
+            return { labels, datasets };
+        }
+        if (Array.isArray(d.points)){
+            return { labels: d.points.map(p=>p.x), datasets: [{ label: outcome.title || 'Series', data: d.points.map(p=>Number(p.y)||0), borderColor: chartColor(0), backgroundColor:'transparent', tension:0.3 }] };
+        }
+        if (Array.isArray(d.values)){
+            return { labels: d.values.map((_,i)=>String(i+1)), datasets: [{ label: outcome.title || 'Series', data: d.values.map(v=>Number(v)||0), borderColor: chartColor(0), backgroundColor:'transparent', tension:0.3 }] };
+        }
+        return null;
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureAndRender); else ensureAndRender();
 })();
-<?php endforeach; ?>
 </script>
-<?php endif; ?> 

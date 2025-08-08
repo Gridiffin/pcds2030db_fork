@@ -46,6 +46,17 @@ $recent_submissions = get_recent_submissions($period_id, 5);
 // Get outcomes statistics for the dashboard
 $outcomes_stats = get_outcomes_statistics($period_id);
 
+// Prepare individual outcomes for graphs and KPIs
+$all_outcomes = get_all_outcomes();
+$admin_chart_outcomes = array_values(array_filter($all_outcomes, function($o) {
+    $type = strtolower($o['type'] ?? '');
+    return in_array($type, ['chart', 'graph']);
+}));
+$admin_kpi_outcomes = array_values(array_filter($all_outcomes, function($o) {
+    $type = strtolower($o['type'] ?? '');
+    return $type === 'kpi';
+}));
+
 // Get latest 5 programs for display
 $latest_programs = get_admin_programs_list($period_id, [
     'limit' => 5,
