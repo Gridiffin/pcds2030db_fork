@@ -150,30 +150,30 @@ function get_period_submission_stats($period_id) {
     if ($result && $row = $result->fetch_assoc()) {
         $stats['agencies_reported'] = $row['reported'];
     }
-      // Get program status counts - Fixed to count unique programs, not all submissions
-    $query = "SELECT ps.is_draft, COUNT(DISTINCT ps.program_id) as count 
-              FROM program_submissions ps 
-              INNER JOIN (
-                  SELECT program_id, MAX(submission_id) as max_submission_id
-                  FROM program_submissions 
-                  WHERE period_id = ?
-                  GROUP BY program_id
-              ) latest ON ps.program_id = latest.program_id AND ps.submission_id = latest.max_submission_id
-              WHERE ps.period_id = ? 
-              GROUP BY ps.is_draft";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("ii", $period_id, $period_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
     
-    while ($result && $row = $result->fetch_assoc()) {
-        if ($row['is_draft'] == 0) {
-            // final submissions - count unique programs with finalized submissions
-            $stats['on_track_programs'] += $row['count'];
-        } else {
-            // draft submissions - count unique programs with only draft submissions
-            $stats['delayed_programs'] += $row['count'];
+    // Programs On Track: count by programs.rating column (enum 'on_track_for_year')
+    $on_track_value = 'on_track_for_year';
+    $onTrackStmt = $conn->prepare("SELECT COUNT(*) AS total FROM programs WHERE rating = ?");
+    if ($onTrackStmt) {
+        $onTrackStmt->bind_param('s', $on_track_value);
+        $onTrackStmt->execute();
+        $onTrackResult = $onTrackStmt->get_result();
+        if ($onTrackResult && $onTrackRow = $onTrackResult->fetch_assoc()) {
+            $stats['on_track_programs'] = (int)$onTrackRow['total'];
         }
+        $onTrackStmt->close();
+    }
+    // Delayed programs: count by programs.rating column (enum 'severe_delay')
+    $delayed_value = 'severe_delay';
+    $delayedStmt = $conn->prepare("SELECT COUNT(*) AS total FROM programs WHERE rating = ?");
+    if ($delayedStmt) {
+        $delayedStmt->bind_param('s', $delayed_value);
+        $delayedStmt->execute();
+        $delayedResult = $delayedStmt->get_result();
+        if ($delayedResult && $delayedRow = $delayedResult->fetch_assoc()) {
+            $stats['delayed_programs'] = (int)$delayedRow['total'];
+        }
+        $delayedStmt->close();
     }
     
     // Get total programs

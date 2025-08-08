@@ -15,13 +15,13 @@
                         <i class="fas fa-users stat-icon"></i>
                     </div>
                     <div class="stat-card-content">
-                        <div class="stat-title">Agencies Reporting</div>
+                        <div class="stat-title">Users Reporting</div>
                         <div class="stat-value">
                             <?php echo $submission_stats['agencies_reported'] ?? 0; ?>/<?php echo $submission_stats['total_agencies'] ?? 0; ?>
                         </div>
                         <div class="stat-subtitle">
                             <i class="fas fa-check me-1"></i>
-                            <?php echo $submission_stats['agencies_reported'] ?? 0; ?> Agencies Reported
+                            <?php echo $submission_stats['agencies_reported'] ?? 0; ?> Users Reported
                         </div>
                     </div>
                 </div>
@@ -60,7 +60,7 @@
                     </div>
                     <div class="stat-card-content">
                         <div class="stat-title">Programs Delayed</div>
-                        <div class="stat-value>
+                        <div class="stat-value">
                             <?php echo $submission_stats['delayed_programs'] ?? 0; ?>
                         </div>
                         <?php if (isset($submission_stats['total_programs']) && $submission_stats['total_programs'] > 0): ?>

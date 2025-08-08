@@ -20,6 +20,11 @@ $admin_kpi_outcomes = isset($admin_kpi_outcomes)
         $t = strtolower($o['type'] ?? '');
         return $t === 'kpi';
     }));
+// Only show graph outcomes; exclude KPI or other types
+$outcomes = array_values(array_filter($outcomes, function($o){
+    $t = strtolower($o['type'] ?? '');
+    return $t === 'chart' || $t === 'graph';
+}));
 ?>
 <div class="row mb-4">
     <div class="col-12">
