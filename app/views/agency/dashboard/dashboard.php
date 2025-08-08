@@ -17,6 +17,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/agencies/outcomes.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/rating_helpers.php';
 require_once PROJECT_ROOT_PATH . 'app/controllers/DashboardController.php';
 
@@ -73,6 +74,25 @@ $dashboardData = $dashboardController->getDashboardData(
 $stats = $dashboardData['stats'];
 $chartData = $dashboardData['chart_data'];
 $recentUpdates = $dashboardData['recent_updates'];
+
+// Outcomes stats and chart data for Outcomes chart under Initiatives
+$outcomes_stats = get_agency_outcomes_statistics($_SESSION['sector_id'] ?? 0, $period_id);
+$outcomes_stats['recent_outcomes'] = $outcomes_stats['recent_outcomes'] ?? [];
+$outcomesChartData = [
+    'labels' => array_keys($outcomes_stats['outcomes_by_type'] ?? []),
+    'data' => array_values($outcomes_stats['outcomes_by_type'] ?? [])
+];
+
+// Load individual outcomes for dashboard rendering
+$allOutcomes = get_all_outcomes();
+$chartOutcomes = array_values(array_filter($allOutcomes, function($o) {
+    $type = strtolower($o['type'] ?? '');
+    return in_array($type, ['chart', 'graph']);
+}));
+$kpiOutcomes = array_values(array_filter($allOutcomes, function($o) {
+    $type = strtolower($o['type'] ?? '');
+    return $type === 'kpi';
+}));
 
 
 // Include the base layout

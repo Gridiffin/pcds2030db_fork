@@ -8,12 +8,15 @@ export class DashboardChart {
     constructor() {
         this.chart = null;
         this.chartData = null;
+        this.outcomesChart = null;
+        this.outcomesChartData = null;
         this.init();
     }
     
     init() {
         // Get chart data from global variable (set by PHP)
         this.chartData = window.programRatingChartData || null;
+        this.outcomesChartData = window.outcomesChartData || null;
         
         if (!this.chartData) {
             console.warn('⚠️ No chart data found');
@@ -21,6 +24,7 @@ export class DashboardChart {
         }
         
         this.createChart();
+        this.createOutcomesChart();
     }
     
     createChart() {
@@ -98,6 +102,63 @@ export class DashboardChart {
             this.showChartError();
         }
     }
+
+    createOutcomesChart() {
+        const canvas = document.getElementById('outcomesTypeChart');
+        if (!canvas) {
+            return; // Outcomes chart is optional
+        }
+        if (!this.outcomesChartData) {
+            console.warn('⚠️ No outcomes chart data found');
+            return;
+        }
+        if (typeof Chart === 'undefined') {
+            console.error('❌ Chart.js not loaded');
+            return;
+        }
+        if (this.outcomesChart) {
+            this.outcomesChart.destroy();
+        }
+        try {
+            this.outcomesChart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: this.outcomesChartData.labels,
+                    datasets: [{
+                        label: 'Outcomes',
+                        data: this.outcomesChartData.data,
+                        backgroundColor: '#11998e',
+                        borderColor: '#0e7f76',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw || 0;
+                                    return `Count: ${value}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            window.outcomesTypeChart = this.outcomesChart;
+        } catch (error) {
+            console.error('❌ Error creating outcomes chart:', error);
+        }
+    }
     
     showChartError() {
         const canvas = document.getElementById('programRatingChart');
@@ -130,7 +191,6 @@ export class DashboardChart {
             this.chart.data.datasets[0].data = newData.data;
             this.chart.data.labels = newData.labels;
             this.chart.update('active');
-            
         }
     }
     
