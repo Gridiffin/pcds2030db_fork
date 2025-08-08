@@ -79,6 +79,7 @@ $hasActivePeriod = isset($current_period) && !empty($current_period);
 $inlineScripts = "
     var hasActivePeriod = " . ($hasActivePeriod ? 'true' : 'false') . ";
     var currentPeriodId = " . ($period_id ? $period_id : 'null') . ";
+    var APP_URL = '" . APP_URL . "';
 ";
 
 // Configure page header

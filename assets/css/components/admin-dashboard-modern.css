@@ -6,6 +6,7 @@
 /* Import base modern card system */
 @import 'cards.css';
 @import 'bento-grid.css';
+@import 'admin-stat-modal.css';
 
 /* === Modern Admin Cards === */
 .admin-card-modern {
@@ -80,6 +81,28 @@
 .admin-stat-card-modern:focus {
     outline: 2px solid rgba(255, 255, 255, 0.5);
     outline-offset: 2px;
+}
+
+/* Clickable stat cards */
+.admin-stat-card-modern.admin-stat-clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.admin-stat-card-modern.admin-stat-clickable:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.admin-stat-click-hint {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.admin-stat-card-modern.admin-stat-clickable:hover .admin-stat-click-hint {
+    opacity: 1;
 }
 
 .admin-stat-card-modern::before {

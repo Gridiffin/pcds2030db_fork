@@ -12,6 +12,7 @@ import './dashboard.js';
 
 // Import modern enhancements
 import './admin-dashboard-modern.js';
+import './admin-stat-modal.js';
 
 // Dashboard initialization
 document.addEventListener('DOMContentLoaded', function() {
