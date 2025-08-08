@@ -78,8 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize more actions modal functionality
     initMoreActionsModal();
     
-    // Initialize tooltips for all buttons
-    initTooltips();
+    // Tooltip initialization removed - using CSS-only tooltips
     
     // Initialize pagination for both tables (wait for TablePagination to be available)
     if (typeof TablePagination !== 'undefined') {
@@ -499,44 +498,7 @@ function updateNoResultsMessage(containerId) {
     }
 }
 
-/**
- * Initialize tooltips for all buttons in the tables
- */
-function initTooltips() {
-    // Initialize tooltips for all elements with data-bs-toggle="tooltip"
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl, {
-            trigger: 'hover focus',
-            delay: { show: 300, hide: 100 }
-        });
-    });
-    
-    // Also initialize tooltips for any dynamically added content
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) { // Element node
-                        const newTooltips = node.querySelectorAll ? node.querySelectorAll('[data-bs-toggle="tooltip"]') : [];
-                        newTooltips.forEach(function(tooltipEl) {
-                            new bootstrap.Tooltip(tooltipEl, {
-                                trigger: 'hover focus',
-                                delay: { show: 300, hide: 100 }
-                            });
-                        });
-                    }
-                });
-            }
-        });
-    });
-    
-    // Observe changes to the document body
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-}
+// Tooltip initialization removed - using CSS-only tooltips instead
 
 /**
  * Initialize more actions modal functionality for table action buttons

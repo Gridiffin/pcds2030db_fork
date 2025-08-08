@@ -62,6 +62,10 @@ $status_info = get_program_status_info($status);
                             <span class="badge status-badge bg-<?php echo $status_info['class']; ?> py-2 px-3" id="program-status-badge">
                                 <i class="<?php echo $status_info['icon']; ?> me-1"></i>
                                 <?php echo $status_info['label']; ?>
+                                <div class="tooltip">
+                                    <strong>Status Information:</strong><br>
+                                    Used for internal agency program progress tracking and management. This helps agencies monitor their programs internally and make operational decisions.
+                                </div>
                             </span>
                             <div id="hold-point-info"></div>
                         </div>
@@ -79,7 +83,13 @@ $status_info = get_program_status_info($status);
                             <?php 
                             $program_rating = $program['rating'] ?? 'not_started';
                             if (function_exists('get_rating_badge')): ?>
-                                <?php echo get_rating_badge($program_rating); ?>
+                                <span class="rating-wrapper">
+                                    <?php echo get_rating_badge($program_rating); ?>
+                                    <div class="tooltip">
+                                        <strong>Rating Information:</strong><br>
+                                        Program performance rating that appears in official MUDeNR reports. This rating is shared with external stakeholders and reflects overall program performance.
+                                    </div>
+                                </span>
                             <?php else: 
                                 // Fallback display if rating helper functions are not available
                                 $rating_labels = [
@@ -107,6 +117,10 @@ $status_info = get_program_status_info($status);
                                 <span class="badge bg-<?php echo $class; ?> py-2 px-3">
                                     <i class="fas fa-<?php echo $icon; ?> me-1"></i>
                                     <?php echo $label; ?>
+                                    <div class="tooltip">
+                                        <strong>Rating Information:</strong><br>
+                                        Program performance rating that appears in official MUDeNR reports. This rating is shared with external stakeholders and reflects overall program performance.
+                                    </div>
                                 </span>
                             <?php endif; ?>
                         </div>

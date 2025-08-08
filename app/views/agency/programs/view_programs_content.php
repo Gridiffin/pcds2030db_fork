@@ -265,110 +265,13 @@
         <!-- Simple Finalize Modal (New Implementation) -->
         <?php require_once __DIR__ . '/partials/simple_finalize_modal.php'; ?>
         
-        <!-- JavaScript data and initialization -->
+        <!-- JavaScript data -->
         <script>
             // Make program data available to JavaScript
             window.allPrograms = <?php echo json_encode($programs); ?>;
             window.currentUserRole = '<?php echo $_SESSION['role'] ?? ''; ?>';
             window.currentUserId = '<?php echo $_SESSION['user_id'] ?? ''; ?>';
-            
-            // Initialize Bootstrap tooltips with retry mechanism
-            function initializeTooltips() {
-                console.log('Attempting to initialize tooltips...');
-                
-                // Check if Bootstrap is available
-                if (typeof bootstrap === 'undefined') {
-                    console.log('Bootstrap not yet loaded, retrying...');
-                    setTimeout(initializeTooltips, 100);
-                    return;
-                }
-                
-                try {
-                    // Find all tooltip elements
-                    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-                    console.log('Found tooltip elements:', tooltipTriggerList.length);
-                    
-                    if (tooltipTriggerList.length === 0) {
-                        console.log('No tooltip elements found, retrying...');
-                        setTimeout(initializeTooltips, 100);
-                        return;
-                    }
-                    
-                    // Initialize tooltips without animation
-                    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                        return new bootstrap.Tooltip(tooltipTriggerEl, {
-                            animation: false,
-                            delay: 0,
-                            fade: false
-                        });
-                    });
-                    
-                    console.log('Tooltips initialized successfully:', tooltipList.length);
-                    
-                    // Store globally for cleanup
-                    window.currentTooltips = tooltipList;
-                    
-                    // Create a MutationObserver to watch for tooltip creation
-                    const observer = new MutationObserver(function(mutations) {
-                        mutations.forEach(function(mutation) {
-                            mutation.addedNodes.forEach(function(node) {
-                                if (node.nodeType === 1 && node.classList && node.classList.contains('tooltip')) {
-                                    console.log('Tooltip detected by MutationObserver:', node);
-                                    // Force visibility using CSS class instead of inline styles
-                                    node.classList.add('tooltip-force-visible');
-                                    
-                                    // Also try direct style manipulation
-                                    setTimeout(function() {
-                                        node.style.setProperty('visibility', 'visible', 'important');
-                                        node.style.setProperty('opacity', '1', 'important');
-                                        node.style.setProperty('display', 'block', 'important');
-                                    }, 0);
-                                }
-                            });
-                        });
-                    });
-                    
-                    // Start observing
-                    observer.observe(document.body, {
-                        childList: true,
-                        subtree: true
-                    });
-                    
-                    // Store observer for cleanup
-                    window.tooltipObserver = observer;
-                    
-                } catch (error) {
-                    console.error('Error initializing tooltips:', error);
-                    setTimeout(initializeTooltips, 100);
-                }
-            }
-            
-            // Re-initialize tooltips when program content changes (for filters/pagination)
-            function reinitializeTooltips() {
-                console.log('Reinitializing tooltips...');
-                
-                // Dispose existing tooltips
-                if (window.currentTooltips) {
-                    window.currentTooltips.forEach(function(tooltip) {
-                        if (tooltip && typeof tooltip.dispose === 'function') {
-                            tooltip.dispose();
-                        }
-                    });
-                }
-                
-                // Initialize tooltips again
-                initializeTooltips();
-            }
-            
-            // Make reinitialize function available globally
-            window.reinitializeTooltips = reinitializeTooltips;
-            
-            // Start initialization when DOM is ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initializeTooltips);
-            } else {
-                initializeTooltips();
-            }
+            // CSS-only tooltips are used on this page. Bootstrap tooltips remain for modal buttons only.
         </script>
     </div>
 </main>
