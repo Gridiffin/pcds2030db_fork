@@ -4,6 +4,8 @@
  * 
  * @var array $outcomes_stats Statistics related to outcomes.
  */
+require_once ROOT_PATH . 'app/lib/admins/outcomes.php';
+$outcomes = get_all_outcomes();
 ?>
 <div class="row mb-4">
     <div class="col-12">
@@ -107,7 +109,77 @@
                         </div>
                     </div>
                 </div>
+                <!-- Outcome Line Charts -->
+                <div class="row mt-4">
+                    <?php foreach ($outcomes as $outcome): ?>
+                        <?php
+                        $data = $outcome['data'] ?? [];
+                        $columns = $data['columns'] ?? [];
+                        $rows = $data['rows'] ?? [];
+                        $has_data = !empty($columns) && !empty($rows);
+                        ?>
+                        <?php if ($has_data): ?>
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-2"><?php echo htmlspecialchars($outcome['title']); ?></h6>
+                                    <div class="chart-canvas-container">
+                                        <canvas id="outcomeChart_<?php echo $outcome['id']; ?>" class="chart-canvas" height="200"></canvas>
+                                    </div>
+                                    <pre style="font-size:12px; background:#f8f9fa; border:1px solid #eee; padding:8px; margin-top:10px; max-height:200px; overflow:auto;">
+Columns:
+<?php print_r($columns); ?>
+Rows:
+<?php print_r($rows); ?>
+</pre>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
     </div>
 </div> 
+<?php if (!empty($outcomes)): ?>
+<script src="<?php echo asset_url('js/charts', 'outcomes-chart.js'); ?>"></script>
+<script>
+<?php foreach ($outcomes as $outcome):
+    $data = $outcome['data'] ?? [];
+    $columns = $data['columns'] ?? [];
+    $rows = $data['rows'] ?? [];
+    $has_data = !empty($columns) && !empty($rows);
+    if (!$has_data) continue;
+    // Prepare labels (months) and datasets (years)
+    $labels = array_map(function($row) { return $row['month'] ?? ''; }, $rows);
+    $datasets = [];
+    foreach ($columns as $year) {
+        if ($year === 'month') continue;
+        $datasets[] = [
+            'label' => $year,
+            'data' => array_map(function($row) use ($year) { return isset($row[$year]) ? floatval($row[$year]) : null; }, $rows),
+            'fill' => false,
+            'borderColor' => 'rgba(54, 162, 235, 1)',
+            'tension' => 0.1
+        ];
+    }
+?>
+(function() {
+    var ctx = document.getElementById('outcomeChart_<?php echo $outcome['id']; ?>').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: <?php echo json_encode($labels); ?>,
+            datasets: <?php echo json_encode($datasets); ?>
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: true } },
+            scales: { x: { display: true }, y: { display: true } }
+        }
+    });
+})();
+<?php endforeach; ?>
+</script>
+<?php endif; ?> 
