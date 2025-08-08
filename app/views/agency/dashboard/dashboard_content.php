@@ -34,6 +34,22 @@
                             </div>
                         </div>
                     </div>
+                    <!-- KPI Outcomes -->
+                    <div class="col-12">
+                        <div class="card-modern card-elevated-modern">
+                            <div class="card-header-modern">
+                                <h3 class="card-title-modern">
+                                    <div class="card-icon-modern text-forest-medium">
+                                        <i class="fas fa-gauge-high"></i>
+                                    </div>
+                                    KPIs
+                                </h3>
+                            </div>
+                            <div class="card-body-modern">
+                                <div id="kpiOutcomesContainer" class="row g-3"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -54,7 +70,10 @@
         data: <?php echo json_encode($chartData['data']); ?>
     };
     // Provide raw outcomes for individual rendering
-    window.dashboardOutcomes = { charts: <?php echo json_encode($chartOutcomes); ?> };
+    window.dashboardOutcomes = { 
+        charts: <?php echo json_encode($chartOutcomes); ?>,
+        kpis: <?php echo json_encode($kpiOutcomes); ?>
+    };
     
     // Pass current period ID for AJAX requests
     window.currentPeriodId = <?php echo json_encode($period_id); ?>;
@@ -62,8 +81,9 @@
     // Render individual outcomes (line charts) after Chart.js is ready
     (function renderIndividualOutcomes(){
         const graphContainer = document.getElementById('outcomeGraphsContainer');
-        if (!graphContainer) return;
-        const data = window.dashboardOutcomes || {charts: []};
+        const kpiContainer = document.getElementById('kpiOutcomesContainer');
+        if (!graphContainer && !kpiContainer) return;
+        const data = window.dashboardOutcomes || {charts: [], kpis: []};
         let tries = 0; const max = 50;
         function ensureChartJsAndRender(){
             if (typeof Chart === 'undefined') {
@@ -107,9 +127,51 @@
                     });
                 }
             }
+            // Render KPI outcomes
+            if (kpiContainer) {
+                if (!data.kpis || data.kpis.length === 0) {
+                    kpiContainer.innerHTML = '<div class="text-muted py-3 text-center">No KPI outcomes to display</div>';
+                } else {
+                    kpiContainer.innerHTML = '';
+                    data.kpis.forEach((o) => {
+                        const items = Array.isArray(o.data) ? o.data : (Array.isArray(o.data?.items) ? o.data.items : (o.data ? [o.data] : []));
+                        if (!items.length) return;
+                        // Create a header row for each KPI group
+                        const header = document.createElement('div');
+                        header.className = 'col-12';
+                        header.innerHTML = `<div class="small text-muted mt-1 mb-1">${escapeHtml(o.title || o.code || 'KPI')}</div>`;
+                        kpiContainer.appendChild(header);
+                        items.forEach((entry) => {
+                            const valueRaw = entry?.value ?? entry?.current ?? entry?.kpi ?? null;
+                            const unit = entry?.unit ?? entry?.suffix ?? '';
+                            const extra = entry?.extra ? ` <span class="d-block small text-muted">${escapeHtml(entry.extra)}</span>` : '';
+                            const desc = entry?.description ? `<div class="small text-muted">${escapeHtml(entry.description)}</div>` : '';
+                            const formatted = formatValue(valueRaw);
+                            const card = document.createElement('div');
+                            card.className = 'col-sm-6 col-md-4 col-lg-3';
+                            card.innerHTML = `
+                                <div class="card-modern card-stat-modern text-center h-100">
+                                    <div class="card-body-modern">
+                                        <div class="card-icon-modern text-forest-medium mb-2"><i class="fas fa-bullseye"></i></div>
+                                        <div class="card-stat-number-modern">${escapeHtml(formatted)}${unit ? ' ' + escapeHtml(unit) : ''}</div>
+                                        ${desc}
+                                        ${extra}
+                                    </div>
+                                </div>`;
+                            kpiContainer.appendChild(card);
+                        });
+                    });
+                }
+            }
         }
         function escapeHtml(str){
             return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s]));
+        }
+        function formatValue(v){
+            if (v === null || v === undefined) return '-';
+            if (typeof v === 'number') return v.toLocaleString();
+            const num = Number(v);
+            return Number.isFinite(num) ? num.toLocaleString() : String(v);
         }
         function transformOutcomeToSeries(outcome){
             // Support common structures: {data:{rows:[{month, year:value},...] , columns:[years]}} or arrays of points
