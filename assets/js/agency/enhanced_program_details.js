@@ -58,7 +58,7 @@ class EnhancedProgramDetails {
     // Dynamically build class list for the badge
     const statusInfo = this.getStatusInfo(status);
     badge.className = `badge status-badge ${statusInfo.class} py-2 px-3`;
-    badge.innerHTML = `<i class="${statusInfo.icon} me-1"></i> ${statusLabel}`;
+    badge.innerHTML = `<i class="${statusInfo.icon} me-1"></i> ${statusLabel}<div class="tooltip"><strong>Status Information:</strong><br>Used for internal agency program progress tracking and management. This helps agencies monitor their programs internally and make operational decisions.</div>`;
 
     if (status === "on_hold" && data.hold_point) {
       if (holdInfo) {
@@ -322,8 +322,7 @@ class EnhancedProgramDetails {
   }
 
   initializeComponents() {
-    // Initialize tooltips
-    this.initTooltips();
+    // Tooltip initialization removed - using CSS-only tooltips
 
     // Initialize animations
     this.initAnimations();
@@ -489,17 +488,7 @@ class EnhancedProgramDetails {
     });
   }
 
-  initTooltips() {
-    // Initialize Bootstrap tooltips if available
-    if (typeof bootstrap !== "undefined" && bootstrap.Tooltip) {
-      const tooltipTriggerList = [].slice.call(
-        document.querySelectorAll('[data-bs-toggle="tooltip"]')
-      );
-      tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-      });
-    }
-  }
+  // Tooltip initialization removed - using CSS-only tooltips instead
 
   initAnimations() {
     // Animate cards on scroll

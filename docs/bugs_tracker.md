@@ -1,3 +1,25 @@
+### 41. View Programs Tooltips Invisible on Live (Bootstrap .tooltip collision) (2025-08-08) ✅ FIXED
+
+- Problem: On the View Programs page, hovering status/rating/initiative badges showed no tooltip on the live host, while localhost worked. Program Details page tooltips were unaffected.
+- Root Cause:
+  - Custom CSS used a generic .tooltip class for hover tips inside program boxes.
+  - Bootstrap also defines .tooltip. On live, Bootstrap’s styles/script interfered, making the CSS-only tooltips invisible.
+  - View Programs mixed expectations (CSS-only markup vs. Bootstrap JS init attempted as a hotfix).
+- Solution:
+  1) Renamed inline tooltip markup in View Programs to .program-tooltip to avoid Bootstrap collision.
+  2) Added .program-tooltip styles alongside existing .tooltip in assets/css/components/programs-modern-box.css, and updated hover selectors to reveal both.
+  3) Removed temporary migration/observer code that converted inline tips to Bootstrap tooltips.
+- Files Changed:
+  - app/views/agency/programs/partials/program_row.php (class rename)
+  - assets/css/components/programs-modern-box.css (added .program-tooltip rules)
+  - app/views/agency/programs/view_programs_content.php (removed migration/init JS)
+- Testing:
+  - Verified CSS-only hover tips render correctly on View Programs in live-like conditions.
+  - Bootstrap tooltips kept only for modal action buttons.
+- Prevention:
+  - Avoid using the generic .tooltip class for custom CSS when Bootstrap is present; prefer a unique class (e.g., .program-tooltip).
+  - Keep a single tooltip strategy per page to prevent collisions.
+
 # Login Module Refactor - Problems & Solutions Log
 
 **Date:** 2025-07-18  
