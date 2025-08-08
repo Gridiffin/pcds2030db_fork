@@ -52,23 +52,22 @@ class ModernAdminDashboard {
      * Setup interactive elements
      */
     setupInteractions() {
-        // Enhanced hover effects for action cards
+        // Subtle hover effects for action cards (removed ripple effect)
         const actionCards = document.querySelectorAll('.admin-action-card-modern');
         actionCards.forEach(card => {
-            card.addEventListener('mouseenter', (e) => {
-                this.addRippleEffect(e.target);
+            card.addEventListener('click', function() {
+                console.log('Quick action accessed:', this.querySelector('.admin-action-title-modern')?.textContent);
             });
         });
 
-        // Smooth stat card interactions
+        // Subtle stat card interactions (removed excessive transforms)
         const statCards = document.querySelectorAll('.admin-stat-card-modern');
         statCards.forEach(card => {
-            card.addEventListener('mouseenter', () => {
-                card.style.transform = 'translateY(-8px) scale(1.02)';
-            });
-            
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = '';
+            card.addEventListener('click', function() {
+                const title = this.querySelector('.admin-stat-title-modern');
+                if (title) {
+                    console.log('Stat card accessed:', title.textContent);
+                }
             });
         });
 

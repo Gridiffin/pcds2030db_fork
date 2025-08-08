@@ -48,19 +48,14 @@ function initializeDashboard() {
         });
     });
 
-    // Stats cards interactions (enhanced)
+    // Stats cards interactions (subtle, professional)
     const statCards = document.querySelectorAll('.admin-stat-card-modern, .stat-card');
     statCards.forEach(card => {
         card.addEventListener('click', function() {
             const title = this.querySelector('.admin-stat-title-modern, .stat-card-title');
             if (title) {
                 console.log('Stat card clicked:', title.textContent);
-                
-                // Add visual feedback
-                this.style.transform = 'scale(0.98)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 150);
+                // Removed excessive transform animation for professional feel
             }
         });
     });
