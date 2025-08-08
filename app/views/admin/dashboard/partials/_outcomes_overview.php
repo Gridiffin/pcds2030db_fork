@@ -6,6 +6,11 @@
  */
 require_once ROOT_PATH . 'app/lib/admins/outcomes.php';
 $outcomes = get_all_outcomes();
+// Only show graph outcomes; exclude KPI or other types
+$outcomes = array_values(array_filter($outcomes, function($o){
+    $t = strtolower($o['type'] ?? '');
+    return $t === 'chart' || $t === 'graph';
+}));
 ?>
 <div class="row mb-4">
     <div class="col-12">
@@ -111,75 +116,114 @@ $outcomes = get_all_outcomes();
                 </div>
                 <!-- Outcome Line Charts -->
                 <div class="row mt-4">
-                    <?php foreach ($outcomes as $outcome): ?>
-                        <?php
-                        $data = $outcome['data'] ?? [];
-                        $columns = $data['columns'] ?? [];
-                        $rows = $data['rows'] ?? [];
-                        $has_data = !empty($columns) && !empty($rows);
-                        ?>
-                        <?php if ($has_data): ?>
-                        <div class="col-md-6 col-lg-4 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h6 class="card-title mb-2"><?php echo htmlspecialchars($outcome['title']); ?></h6>
-                                    <div class="chart-canvas-container">
-                                        <canvas id="outcomeChart_<?php echo $outcome['id']; ?>" class="chart-canvas" height="200"></canvas>
-                                    </div>
-                                    <pre style="font-size:12px; background:#f8f9fa; border:1px solid #eee; padding:8px; margin-top:10px; max-height:200px; overflow:auto;">
-Columns:
-<?php print_r($columns); ?>
-Rows:
-<?php print_r($rows); ?>
-</pre>
-                                </div>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
+                    <div class="col-12">
+                        <div id="adminOutcomeGraphsContainer" class="row g-4"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div> 
 <?php if (!empty($outcomes)): ?>
-<script src="<?php echo asset_url('js/charts', 'outcomes-chart.js'); ?>"></script>
 <script>
-<?php foreach ($outcomes as $outcome):
-    $data = $outcome['data'] ?? [];
-    $columns = $data['columns'] ?? [];
-    $rows = $data['rows'] ?? [];
-    $has_data = !empty($columns) && !empty($rows);
-    if (!$has_data) continue;
-    // Prepare labels (months) and datasets (years)
-    $labels = array_map(function($row) { return $row['month'] ?? ''; }, $rows);
-    $datasets = [];
-    foreach ($columns as $year) {
-        if ($year === 'month') continue;
-        $datasets[] = [
-            'label' => $year,
-            'data' => array_map(function($row) use ($year) { return isset($row[$year]) ? floatval($row[$year]) : null; }, $rows),
-            'fill' => false,
-            'borderColor' => 'rgba(54, 162, 235, 1)',
-            'tension' => 0.1
+// Provide outcomes to JS (only necessary fields)
+window.adminDashboardOutcomes = {
+    charts: <?php echo json_encode(array_map(function($o){
+        return [
+            'id' => $o['id'] ?? null,
+            'code' => $o['code'] ?? null,
+            'title' => $o['title'] ?? ($o['code'] ?? 'Outcome'),
+            'data' => $o['data'] ?? null
         ];
-    }
-?>
-(function() {
-    var ctx = document.getElementById('outcomeChart_<?php echo $outcome['id']; ?>').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: <?php echo json_encode($labels); ?>,
-            datasets: <?php echo json_encode($datasets); ?>
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: true } },
-            scales: { x: { display: true }, y: { display: true } }
+    }, $outcomes)); ?>
+};
+
+(function renderAdminOutcomes(){
+    const graphContainer = document.getElementById('adminOutcomeGraphsContainer');
+    if (!graphContainer) return;
+    const data = window.adminDashboardOutcomes || {charts: []};
+    let tries = 0; const max = 50;
+    function ensureChartJsAndRender(){
+        if (typeof Chart === 'undefined') {
+            tries++; if (tries < max) return setTimeout(ensureChartJsAndRender, 100);
         }
-    });
+        renderCharts();
+    }
+    function renderCharts(){
+        const charts = Array.isArray(data.charts) ? data.charts : [];
+        if (!charts.length) {
+            graphContainer.innerHTML = '<div class="text-muted py-3 text-center">No graph outcomes to display</div>';
+            return;
+        }
+        graphContainer.innerHTML = '';
+        charts.forEach((o, idx) => {
+            const col = document.createElement('div');
+            col.className = 'col-lg-6';
+            col.innerHTML = `
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title mb-2">${escapeHtml(o.title || o.code || 'Outcome')}</h6>
+                        <div style="position:relative;height:260px"><canvas id="adminOutcomeChart_${idx}"></canvas></div>
+                    </div>
+                </div>`;
+            graphContainer.appendChild(col);
+            try {
+                const series = transformOutcomeToSeries(o);
+                if (series && typeof Chart !== 'undefined') {
+                    const ctx = col.querySelector('canvas').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: { labels: series.labels, datasets: series.datasets },
+                        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } }, scales:{ y:{ beginAtZero:true } } }
+                    });
+                } else {
+                    col.querySelector('.card-body').insertAdjacentHTML('beforeend', '<div class="text-muted">No data</div>');
+                }
+            } catch(e) { console.error('Admin outcome render failed', e); }
+        });
+    }
+    function escapeHtml(str){
+        return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s]));
+    }
+    function transformOutcomeToSeries(outcome){
+        const d = outcome.data || {};
+        // Tabular { rows, columns }
+        if (d && Array.isArray(d.rows) && Array.isArray(d.columns) && d.columns.length){
+            const labels = (d.rows || []).map(r => r.month || r.label || r.date || '');
+            const datasets = (d.columns || [])
+                .filter(col => col !== 'month')
+                .map((col, i) => ({
+                    label: String(col),
+                    data: (d.rows || []).map(r => Number(r[col]) || 0),
+                    borderColor: chartColor(i),
+                    backgroundColor: 'transparent',
+                    tension: 0.3
+                }));
+            return { labels, datasets };
+        }
+        // Simple points { points: [{x,y}] }
+        if (Array.isArray(d.points)){
+            const labels = d.points.map(p => p.x);
+            const datasets = [{ label: outcome.title || 'Series', data: d.points.map(p => Number(p.y)||0), borderColor: chartColor(0), backgroundColor:'transparent', tension:0.3 }];
+            return { labels, datasets };
+        }
+        // Fallback values array { values: [...] }
+        if (Array.isArray(d.values)){
+            const labels = d.values.map((_,i)=> String(i+1));
+            const datasets = [{ label: outcome.title || 'Series', data: d.values.map(v => Number(v)||0), borderColor: chartColor(0), backgroundColor:'transparent', tension:0.3 }];
+            return { labels, datasets };
+        }
+        return null;
+    }
+    function chartColor(i){
+        const palette = ['#11998e','#2f80ed','#f2994a','#eb5757','#9b51e0','#27ae60'];
+        return palette[i % palette.length];
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureChartJsAndRender);
+    } else {
+        ensureChartJsAndRender();
+    }
 })();
-<?php endforeach; ?>
 </script>
 <?php endif; ?> 
