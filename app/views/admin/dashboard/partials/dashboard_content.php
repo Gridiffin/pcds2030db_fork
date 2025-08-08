@@ -7,9 +7,7 @@
  */
 ?>
 
-<script>
-    const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
-</script>
+<!-- hasActivePeriod is injected by parent via $inlineScripts; avoid redeclaration here. -->
 
 <!-- Modern Admin Dashboard -->
 <main class="flex-fill">

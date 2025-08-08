@@ -7,6 +7,29 @@
 import '../../css/admin/dashboard/dashboard.css';
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Fallback: if admin CSS bundle failed to load on live, inject minimal styles
+    (function ensureStyles() {
+        const probe = document.createElement('div');
+        probe.className = 'stat-card';
+        probe.style.position = 'absolute';
+        probe.style.visibility = 'hidden';
+        document.body.appendChild(probe);
+        const computed = window.getComputedStyle(probe);
+        const hasBundleStyles = computed && (computed.borderRadius !== '0px' || computed.backgroundColor !== 'rgba(0, 0, 0, 0)');
+        document.body.removeChild(probe);
+        if (!hasBundleStyles) {
+            const fallback = document.createElement('style');
+            fallback.textContent = `
+                .admin-dashboard-bento { display: grid; gap: 1rem; }
+                .stat-card, .card, .admin-bento-stats, .admin-bento-quick-actions,
+                .admin-bento-programs, .admin-bento-outcomes { border: 1px solid #e5e7eb; border-radius: .5rem; padding: 1rem; background:#fff; }
+                body { background:#f8fafb; }
+            `;
+            document.head.appendChild(fallback);
+            console.warn('[admin-dashboard] CSS bundle missing; applied minimal fallback styles');
+        }
+    })();
+
     // Handle refresh button click
     const refreshButton = document.getElementById('refreshPage');
     if (refreshButton) {

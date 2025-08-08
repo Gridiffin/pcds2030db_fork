@@ -53,11 +53,10 @@ $agency_count = count($agency_programs);
 $hasActivePeriod = isset($current_period) && !empty($current_period);
 
 // Additional scripts needed by the view
-$additionalScripts = [
-    asset_url('js/admin', 'dashboard_charts.js'),
-    asset_url('js/admin', 'dashboard.js'),
-    asset_url('js', 'period_selector.js')
-];
+// IMPORTANT: Admin dashboard now uses a Vite bundle (jsBundle = 'admin-dashboard').
+// Do not load raw JS files here to avoid duplicate execution and ESM import errors.
+// Leave additionalScripts empty unless you need an external, non-bundled script.
+$additionalScripts = [];
 
 // Configuration for the page header
 $header_config = [
