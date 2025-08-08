@@ -1,8 +1,9 @@
 <?php
 /**
- * Dashboard Content Partial
+ * Dashboard Content Partial - Modernized
  * 
- * Main content for the admin dashboard
+ * Modern bento-grid layout for admin dashboard
+ * Maintains all functionality with enhanced UX
  */
 ?>
 
@@ -10,26 +11,36 @@
     const hasActivePeriod = <?php echo $hasActivePeriod ? 'true' : 'false'; ?>;
 </script>
 
-<!-- Dashboard Content -->
+<!-- Modern Admin Dashboard -->
 <main class="flex-fill">
     <section class="section">
         <div class="container-fluid">
-            <!-- Period Selector Component -->
+            <!-- Modern Bento Grid Layout -->
+            <div class="admin-dashboard-bento admin-fade-in">
+                
+                <!-- Statistics Overview - Modern Cards -->
+                <div class="admin-bento-stats">
+                    <div data-period-content="stats_section">
+                        <?php require_once __DIR__ . '/_stats_overview_modern.php'; ?>
+                    </div>
+                </div>
 
-            <!-- Quick Actions Section -->
-            <?php require_once __DIR__ . '/_quick_actions.php'; ?>
+                <!-- Quick Actions - Modern Layout -->
+                <div class="admin-bento-quick-actions">
+                    <?php require_once __DIR__ . '/_quick_actions_modern.php'; ?>
+                </div>
 
-            <!-- Stats Overview -->
-            <div data-period-content="stats_section">
-                <?php require_once __DIR__ . '/_stats_overview.php'; ?>
+                <!-- Programs Overview - Enhanced -->
+                <div class="admin-bento-programs">
+                    <?php require_once __DIR__ . '/_programs_overview_modern.php'; ?>
+                </div>
+
+                <!-- Outcomes Overview - Streamlined -->
+                <div class="admin-bento-outcomes">
+                    <?php require_once __DIR__ . '/_outcomes_overview_modern.php'; ?>
+                </div>
+
             </div>
-
-            <!-- Programs Overview Section -->
-            <?php require_once __DIR__ . '/_programs_overview.php'; ?>
-
-            <!-- Outcomes Overview Section -->
-            <?php require_once __DIR__ . '/_outcomes_overview.php'; ?>
-
         </div>
     </section>
 </main>

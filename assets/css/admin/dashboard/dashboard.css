@@ -1,13 +1,14 @@
 /**
- * Admin Dashboard CSS Entry Point
- * Base + dashboard-specific components
- * Replaces main.css import for dashboard module (~70kB vs 352kB)
+ * Admin Dashboard CSS Entry Point - Modernized
+ * Modern design system inspired by agency dashboard
+ * Maintains functionality while improving UX
  */
 
 /* Import shared admin foundation */
 @import '../shared/base.css';
 
-/* Dashboard-specific components */
+/* Modern dashboard components */
+@import '../../components/admin-dashboard-modern.css';
 @import '../../components/dashboard-cards.css';
 @import '../../components/cards.css';
 

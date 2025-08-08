@@ -14,17 +14,7 @@ $admin_chart_outcomes = isset($admin_chart_outcomes)
         $t = strtolower($o['type'] ?? '');
         return in_array($t, ['chart','graph']);
     }));
-$admin_kpi_outcomes = isset($admin_kpi_outcomes)
-    ? $admin_kpi_outcomes
-    : array_values(array_filter($all_outcomes, function($o){
-        $t = strtolower($o['type'] ?? '');
-        return $t === 'kpi';
-    }));
-// Only show graph outcomes; exclude KPI or other types
-$outcomes = array_values(array_filter($outcomes, function($o){
-    $t = strtolower($o['type'] ?? '');
-    return $t === 'chart' || $t === 'graph';
-}));
+// Only charts needed on admin dashboard; KPIs are excluded
 ?>
 <div class="row mb-4">
     <div class="col-12">
@@ -128,21 +118,13 @@ $outcomes = array_values(array_filter($outcomes, function($o){
                         </div>
                     </div>
                 </div>
-                <!-- Outcome Graphs and KPIs -->
+                <!-- Outcome Graphs -->
                 <div class="row mt-4 g-4">
                     <div class="col-12">
                         <div class="card h-100">
                             <div class="card-header"><h6 class="m-0"><i class="fas fa-chart-line me-1"></i>Outcome Graphs</h6></div>
                             <div class="card-body">
                                 <div id="adminOutcomeGraphs" class="row g-4"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="card h-100">
-                            <div class="card-header"><h6 class="m-0"><i class="fas fa-gauge-high me-1"></i>KPIs</h6></div>
-                            <div class="card-body">
-                                <div id="adminKpiOutcomes" class="row g-3"></div>
                             </div>
                         </div>
                     </div>
@@ -154,14 +136,12 @@ $outcomes = array_values(array_filter($outcomes, function($o){
 <script>
 // Provide data for admin charts/KPIs
 window.adminDashboardOutcomes = {
-    charts: <?php echo json_encode($admin_chart_outcomes); ?>,
-    kpis: <?php echo json_encode($admin_kpi_outcomes); ?>
+    charts: <?php echo json_encode($admin_chart_outcomes); ?>
 };
 
 (function initAdminOutcomes(){
     const graphRoot = document.getElementById('adminOutcomeGraphs');
-    const kpiRoot = document.getElementById('adminKpiOutcomes');
-    const data = window.adminDashboardOutcomes || {charts:[], kpis:[]};
+    const data = window.adminDashboardOutcomes || {charts:[]};
     let tries = 0; const max = 50;
     function ensureAndRender(){
         if (typeof Chart === 'undefined') { tries++; if (tries < max) return setTimeout(ensureAndRender, 100); }
@@ -217,38 +197,6 @@ window.adminDashboardOutcomes = {
                         let i = 0; const step = () => { if (i < chartElems.length){ renderChart(chartElems[i++]); setTimeout(step, 50); } }; step();
                     }
                 }
-            }
-        }
-        // KPIs
-        if (kpiRoot){
-            if (!data.kpis || data.kpis.length === 0){
-                kpiRoot.innerHTML = '<div class="text-muted py-3 text-center">No KPI outcomes to display</div>';
-            } else {
-                kpiRoot.innerHTML = '';
-                data.kpis.forEach((o) => {
-                    const items = Array.isArray(o.data) ? o.data : (Array.isArray(o.data?.items) ? o.data.items : (o.data ? [o.data] : []));
-                    if (!items.length) return;
-                    const header = document.createElement('div');
-                    header.className = 'col-12';
-                    header.innerHTML = '<div class="small text-muted mt-1 mb-1">' + escapeHtml(o.title || o.code || 'KPI') + '</div>';
-                    kpiRoot.appendChild(header);
-                    items.forEach((entry) => {
-                        const valueRaw = entry && (entry.value ?? entry.current ?? entry.kpi);
-                        const unit = entry && (entry.unit ?? entry.suffix) || '';
-                        const extra = entry && entry.extra ? ' <span class="d-block small text-muted">' + escapeHtml(entry.extra) + '</span>' : '';
-                        const desc = entry && entry.description ? '<div class="small text-muted">' + escapeHtml(entry.description) + '</div>' : '';
-                        const formatted = formatValue(valueRaw);
-                        const card = document.createElement('div');
-                        card.className = 'col-sm-6 col-md-4 col-lg-3';
-                        card.innerHTML = '<div class="card h-100 text-center">'
-                            + '<div class="card-body">'
-                            + '<div class="text-forest-medium mb-2"><i class="fas fa-bullseye"></i></div>'
-                            + '<div class="h4">' + escapeHtml(formatted) + (unit ? ' ' + escapeHtml(unit) : '') + '</div>'
-                            + desc + extra
-                            + '</div></div>';
-                        kpiRoot.appendChild(card);
-                    });
-                });
             }
         }
     }

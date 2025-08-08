@@ -72,7 +72,7 @@ $pageTitle = 'Admin Dashboard';
 $cssBundle = 'admin-dashboard';
 $jsBundle = 'admin-dashboard';
 $contentFile = __DIR__ . '/partials/dashboard_content.php';
-$metaDescription = 'PCDS 2030 Admin Dashboard - System overview and management tools';
+$metaDescription = 'PCDS 2030 Admin Dashboard - Modern system overview and management tools';
 
 // Pass hasActivePeriod to JavaScript for inline scripts
 $hasActivePeriod = isset($current_period) && !empty($current_period);
