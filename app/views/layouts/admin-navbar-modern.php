@@ -102,6 +102,12 @@ $dropdown_items = [
                 'label' => 'Outcomes',
                 'icon' => 'fas fa-chart-line',
                 'active_pages' => ['manage_outcomes.php']
+            ],
+            [
+                'url' => APP_URL . '/app/views/admin/initiatives/manage_initiatives.php',
+                'label' => 'Initiatives',
+                'icon' => 'fas fa-lightbulb',
+                'active_pages' => ['manage_initiatives.php', 'create.php', 'edit.php', 'view_initiative.php']
             ]
         ]
     ],

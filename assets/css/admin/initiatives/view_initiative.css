@@ -1,0 +1,23 @@
+/* Admin View Initiative Page Styles */
+
+.initiative-health {
+  display:flex;
+  gap:1rem;
+  align-items:center;
+  background:#f5faf7;
+  border:1px solid #dbe8df;
+  padding:1rem 1.25rem;
+  border-radius:.75rem;
+}
+.initiative-health .score {
+  font-size:2.25rem;
+  line-height:1;
+  font-weight:600;
+}
+
+.initiative-programs-table td, .initiative-programs-table th { vertical-align: middle; }
+
+@media (max-width: 576px) {
+  .initiative-health { flex-direction:column; align-items:flex-start; }
+  .initiative-health .score { font-size:1.9rem; }
+}

@@ -1,0 +1,17 @@
+/* Admin Edit Initiative Page Styles */
+
+.edit-initiative .meta-block {
+  background:#f0f4f1;
+  border:1px solid #dfebe3;
+  padding:.75rem 1rem;
+  border-radius: .5rem;
+  font-size:.85rem;
+}
+
+.edit-initiative .programs-table td, .edit-initiative .programs-table th { vertical-align: middle; }
+
+.edit-initiative .programs-table .badge { font-weight:500; }
+
+/* Status badges potential future enhancement */
+.edit-initiative .status-badge-active { background:#2f7d46; }
+.edit-initiative .status-badge-inactive { background:#6c757d; }

@@ -62,6 +62,17 @@ $bodyClass = $bodyClass ?? '';
     
     <!-- CSS Bundle - extracted from JS imports by Vite -->
     <!-- DEBUG: cssBundle variable = "<?php echo htmlspecialchars($cssBundle ?? 'NOT_SET'); ?>" -->
+    <?php
+    // Auto-include shared CSS chunk for initiative pages where Vite extracted common imports
+    $needs_initiatives_chunk = false;
+    if (isset($cssBundle)) {
+        if (preg_match('/^admin-(manage-initiatives|create-initiative|edit-initiative|view-initiative)$/', $cssBundle)) {
+            $needs_initiatives_chunk = true;
+        }
+    }
+    if ($needs_initiatives_chunk && file_exists(PROJECT_ROOT_PATH . 'dist/css/initiatives.bundle.css')): ?>
+        <link rel="stylesheet" href="<?php echo APP_URL; ?>/dist/css/initiatives.bundle.css">
+    <?php endif; ?>
     <?php if ($cssBundle): ?>
     <link rel="stylesheet" href="<?php echo APP_URL; ?>/dist/css/<?php echo htmlspecialchars($cssBundle); ?>.bundle.css">
     <?php endif; ?>

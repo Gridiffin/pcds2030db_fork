@@ -28,6 +28,9 @@ export default defineConfig({
                 'admin-outcomes': path.resolve(__dirname, 'assets/js/admin/admin-outcomes.js'),
                 'admin-periods': path.resolve(__dirname, 'assets/js/admin/admin-periods.js'),
                 'admin-manage-initiatives': path.resolve(__dirname, 'assets/js/admin/manage-initiatives.js'),
+                'admin-create-initiative': path.resolve(__dirname, 'assets/js/admin/initiatives/create_initiative.js'),
+                'admin-edit-initiative': path.resolve(__dirname, 'assets/js/admin/initiatives/edit_initiative.js'),
+                'admin-view-initiative': path.resolve(__dirname, 'assets/js/admin/initiatives/view_initiative.js'),
 
                 // Agency Core
                 'agency-dashboard': path.resolve(__dirname, 'assets/js/agency/dashboard/dashboard.js'),

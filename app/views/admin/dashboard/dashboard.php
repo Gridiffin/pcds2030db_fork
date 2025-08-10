@@ -57,15 +57,28 @@ $admin_kpi_outcomes = array_values(array_filter($all_outcomes, function($o) {
     return $type === 'kpi';
 }));
 
-// Get latest 5 programs for display
-$latest_programs = get_admin_programs_list($period_id, [
-    'limit' => 5,
-    'sort_by' => 'p.created_at',
-    'sort_order' => 'DESC'
-]);
+// Get recent programs for display - simple query
+$recent_programs_query = "SELECT 
+    p.program_id, p.program_name, p.created_at,
+    a.agency_name,
+    u.fullname as creator_name
+FROM programs p
+LEFT JOIN agency a ON p.agency_id = a.agency_id  
+LEFT JOIN users u ON p.created_by = u.user_id
+WHERE p.is_deleted = 0
+ORDER BY p.created_at DESC 
+LIMIT 5";
+
+$recent_programs_result = $conn->query($recent_programs_query);
+$recent_programs = [];
+if ($recent_programs_result && $recent_programs_result->num_rows > 0) {
+    while ($row = $recent_programs_result->fetch_assoc()) {
+        $recent_programs[] = $row;
+    }
+}
 
 // Count total programs
-$total_programs_count = count($latest_programs);
+$total_programs_count = count($recent_programs);
 
 // Set up variables for base_admin layout
 $pageTitle = 'Admin Dashboard';
@@ -88,7 +101,7 @@ $header_config = [
     'subtitle' => 'System overview and management',
     'breadcrumb' => [
         [
-            'text' => 'Dashboard',
+            'text' => 'Home',
             'url' => null // Current page, no link
         ]
     ],

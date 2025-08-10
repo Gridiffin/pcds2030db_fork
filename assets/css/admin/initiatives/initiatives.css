@@ -1,0 +1,21 @@
+/**
+ * Admin Initiatives CSS Entry Point
+ * Mirrors pattern used by other admin modules (e.g., programs.css, dashboard.css)
+ * Provides full foundation (tokens, navbar, footer) via shared/base.css, then component layers,
+ * then any initiative-wide overrides (none yet beyond variables).
+ */
+
+/* Shared admin foundation (design tokens, navbar/footer, resets) */
+@import '../shared/base.css';
+
+/* Common admin component layers used by initiative pages */
+@import '../../components/cards.css';
+@import '../../components/tables.css';
+@import '../../components/forms.css';
+
+/* Optional: modern compatibility & header styles if needed for consistency */
+@import '../../components/admin-dashboard-modern.css';
+@import '../../modern-compatibility.css';
+@import '../../simple-header.css';
+
+/* Initiative module wide adjustments placeholder - add future overrides below */

@@ -64,13 +64,17 @@ $is_active_col = get_column_name('initiatives', 'is_active');
 
 // Set up variables for base layout
 $pageTitle = 'Initiatives';
-$cssBundle = 'outcomes';
+$cssBundle = 'admin-manage-initiatives'; // Correct bundle for admin initiatives list
 $jsBundle = 'admin-manage-initiatives';
 $contentFile = __DIR__ . '/partials/content.php';
 $header_config = [
     'title' => 'Initiatives',
     'subtitle' => 'View initiatives where your agency has assigned programs',
+    'breadcrumb' => [
+        ['text' => 'Home', 'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php'],
+        ['text' => 'Initiatives', 'url' => null]
+    ],
     'variant' => 'green',
     'actions' => []
 ];
-require_once dirname(__DIR__, 2) . '/layouts/base.php';
+require_once dirname(__DIR__, 2) . '/layouts/base_admin.php';

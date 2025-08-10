@@ -17,7 +17,7 @@ function get_admin_breadcrumb($current_page, $additional_items = []) {
     $breadcrumb = [
         [
             'text' => 'Home',
-            'url' => APP_URL . '/index.php?page=admin_dashboard'
+            'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php'
         ]
     ];
     
@@ -46,7 +46,7 @@ function get_agency_breadcrumb($current_page, $additional_items = []) {
     $breadcrumb = [
         [
             'text' => 'Home',
-            'url' => APP_URL . '/index.php?page=agency_dashboard'
+            'url' => APP_URL . '/app/views/agency/dashboard/dashboard.php'
         ]
     ];
     
@@ -77,22 +77,22 @@ function get_program_breadcrumb($user_type, $program_name = null, $additional_it
         $breadcrumb = [
             [
                 'text' => 'Home',
-                'url' => APP_URL . '/index.php?page=admin_dashboard'
+                'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php'
             ],
             [
                 'text' => 'Programs',
-                'url' => APP_URL . '/index.php?page=admin_programs'
+                'url' => APP_URL . '/app/views/admin/programs/programs.php'
             ]
         ];
     } else {
         $breadcrumb = [
             [
                 'text' => 'Home',
-                'url' => APP_URL . '/index.php?page=agency_dashboard'
+                'url' => APP_URL . '/app/views/agency/dashboard/dashboard.php'
             ],
             [
                 'text' => 'My Programs',
-                'url' => APP_URL . '/index.php?page=agency_programs'
+                'url' => APP_URL . '/app/views/agency/programs/view_programs.php'
             ]
         ];
     }
@@ -126,22 +126,22 @@ function get_outcome_breadcrumb($user_type, $outcome_name = null, $additional_it
         $breadcrumb = [
             [
                 'text' => 'Home',
-                'url' => APP_URL . '/index.php?page=admin_dashboard'
+                'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php'
             ],
             [
                 'text' => 'Outcomes',
-                'url' => APP_URL . '/index.php?page=admin_outcomes'
+                'url' => APP_URL . '/app/views/admin/outcomes/manage_outcomes.php'
             ]
         ];
     } else {
         $breadcrumb = [
             [
                 'text' => 'Home',
-                'url' => APP_URL . '/index.php?page=agency_dashboard'
+                'url' => APP_URL . '/app/views/agency/dashboard/dashboard.php'
             ],
             [
                 'text' => 'Outcomes',
-                'url' => APP_URL . '/index.php?page=agency_outcomes'
+                'url' => APP_URL . '/app/views/agency/outcomes/submit_outcomes.php'
             ]
         ];
     }
@@ -175,22 +175,22 @@ function get_initiative_breadcrumb($user_type, $initiative_name = null, $additio
         $breadcrumb = [
             [
                 'text' => 'Home',
-                'url' => APP_URL . '/index.php?page=admin_dashboard'
+                'url' => APP_URL . '/app/views/admin/dashboard/dashboard.php'
             ],
             [
                 'text' => 'Initiatives',
-                'url' => APP_URL . '/index.php?page=admin_initiatives'
+                'url' => APP_URL . '/app/views/admin/initiatives/manage_initiatives.php'
             ]
         ];
     } else {
         $breadcrumb = [
             [
                 'text' => 'Home',
-                'url' => APP_URL . '/index.php?page=agency_dashboard'
+                'url' => APP_URL . '/app/views/agency/dashboard/dashboard.php'
             ],
             [
                 'text' => 'Initiatives',
-                'url' => APP_URL . '/index.php?page=agency_initiatives'
+                'url' => APP_URL . '/app/views/agency/initiatives/initiatives.php'
             ]
         ];
     }

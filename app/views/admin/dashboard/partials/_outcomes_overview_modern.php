@@ -31,20 +31,12 @@ $admin_chart_outcomes = isset($admin_chart_outcomes)
     <div class="admin-card-modern-content">
         <!-- Key Metrics Grid -->
         <div class="row g-3 mb-4">
-            <div class="col-6">
+            <div class="col-12">
                 <div class="text-center p-3 bg-light rounded-3">
                     <div class="h2 text-primary mb-1">
                         <?php echo $outcomes_stats['total_outcomes']; ?>
                     </div>
                     <div class="small text-muted">Total Outcomes</div>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="text-center p-3 bg-light rounded-3">
-                    <div class="h2 text-success mb-1">
-                        <?php echo $outcomes_stats['sectors_with_outcomes'] ?? 0; ?>
-                    </div>
-                    <div class="small text-muted">Active Sectors</div>
                 </div>
             </div>
         </div>
@@ -128,10 +120,15 @@ window.adminDashboardOutcomesCompact = {
                     const col = document.createElement('div');
                     col.className = 'col-12';
                     col.innerHTML = `
-                        <div class="border rounded-3 p-3">
+                        <div class="border rounded-3 p-3 chart-clickable" title="Click to view outcomes">
                             <h6 class="mb-2 text-truncate">${escapeHtml(outcome.title || outcome.code || 'Outcome')}</h6>
                             <div style="position:relative;height:150px">
                                 <canvas id="compactAdminChart_${idx}"></canvas>
+                            </div>
+                            <div class="text-center mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-mouse-pointer me-1"></i>Click to view details
+                                </small>
                             </div>
                         </div>`;
                     rowContainer.appendChild(col);
@@ -162,6 +159,14 @@ window.adminDashboardOutcomesCompact = {
                                     elements: {
                                         point: { radius: 2 },
                                         line: { tension: 0.4 }
+                                    },
+                                    onClick: function(event, elements) {
+                                        // Redirect to view outcomes page when chart is clicked
+                                        window.location.href = '<?php echo view_url('admin', 'outcomes/manage_outcomes.php'); ?>';
+                                    },
+                                    onHover: function(event, elements) {
+                                        // Change cursor to pointer on hover
+                                        event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
                                     }
                                 }
                             });
@@ -241,3 +246,20 @@ window.adminDashboardOutcomesCompact = {
     }
 })();
 </script>
+
+<style>
+.chart-clickable {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.chart-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    border-color: #0d6efd !important;
+}
+
+.chart-clickable canvas {
+    cursor: pointer;
+}
+</style>

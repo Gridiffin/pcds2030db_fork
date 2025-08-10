@@ -44,6 +44,12 @@ $nav_items = [
         'active' => strpos($current_path, '/admin/outcomes/') !== false
     ],
     [
+        'title' => 'Initiatives',
+        'url' => APP_URL . '/app/views/admin/initiatives/manage_initiatives.php',
+        'icon' => 'fas fa-lightbulb',
+        'active' => strpos($current_path, '/admin/initiatives/') !== false
+    ],
+    [
         'title' => 'Reports',
         'url' => APP_URL . '/app/views/admin/reports/generate_reports.php',
         'icon' => 'fas fa-chart-bar',

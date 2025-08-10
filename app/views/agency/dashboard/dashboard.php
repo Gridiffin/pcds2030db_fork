@@ -39,7 +39,7 @@ $header_config = [
     'subtitle' => 'Program tracking and reporting',
     'breadcrumb' => [
         [
-            'text' => 'Dashboard',
+            'text' => 'Home',
             'url' => null // Current page, no link
         ]
     ],

@@ -1,3 +1,5 @@
+import '../../../css/components/admin-shell.css';
+import '../../../css/admin/initiatives/initiatives.css';
 import '../../../css/admin/initiatives/manage_initiatives.css';
 
 function formatDate(dateStr) {
@@ -94,4 +96,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { formatDate, renderTable };
-} 
+}

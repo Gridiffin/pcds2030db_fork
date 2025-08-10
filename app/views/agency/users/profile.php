@@ -41,7 +41,7 @@ $header_config = [
     'subtitle' => 'Manage your account information and preferences',
     'breadcrumb' => [
         [
-            'text' => 'Dashboard',
+            'text' => 'Home',
             'url' => ($_SESSION['role'] === 'admin') 
                     ? APP_URL . '/app/views/admin/dashboard/dashboard.php'
                     : APP_URL . '/app/views/agency/dashboard/dashboard.php'
@@ -57,7 +57,7 @@ $header_config = [
             'url' => ($_SESSION['role'] === 'admin') 
                     ? APP_URL . '/app/views/admin/dashboard/dashboard.php'
                     : APP_URL . '/app/views/agency/dashboard/dashboard.php',
-            'text' => 'Back to Dashboard',
+            'text' => 'Back to Home',
             'icon' => 'fas fa-arrow-left',
             'class' => 'btn-light'
         ]

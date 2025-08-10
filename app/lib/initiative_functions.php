@@ -351,4 +351,50 @@ function get_initiatives_for_select($active_only = true) {
     }
     return $initiatives;
 }
+
+/**
+ * Delete an initiative and unlink associated programs
+ */
+function delete_initiative($initiative_id) {
+    global $conn, $initiativesTable, $programsTable, $initiativeIdCol, $programInitiativeIdCol;
+    
+    // Validate initiative exists
+    $check_sql = "SELECT {$initiativeIdCol} FROM {$initiativesTable} WHERE {$initiativeIdCol} = ?";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param('i', $initiative_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    
+    if ($check_result->num_rows === 0) {
+        return ['error' => 'Initiative not found'];
+    }
+    
+    // Start transaction
+    $conn->begin_transaction();
+    
+    try {
+        // First, unlink all associated programs (set initiative_id to NULL)
+        $unlink_sql = "UPDATE {$programsTable} SET {$programInitiativeIdCol} = NULL WHERE {$programInitiativeIdCol} = ?";
+        $unlink_stmt = $conn->prepare($unlink_sql);
+        $unlink_stmt->bind_param('i', $initiative_id);
+        $unlink_stmt->execute();
+        
+        // Then delete the initiative
+        $delete_sql = "DELETE FROM {$initiativesTable} WHERE {$initiativeIdCol} = ?";
+        $delete_stmt = $conn->prepare($delete_sql);
+        $delete_stmt->bind_param('i', $initiative_id);
+        $delete_stmt->execute();
+        
+        if ($delete_stmt->affected_rows > 0) {
+            $conn->commit();
+            return ['success' => true, 'message' => 'Initiative deleted successfully'];
+        } else {
+            $conn->rollback();
+            return ['error' => 'Failed to delete initiative'];
+        }
+    } catch (Exception $e) {
+        $conn->rollback();
+        return ['error' => 'Database error: ' . $e->getMessage()];
+    }
+}
 ?>

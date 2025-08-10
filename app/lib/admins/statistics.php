@@ -298,10 +298,21 @@ function get_admin_programs_list($period_id = null, $filters = []) {
 
     // Construct the main query with subquery to get latest submission per program
     $sql = "SELECT 
-                p.program_id, p.program_name, p.program_number, p.agency_id, p.created_at,
-                p.initiative_id, i.initiative_name, i.initiative_number,
-                a.agency_name,
-                latest_sub.submission_id, latest_sub.is_draft, latest_sub.submitted_at, latest_sub.updated_at, latest_sub.period_id AS submission_period_id,
+                p.program_id, 
+                ANY_VALUE(p.program_name) as program_name, 
+                ANY_VALUE(p.program_number) as program_number, 
+                ANY_VALUE(p.agency_id) as agency_id, 
+                ANY_VALUE(p.created_at) as created_at,
+                ANY_VALUE(p.initiative_id) as initiative_id, 
+                ANY_VALUE(i.initiative_name) as initiative_name, 
+                ANY_VALUE(i.initiative_number) as initiative_number,
+                ANY_VALUE(a.agency_name) as agency_name, 
+                ANY_VALUE(creator.fullname) as creator_name,
+                ANY_VALUE(latest_sub.submission_id) as submission_id, 
+                ANY_VALUE(latest_sub.is_draft) as is_draft, 
+                ANY_VALUE(latest_sub.submitted_at) as submitted_at, 
+                ANY_VALUE(latest_sub.updated_at) as updated_at, 
+                ANY_VALUE(latest_sub.period_id) AS submission_period_id,
                 COALESCE(
                   MAX(CASE WHEN pt.status_indicator = 'delayed' THEN 'delayed' END),
                   MAX(CASE WHEN pt.status_indicator = 'in_progress' THEN 'in_progress' END),
@@ -310,8 +321,8 @@ function get_admin_programs_list($period_id = null, $filters = []) {
                   'not_started'
                 ) as rating
             FROM programs p
-            JOIN users u ON p.agency_id = u.agency_id
-            LEFT JOIN agency a ON u.agency_id = a.agency_id
+            LEFT JOIN agency a ON p.agency_id = a.agency_id
+            LEFT JOIN users creator ON p.created_by = creator.user_id
             LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
             LEFT JOIN (
                 SELECT ps1.*

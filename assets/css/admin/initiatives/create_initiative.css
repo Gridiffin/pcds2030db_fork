@@ -1,0 +1,24 @@
+/* Admin Create Initiative Page Specific Styles */
+
+.initiative-form .form-label {
+    font-weight: 500;
+}
+
+.initiative-form textarea {
+    resize: vertical;
+    min-height: 130px;
+}
+
+.initiative-form .card { border: 1px solid #e3e7e3; }
+.initiative-form .card-header { background:#f7faf8; }
+
+.initiative-form .badge-status {
+    font-size: .75rem;
+    padding: .35em .6em;
+    letter-spacing: .5px;
+}
+
+/* Responsive tweaks */
+@media (max-width: 576px) {
+  .initiative-form .card-body { padding: 1.1rem; }
+}

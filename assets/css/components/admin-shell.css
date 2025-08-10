@@ -1,0 +1,9 @@
+/* Admin Shell Aggregated Styles
+ * Central import point for structural admin layout styling
+ * Combines base tokens, navbar/footer, compatibility, header variants, and theme overrides.
+ * Order: foundation (shared/base.css) -> compatibility -> header base -> thematic component overrides.
+ */
+@import '../admin/shared/base.css';
+@import '../modern-compatibility.css';
+@import '../simple-header.css';
+@import './admin-common.css';

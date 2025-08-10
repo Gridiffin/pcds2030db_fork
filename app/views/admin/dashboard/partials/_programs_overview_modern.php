@@ -15,9 +15,6 @@
             </div>
             Programs Overview
         </h3>
-        <span class="admin-badge-modern primary">
-            Total: <?php echo $total_programs_count ?? 0; ?>
-        </span>
     </div>
     
     <div class="admin-card-modern-content">
@@ -36,10 +33,10 @@
                 <table class="table table-borderless">
                     <thead>
                         <tr>
-                            <th style="width: 40%">Program Name</th>
+                            <th style="width: 35%">Program Name</th>
                             <th style="width: 25%">Agency</th>
-                            <th style="width: 15%">Type</th>
-                            <th style="width: 20%">Created Date</th>
+                            <th style="width: 20%">User</th>
+                            <th style="width: 20%">Created</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -56,18 +53,14 @@
                                         <?php echo htmlspecialchars($program['agency_name']); ?>
                                     </span>
                                 </td>
-                                <td>
-                                    <?php 
-                                    $typeClass = isset($program['created_by_admin']) && $program['created_by_admin'] ? 'success' : 'info';
-                                    $typeText = isset($program['created_by_admin']) && $program['created_by_admin'] ? 'Assigned' : 'Agency';
-                                    ?>
-                                    <span class="admin-badge-modern <?php echo $typeClass; ?>">
-                                        <?php echo $typeText; ?>
+                                <td class="text-truncate" title="<?php echo htmlspecialchars($program['creator_name'] ?? 'Unknown'); ?>">
+                                    <span class="text-muted">
+                                        <?php echo htmlspecialchars($program['creator_name'] ?? 'Unknown'); ?>
                                     </span>
                                 </td>
                                 <td>
                                     <span class="text-muted">
-                                        <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
+                                        <?php echo date('M j, Y g:i A', strtotime($program['created_at'])); ?>
                                     </span>
                                 </td>
                             </tr>
