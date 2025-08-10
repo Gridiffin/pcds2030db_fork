@@ -132,23 +132,88 @@ function get_period_submission_stats($period_id) {
         'total_programs' => 0,
         'completion_percentage' => 0
     ];
-      // Get total agencies (including both regular agencies and focal agencies)
-    $query = "SELECT COUNT(*) as total FROM users WHERE role IN ('agency', 'focal') AND is_active = 1";
-    $result = $conn->query($query);
-    if ($result && $row = $result->fetch_assoc()) {
-        $stats['total_agencies'] = $row['total'];
+    // Derive period window (start/end) for user activity metric
+    $period_start = null;
+    $period_end = null;
+    if ($period_id) {
+        $period_stmt = $conn->prepare("SELECT start_date, end_date FROM reporting_periods WHERE period_id = ?");
+        if ($period_stmt) {
+            $period_stmt->bind_param('i', $period_id);
+            $period_stmt->execute();
+            $period_res = $period_stmt->get_result();
+            if ($period_res && $p = $period_res->fetch_assoc()) {
+                $period_start = $p['start_date'] . ' 00:00:00';
+                $period_end = $p['end_date'] . ' 23:59:59';
+            }
+            $period_stmt->close();
+        }
     }
-    
-    // Get agencies that have reported
-    $query = "SELECT COUNT(DISTINCT submitted_by) as reported 
-              FROM program_submissions 
-              WHERE period_id = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $period_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result && $row = $result->fetch_assoc()) {
-        $stats['agencies_reported'] = $row['reported'];
+
+    // Denominator: active agency/focal users whose agency has programs
+    $den_sql = "SELECT COUNT(*) AS total
+                FROM users u
+                WHERE u.role IN ('agency','focal')
+                  AND u.is_active = 1
+                  AND EXISTS (SELECT 1 FROM programs p WHERE p.agency_id = u.agency_id)";
+    $den_result = $conn->query($den_sql);
+    if ($den_result && $den_row = $den_result->fetch_assoc()) {
+        $stats['total_agencies'] = (int)$den_row['total'];
+    }
+
+    // Numerator: distinct active users who created/updated/finalized submissions within period window
+    // Support environments that may have only one of the audit tables
+    if ($period_start && $period_end) {
+        $has_audit_logs = false; // plural
+        $has_audit_log = false;  // singular
+        try {
+            $r1 = $conn->query("SHOW TABLES LIKE 'audit_logs'");
+            $has_audit_logs = $r1 && $r1->num_rows > 0;
+        } catch (Exception $e) {}
+        try {
+            $r2 = $conn->query("SHOW TABLES LIKE 'audit_log'");
+            $has_audit_log = $r2 && $r2->num_rows > 0;
+        } catch (Exception $e) {}
+
+        $inner_parts = [];
+        $param_values = [];
+        $param_types = '';
+
+        if ($has_audit_logs) {
+            $inner_parts[] = "SELECT al.user_id
+                              FROM audit_logs al
+                              JOIN users u ON u.user_id = al.user_id
+                              WHERE al.action IN ('create_submission','update_submission')
+                                AND al.created_at BETWEEN ? AND ?
+                                AND u.role IN ('agency','focal') AND u.is_active = 1";
+            $param_values[] = $period_start; $param_values[] = $period_end;
+            $param_types .= 'ss';
+        }
+        if ($has_audit_log) {
+            $inner_parts[] = "SELECT al2.user_id
+                              FROM audit_log al2
+                              JOIN users u2 ON u2.user_id = al2.user_id
+                              WHERE al2.action = 'finalize_submission'
+                                AND al2.created_at BETWEEN ? AND ?
+                                AND u2.role IN ('agency','focal') AND u2.is_active = 1";
+            $param_values[] = $period_start; $param_values[] = $period_end;
+            $param_types .= 'ss';
+        }
+
+        if (!empty($inner_parts)) {
+            $num_sql = "SELECT COUNT(DISTINCT t.user_id) AS total_users FROM (" . implode("\nUNION\n", $inner_parts) . ") t";
+            $num_stmt = $conn->prepare($num_sql);
+            if ($num_stmt) {
+                if (!empty($param_values)) {
+                    $num_stmt->bind_param($param_types, ...$param_values);
+                }
+                $num_stmt->execute();
+                $num_res = $num_stmt->get_result();
+                if ($num_res && $num_row = $num_res->fetch_assoc()) {
+                    $stats['agencies_reported'] = (int)$num_row['total_users'];
+                }
+                $num_stmt->close();
+            }
+        }
     }
     
     // Programs On Track: count by programs.rating column (enum 'on_track_for_year')

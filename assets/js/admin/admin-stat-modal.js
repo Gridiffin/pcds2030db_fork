@@ -240,8 +240,7 @@ class AdminStatModal {
                 
                 if (countElement) {
                     if (statType === 'agencies_reported') {
-                        // For agencies, count them directly
-                        countElement.textContent = `${data.programs.length} ${data.programs.length === 1 ? 'agency' : 'agencies'} reported`;
+                        countElement.textContent = `${data.programs.length} ${data.programs.length === 1 ? 'user' : 'users'} active`;
                     } else {
                         countElement.textContent = `${data.programs.length} ${data.programs.length === 1 ? 'program' : 'programs'} found`;
                     }
@@ -287,7 +286,7 @@ class AdminStatModal {
         const contentElement = this.modal.querySelector('#adminStatModalContent');
 
         if (!data || data.length === 0) {
-            const emptyType = statType === 'agencies_reported' ? 'Agencies' : 'Programs';
+            const emptyType = statType === 'agencies_reported' ? 'Users' : 'Programs';
             contentElement.innerHTML = `
                 <div class="admin-stat-modal-empty">
                     <div class="admin-stat-modal-empty-icon">
@@ -301,32 +300,33 @@ class AdminStatModal {
         }
 
         if (statType === 'agencies_reported') {
-            // Render agencies that have reported
-            const agenciesList = data.map(agency => `
-                <li class="admin-stat-program-item" onclick="window.location.href='${APP_URL}/app/views/admin/users/manage_users.php?agency_id=${agency.agency_id}'">
+            // Render users who were active this period with action breakdown
+            const usersList = data.map(user => {
+                const displayName = this.escapeHtml(user.display_name || user.fullname || user.username || 'User');
+                const agencyName = this.escapeHtml(user.agency_name || 'Unknown Agency');
+                const createCount = Number(user.create_count || 0);
+                const updateCount = Number(user.update_count || 0);
+                const finalizeCount = Number(user.finalize_count || 0);
+                const lastActivity = user.last_activity ? new Date(user.last_activity).toLocaleString() : '—';
+                return `
+                <li class="admin-stat-program-item" onclick="window.location.href='${APP_URL}/app/views/admin/users/manage_users.php?user_id=${user.user_id}'">
                     <div class="admin-stat-program-header">
                         <div>
-                            <h4 class="admin-stat-program-name">
-                                ${this.escapeHtml(agency.agency_name)}
-                            </h4>
-                            <div class="admin-stat-program-id">Agency ID: ${agency.agency_id}</div>
+                            <h4 class="admin-stat-program-name">${displayName}</h4>
+                            <div class="admin-stat-program-id">@${this.escapeHtml(user.username || '')} • ${agencyName}</div>
                         </div>
                     </div>
                     <div class="admin-stat-program-meta">
-                        <div class="admin-stat-program-agency">
-                            <strong>Programs:</strong> ${agency.total_programs}
-                        </div>
-                        <div class="admin-stat-program-status">
-                            <strong>Submitted:</strong> ${agency.submitted_programs}
-                        </div>
+                        <div class="admin-stat-program-agency"><strong>Actions:</strong> Create ${createCount} • Update ${updateCount} • Finalize ${finalizeCount}</div>
+                        <div class="admin-stat-program-status"><strong>Last Activity:</strong> ${lastActivity}</div>
                     </div>
-                </li>
-            `).join('');
+                </li>`;
+            }).join('');
 
             contentElement.innerHTML = `
                 <div class="admin-stat-modal-content">
                     <ul class="admin-stat-program-list">
-                        ${agenciesList}
+                        ${usersList}
                     </ul>
                 </div>
             `;

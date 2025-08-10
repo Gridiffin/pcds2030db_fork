@@ -58,7 +58,7 @@ try {
             break;
             
         case 'agencies_reported':
-            $programs = getReportedAgencies($conn, $period_id);
+            $programs = getActiveUsersWithSubmissionActions($conn, $period_id);
             break;
             
         default:
@@ -164,41 +164,102 @@ function getOnTrackPrograms($conn, $period_id) {
 /**
  * Get agencies that have reported (with their program counts)
  */
-function getReportedAgencies($conn, $period_id) {
-    $whereClause = '';
-    $params = [];
-    
+function getActiveUsersWithSubmissionActions($conn, $period_id) {
+    // Resolve period window
+    $period_start = null; $period_end = null;
     if ($period_id) {
-        $whereClause = 'AND ps.period_id = ?';
-        $params[] = $period_id;
+        $pstmt = $conn->prepare("SELECT start_date, end_date FROM reporting_periods WHERE period_id = ?");
+        if ($pstmt) {
+            $pstmt->bind_param('i', $period_id);
+            $pstmt->execute();
+            $pres = $pstmt->get_result();
+            if ($pres && $prow = $pres->fetch_assoc()) {
+                $period_start = $prow['start_date'] . ' 00:00:00';
+                $period_end = $prow['end_date'] . ' 23:59:59';
+            }
+            $pstmt->close();
+        }
     }
 
-    $sql = "
-        SELECT 
+    if (!$period_start || !$period_end) {
+        return [];
+    }
+
+    // Detect available audit tables
+    $has_audit_logs = false; // plural
+    $has_audit_log = false;  // singular
+    try { $r1 = $conn->query("SHOW TABLES LIKE 'audit_logs'"); $has_audit_logs = $r1 && $r1->num_rows > 0; } catch (Exception $e) {}
+    try { $r2 = $conn->query("SHOW TABLES LIKE 'audit_log'"); $has_audit_log = $r2 && $r2->num_rows > 0; } catch (Exception $e) {}
+
+    $inner_parts = [];
+    $param_values = [];
+    $param_types = '';
+
+    if ($has_audit_logs) {
+        $inner_parts[] = "SELECT 
+                al.user_id,
+                SUM(al.action = 'create_submission') AS create_count,
+                SUM(al.action = 'update_submission') AS update_count,
+                0 AS finalize_count,
+                MAX(al.created_at) AS last_activity
+            FROM audit_logs al
+            JOIN users uu ON uu.user_id = al.user_id
+            WHERE al.action IN ('create_submission','update_submission')
+              AND al.created_at BETWEEN ? AND ?
+              AND uu.role IN ('agency','focal') AND uu.is_active = 1
+            GROUP BY al.user_id";
+        $param_values[] = $period_start; $param_values[] = $period_end;
+        $param_types .= 'ss';
+    }
+    if ($has_audit_log) {
+        $inner_parts[] = "SELECT 
+                al2.user_id,
+                0 AS create_count,
+                0 AS update_count,
+                COUNT(*) AS finalize_count,
+                MAX(al2.created_at) AS last_activity
+            FROM audit_log al2
+            JOIN users uu2 ON uu2.user_id = al2.user_id
+            WHERE al2.action = 'finalize_submission'
+              AND al2.created_at BETWEEN ? AND ?
+              AND uu2.role IN ('agency','focal') AND uu2.is_active = 1
+            GROUP BY al2.user_id";
+        $param_values[] = $period_start; $param_values[] = $period_end;
+        $param_types .= 'ss';
+    }
+
+    if (empty($inner_parts)) {
+        return [];
+    }
+
+    $sql = "SELECT 
+            u.user_id,
+            COALESCE(NULLIF(TRIM(u.fullname), ''), u.username) AS display_name,
+            u.username,
+            u.fullname,
+            u.role,
             a.agency_id,
             a.agency_name,
-            COUNT(DISTINCT p.program_id) as total_programs,
-            COUNT(DISTINCT ps.submission_id) as submitted_programs,
-            MAX(ps.updated_at) as last_updated
-        FROM agency a
-        INNER JOIN programs p ON a.agency_id = p.agency_id
-        INNER JOIN program_submissions ps ON p.program_id = ps.program_id
-        WHERE (ps.is_submitted = 1 OR ps.is_draft = 0)
-        $whereClause
-        GROUP BY a.agency_id, a.agency_name
-        HAVING submitted_programs > 0
-        ORDER BY a.agency_name ASC
-    ";
+            SUM(x.create_count) AS create_count,
+            SUM(x.update_count) AS update_count,
+            SUM(x.finalize_count) AS finalize_count,
+            MAX(x.last_activity) AS last_activity
+        FROM (" . implode("\nUNION ALL\n", $inner_parts) . ") x
+        JOIN users u ON u.user_id = x.user_id
+        LEFT JOIN agency a ON a.agency_id = u.agency_id
+        GROUP BY u.user_id, u.username, u.fullname, u.role, a.agency_id, a.agency_name
+        ORDER BY last_activity DESC";
 
     $stmt = $conn->prepare($sql);
-    
-    if ($params) {
-        $stmt->bind_param(str_repeat('i', count($params)), ...$params);
+    if (!$stmt) { return []; }
+    if (!empty($param_values)) {
+        $stmt->bind_param($param_types, ...$param_values);
     }
-    
     $stmt->execute();
-    $result = $stmt->get_result();
-    
-    return $result->fetch_all(MYSQLI_ASSOC);
+    $res = $stmt->get_result();
+    $rows = $res->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    return $rows;
 }
 ?>
