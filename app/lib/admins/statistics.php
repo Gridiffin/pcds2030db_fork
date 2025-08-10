@@ -129,6 +129,7 @@ function get_period_submission_stats($period_id) {
         'total_agencies' => 0,
         'on_track_programs' => 0,
         'delayed_programs' => 0,
+        'monthly_target_achieved_programs' => 0,
         'total_programs' => 0,
         'completion_percentage' => 0
     ];
@@ -248,9 +249,22 @@ function get_period_submission_stats($period_id) {
         $stats['total_programs'] = $row['total'];
     }
     
-    // Calculate completion percentage
-    if ($stats['total_agencies'] > 0) {
-        $stats['completion_percentage'] = round(($stats['agencies_reported'] / $stats['total_agencies']) * 100);
+    // Count programs with "monthly target achieved" rating
+    $target_achieved_value = 'monthly_target_achieved';
+    $targetAchievedStmt = $conn->prepare("SELECT COUNT(*) AS total FROM programs WHERE rating = ?");
+    if ($targetAchievedStmt) {
+        $targetAchievedStmt->bind_param('s', $target_achieved_value);
+        $targetAchievedStmt->execute();
+        $targetAchievedResult = $targetAchievedStmt->get_result();
+        if ($targetAchievedResult && $targetAchievedRow = $targetAchievedResult->fetch_assoc()) {
+            $stats['monthly_target_achieved_programs'] = (int)$targetAchievedRow['total'];
+        }
+        $targetAchievedStmt->close();
+    }
+    
+    // Calculate completion percentage (for backward compatibility if needed elsewhere)
+    if ($stats['total_programs'] > 0) {
+        $stats['completion_percentage'] = round(($stats['monthly_target_achieved_programs'] / $stats['total_programs']) * 100);
     }
     
     return $stats;

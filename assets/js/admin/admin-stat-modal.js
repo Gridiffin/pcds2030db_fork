@@ -152,6 +152,10 @@ class AdminStatModal {
                 title: `Users Reporting (${statValue})`,
                 icon: 'fas fa-users'
             },
+            'monthly_target_achieved': {
+                title: `Monthly Target Achieved (${statValue})`,
+                icon: 'fas fa-bullseye'
+            },
             'completion_percentage': {
                 title: `Overall Completion (${statValue}%)`,
                 icon: 'fas fa-clipboard-list'
@@ -271,8 +275,9 @@ class AdminStatModal {
      */
     getFilterParam(statType) {
         const filterMap = {
-            'delayed_programs': 'rating=delayed',
-            'on_track_programs': 'rating=on_track',
+            'delayed_programs': 'rating=severe_delay',
+            'on_track_programs': 'rating=on_track_for_year',
+            'monthly_target_achieved': 'rating=monthly_target_achieved',
             'agencies_reported': 'status=reported'
         };
         
@@ -387,6 +392,13 @@ class AdminStatModal {
      */
     getStatusClass(status) {
         const statusMap = {
+            // Actual rating values from database
+            'not_started': 'not-started',
+            'on_track_for_year': 'on-track',
+            'monthly_target_achieved': 'completed',
+            'severe_delay': 'delayed',
+            
+            // Legacy/fallback values
             'delayed': 'delayed',
             'delayed_programs': 'delayed',
             'on_track': 'on-track',
@@ -402,6 +414,13 @@ class AdminStatModal {
      */
     getStatusText(status) {
         const statusMap = {
+            // Actual rating values from database
+            'not_started': 'Not Started',
+            'on_track_for_year': 'On Track',
+            'monthly_target_achieved': 'Monthly Target Achieved',
+            'severe_delay': 'Severe Delays',
+            
+            // Legacy/fallback values
             'delayed': 'Delayed',
             'delayed_programs': 'Delayed',
             'on_track': 'On Track',
@@ -409,7 +428,7 @@ class AdminStatModal {
             'completed': 'Completed'
         };
         
-        return statusMap[status] || 'On Track';
+        return statusMap[status] || 'Not Started';
     }
 
     /**

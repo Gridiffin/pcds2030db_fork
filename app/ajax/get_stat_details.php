@@ -61,6 +61,10 @@ try {
             $programs = getActiveUsersWithSubmissionActions($conn, $period_id);
             break;
             
+        case 'monthly_target_achieved':
+            $programs = getMonthlyTargetAchievedPrograms($conn, $period_id);
+            break;
+            
         default:
             throw new Exception('Invalid stat type requested.');
     }
@@ -85,14 +89,9 @@ try {
  * Get programs with delayed rating
  */
 function getDelayedPrograms($conn, $period_id) {
-    $whereClause = '';
-    $params = [];
+    // Since rating is at program level, we don't need to filter by period
+    // The rating represents the current status of the program regardless of period
     
-    if ($period_id) {
-        $whereClause = 'AND ps.period_id = ?';
-        $params[] = $period_id;
-    }
-
     $sql = "
         SELECT DISTINCT
             p.program_id,
@@ -103,18 +102,11 @@ function getDelayedPrograms($conn, $period_id) {
             p.updated_at as last_updated
         FROM programs p
         LEFT JOIN agency a ON p.agency_id = a.agency_id
-        LEFT JOIN program_submissions ps ON p.program_id = ps.program_id
-        WHERE p.rating IN ('severe_delay') OR p.status = 'delayed'
-        $whereClause
+        WHERE p.rating = 'severe_delay'
         ORDER BY p.program_name ASC
     ";
 
     $stmt = $conn->prepare($sql);
-    
-    if ($params) {
-        $stmt->bind_param(str_repeat('i', count($params)), ...$params);
-    }
-    
     $stmt->execute();
     $result = $stmt->get_result();
     
@@ -125,14 +117,9 @@ function getDelayedPrograms($conn, $period_id) {
  * Get programs with on-track rating
  */
 function getOnTrackPrograms($conn, $period_id) {
-    $whereClause = '';
-    $params = [];
+    // Since rating is at program level, we don't need to filter by period
+    // The rating represents the current status of the program regardless of period
     
-    if ($period_id) {
-        $whereClause = 'AND ps.period_id = ?';
-        $params[] = $period_id;
-    }
-
     $sql = "
         SELECT DISTINCT
             p.program_id,
@@ -143,18 +130,11 @@ function getOnTrackPrograms($conn, $period_id) {
             p.updated_at as last_updated
         FROM programs p
         LEFT JOIN agency a ON p.agency_id = a.agency_id
-        LEFT JOIN program_submissions ps ON p.program_id = ps.program_id
-        WHERE p.rating IN ('monthly_target_achieved', 'on_track_for_year') OR p.status = 'active'
-        $whereClause
+        WHERE p.rating = 'on_track_for_year'
         ORDER BY p.program_name ASC
     ";
 
     $stmt = $conn->prepare($sql);
-    
-    if ($params) {
-        $stmt->bind_param(str_repeat('i', count($params)), ...$params);
-    }
-    
     $stmt->execute();
     $result = $stmt->get_result();
     
@@ -261,5 +241,33 @@ function getActiveUsersWithSubmissionActions($conn, $period_id) {
     $stmt->close();
 
     return $rows;
+}
+
+/**
+ * Get programs with monthly target achieved rating
+ */
+function getMonthlyTargetAchievedPrograms($conn, $period_id) {
+    // Since rating is at program level, we don't need to filter by period
+    // The rating represents the current status of the program regardless of period
+    
+    $sql = "
+        SELECT DISTINCT
+            p.program_id,
+            p.program_name,
+            p.agency_id,
+            a.agency_name,
+            p.rating,
+            p.updated_at as last_updated
+        FROM programs p
+        LEFT JOIN agency a ON p.agency_id = a.agency_id
+        WHERE p.rating = 'monthly_target_achieved'
+        ORDER BY p.program_name ASC
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    return $result->fetch_all(MYSQLI_ASSOC);
 }
 ?>

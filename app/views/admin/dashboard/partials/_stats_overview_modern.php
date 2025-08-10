@@ -85,19 +85,27 @@
         </div>
     </div>
 
-    <!-- Overall Completion Card -->
-    <div class="admin-stat-card-modern info admin-fade-in">
-        <div class="admin-stat-icon-modern">
-            <i class="fas fa-clipboard-list"></i>
+    <!-- Monthly Target Achieved Card -->
+    <div class="admin-stat-card-modern info admin-fade-in admin-stat-clickable" 
+         role="button" 
+         tabindex="0"
+         data-stat-type="monthly_target_achieved"
+         data-stat-value="<?php echo $submission_stats['monthly_target_achieved_programs'] ?? 0; ?>"
+         data-period-id="<?php echo $period_id ?? ''; ?>"
+         aria-label="Click to view detailed list of programs with monthly target achieved">
+        <div class="admin-stat-icon-modern" aria-hidden="true">
+            <i class="fas fa-bullseye"></i>
         </div>
         <div class="admin-stat-value-modern">
-            <?php echo $submission_stats['completion_percentage'] ?? 0; ?>%
+            <?php echo $submission_stats['monthly_target_achieved_programs'] ?? 0; ?>
         </div>
-        <div class="admin-stat-title-modern">Overall Completion</div>
-        <div class="admin-progress-modern">
-            <div class="admin-progress-bar-modern" 
-                 style="width: <?php echo $submission_stats['completion_percentage'] ?? 0; ?>%">
-            </div>
+        <div class="admin-stat-title-modern">Monthly Target Achieved</div>
+        <div class="admin-stat-subtitle-modern">
+            <i class="fas fa-check-circle" aria-hidden="true"></i>
+            <span><?php echo $submission_stats['monthly_target_achieved_programs'] ?? 0; ?> Programs</span>
+        </div>
+        <div class="admin-stat-click-hint">
+            <small class="text-white-50"><i class="fas fa-mouse-pointer me-1"></i>Click for details</small>
         </div>
     </div>
 </div>
