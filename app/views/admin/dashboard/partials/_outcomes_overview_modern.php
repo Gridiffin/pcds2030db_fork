@@ -86,6 +86,7 @@ $admin_chart_outcomes = isset($admin_chart_outcomes)
                 <!-- Charts will be rendered here -->
             </div>
         </div>
+
     </div>
 </div>
 
@@ -188,6 +189,7 @@ window.adminDashboardOutcomesCompact = {
                 }
             }
         }
+
     }
     
     function escapeHtml(str){ 

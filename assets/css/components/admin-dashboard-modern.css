@@ -1,3 +1,6 @@
+.admin-card-modern .kpi-header-actions .btn {
+  padding: 0.25rem 0.6rem;
+}
 /**
  * Admin Dashboard Modern Components
  * Modern UI components inspired by agency dashboard but optimized for admin functionality
@@ -228,6 +231,7 @@
     grid-template-columns: repeat(12, 1fr);
     gap: 1.5rem;
     margin-bottom: 2rem;
+    grid-auto-flow: dense; /* allow later elements to backfill holes */
 }
 
 .admin-bento-stats {
@@ -247,6 +251,24 @@
 
 .admin-bento-outcomes {
     grid-column: span 4;
+}
+
+/* KPI card column placement */
+.admin-bento-kpis {
+    grid-column: span 12; /* Fill the left content column under Programs (red box) */
+    align-self: start;
+}
+
+.admin-bento-kpis .card-modern {
+    border: 1px solid rgb(226, 226, 226);
+    box-shadow: none;
+    border-radius: 12px; /* adjust px to how rounded you want it */
+    padding: 10px;
+}
+
+.admin-bento-kpis .card-modern:hover {
+    border-color: rgb(226, 226, 226);
+    box-shadow: none;
 }
 
 /* === Modern Progress Elements === */
@@ -335,6 +357,9 @@
     .admin-bento-outcomes {
         grid-column: span 8;
     }
+    .admin-bento-kpis {
+        grid-column: span 8;
+    }
 }
 
 @media (max-width: 768px) {
@@ -348,7 +373,8 @@
     }
     
     .admin-bento-programs,
-    .admin-bento-outcomes {
+    .admin-bento-outcomes,
+    .admin-bento-kpis {
         grid-column: span 1;
     }
     
