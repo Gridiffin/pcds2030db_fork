@@ -114,24 +114,4 @@
             </div>
         </div>
     </div>
-    
-    <?php if (isset($can_edit) && $can_edit): ?>
-    <div class="card-footer">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="text-muted small">
-                <i class="fas fa-info-circle me-1"></i>
-                You have permission to edit this submission
-            </div>
-            <div class="d-flex gap-2">
-                <a href="edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $submission['period_id']; ?>" 
-                   class="btn btn-warning">
-                    <i class="fas fa-edit me-2"></i>Edit Submission
-                </a>
-                <a href="view_programs.php" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Programs
-                </a>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
 </div>
