@@ -12,63 +12,56 @@ $show_rating = $show_rating ?? true;
 // Determine program type (assigned or custom)
 $is_assigned = isset($program['is_assigned']) && $program['is_assigned'] ? true : false;
 
-// Use rating directly from database (no conversion needed)
-$current_status = isset($program['status']) ? $program['status'] : 'active';
+// Use rating directly from database
+$current_rating = isset($program['rating']) ? $program['rating'] : 'not_started';
 
-// Map database status values to display labels, classes, and icons
-$status_map = [
-    'active' => [
-        'label' => 'Active', 
+// Map database rating values to display labels, classes, and icons
+$rating_map = [
+    'monthly_target_achieved' => [
+        'label' => 'Monthly Target Achieved', 
         'class' => 'success',
-        'icon' => 'fas fa-play-circle',
-        'circle_class' => 'admin-status-active'
+        'icon' => 'fas fa-trophy',
+        'badge_class' => 'bg-success'
     ],
-    'on_hold' => [
-        'label' => 'On Hold', 
+    'on_track_for_year' => [
+        'label' => 'On Track for Year', 
         'class' => 'warning',
-        'icon' => 'fas fa-pause-circle',
-        'circle_class' => 'admin-status-pending'
+        'icon' => 'fas fa-chart-line',
+        'badge_class' => 'bg-warning text-dark'
     ],
-    'completed' => [
-        'label' => 'Completed', 
-        'class' => 'primary',
-        'icon' => 'fas fa-check-circle',
-        'circle_class' => 'admin-status-completed'
-    ],
-    'delayed' => [
-        'label' => 'Delayed', 
+    'severe_delay' => [
+        'label' => 'Severe Delay', 
         'class' => 'danger',
         'icon' => 'fas fa-exclamation-triangle',
-        'circle_class' => 'admin-status-pending'
+        'badge_class' => 'bg-danger'
     ],
-    'cancelled' => [
-        'label' => 'Cancelled', 
+    'not_started' => [
+        'label' => 'Not Started', 
         'class' => 'secondary',
-        'icon' => 'fas fa-times-circle',
-        'circle_class' => 'admin-status-inactive'
+        'icon' => 'fas fa-pause-circle',
+        'badge_class' => 'bg-secondary'
     ]
 ];
 
-// Set default if status is not in our map
-if (!isset($status_map[$current_status])) {
-    $current_status = 'active';
+// Set default if rating is not in our map
+if (!isset($rating_map[$current_rating])) {
+    $current_rating = 'not_started';
 }
 
-$status_order = [
-    'completed' => 1,
-    'active' => 2,
-    'on_hold' => 3,
-    'delayed' => 4,
-    'cancelled' => 5
+$rating_order = [
+    'monthly_target_achieved' => 1,
+    'on_track_for_year' => 2,
+    'severe_delay' => 3,
+    'not_started' => 4
 ];
 
-// Determine status indicator class
-$status_class = 'admin-status-finalized';
+// Determine rating indicator class
+$rating_class = 'admin-rating-finalized';
 ?>
 
 <div class="admin-program-box" 
-     data-status="<?php echo $current_rating; ?>" 
-     data-status-order="<?php echo $rating_order[$current_rating] ?? 999; ?>"
+     data-rating="<?php echo $current_rating; ?>" 
+     data-rating-order="<?php echo $rating_order[$current_rating] ?? 999; ?>"
      data-initiative="<?php echo !empty($program['initiative_name']) ? htmlspecialchars($program['initiative_name']) : 'zzz_no_initiative'; ?>"
      data-initiative-id="<?php echo $program['initiative_id'] ?? '0'; ?>"
      data-agency-id="<?php echo $program['agency_id'] ?? '0'; ?>"
@@ -181,11 +174,13 @@ $status_class = 'admin-status-finalized';
                 <?php endif; ?>
             </div>
 
-            <!-- Status -->
+            <!-- Rating -->
             <?php if ($show_rating): ?>
-            <div class="admin-status-info">
-                <div class="admin-status-circle <?php echo $status_map[$current_status]['circle_class']; ?>"></div>
-                <span class="admin-status-text"><?php echo $status_map[$current_status]['label']; ?></span>
+            <div class="admin-rating-info">
+                <span class="badge <?php echo $rating_map[$current_rating]['badge_class']; ?> d-flex align-items-center">
+                    <i class="<?php echo $rating_map[$current_rating]['icon']; ?> me-1"></i>
+                    <?php echo $rating_map[$current_rating]['label']; ?>
+                </span>
             </div>
             <?php endif; ?>
 

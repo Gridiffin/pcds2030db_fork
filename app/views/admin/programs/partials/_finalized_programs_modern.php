@@ -28,18 +28,10 @@
                 <label for="finalizedRatingFilter" class="form-label">Rating</label>
                 <select class="form-select" id="finalizedRatingFilter">
                     <option value="">All Ratings</option>
-                    <option value="target-achieved">Monthly Target Achieved</option>
-                    <option value="on-track-yearly">On Track for Year</option>
-                    <option value="severe-delay">Severe Delays</option>
-                    <option value="not-started">Not Started</option>
-                </select>
-            </div>
-            <div class="col-md-2 col-sm-6">
-                <label for="finalizedTypeFilter" class="form-label">Program Type</label>
-                <select class="form-select" id="finalizedTypeFilter">
-                    <option value="">All Types</option>
-                    <option value="assigned">Assigned</option>
-                    <option value="created">Agency-Created Programs</option>
+                    <option value="monthly_target_achieved">Monthly Target Achieved</option>
+                    <option value="on_track_for_year">On Track for Year</option>
+                    <option value="severe_delay">Severe Delay</option>
+                    <option value="not_started">Not Started</option>
                 </select>
             </div>
             <div class="col-md-2 col-sm-6">
@@ -53,7 +45,7 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-2 col-sm-6">
+            <div class="col-md-3 col-sm-6">
                 <label for="finalizedInitiativeFilter" class="form-label">Initiative</label>
                 <select class="form-select" id="finalizedInitiativeFilter">
                     <option value="">All Initiatives</option>
@@ -65,7 +57,7 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-1 col-sm-12 d-flex align-items-end">
+            <div class="col-md-2 col-sm-12 d-flex align-items-end">
                 <button id="resetFinalizedFilters" class="btn btn-outline-secondary w-100">
                     <i class="fas fa-undo me-1"></i> Reset
                 </button>

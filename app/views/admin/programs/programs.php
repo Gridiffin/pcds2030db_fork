@@ -16,6 +16,7 @@ require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/admins/index.php';
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/AdminProgramsModel.php';
 
 // Verify user is an admin
 if (!is_admin()) {
@@ -33,75 +34,23 @@ if (isset($_SESSION['message'])) {
     unset($_SESSION['message_type']);
 }
 
-// Initialize program arrays
-$programs = [];
-$programs_with_submissions = [];
+// Initialize the model for data access (proper separation of concerns)
+$adminProgramsModel = new AdminProgramsModel($conn);
 
-// Get all finalized programs across all agencies (admin sees everything)
-$query = "SELECT DISTINCT p.*, 
-                 i.initiative_name,
-                 i.initiative_number,
-                 i.initiative_id,
-                 latest_sub.is_draft,
-                 latest_sub.period_id,
-                 latest_sub.submission_id as latest_submission_id,
-                 latest_sub.submitted_at,
-                 latest_sub.submitted_by,
-                 rp.period_type,
-                 rp.period_number,
-                 rp.year as period_year,
-                 a.agency_name,
-                 su.fullname as submitted_by_name,
-                 COALESCE(latest_sub.submitted_at, p.created_at) as updated_at
-          FROM programs p 
-          LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id
-          LEFT JOIN agency a ON p.agency_id = a.agency_id
-          LEFT JOIN (
-              SELECT ps1.*
-              FROM program_submissions ps1
-              INNER JOIN (
-                  SELECT program_id, MAX(submission_id) as max_submission_id
-                  FROM program_submissions
-                  WHERE is_deleted = 0 AND is_draft = 0
-                  GROUP BY program_id
-              ) ps2 ON ps1.program_id = ps2.program_id AND ps1.submission_id = ps2.max_submission_id
-              WHERE ps1.is_draft = 0
-          ) latest_sub ON p.program_id = latest_sub.program_id
-          LEFT JOIN reporting_periods rp ON latest_sub.period_id = rp.period_id
-          LEFT JOIN users su ON latest_sub.submitted_by = su.user_id
-          WHERE p.is_deleted = 0 
-          AND latest_sub.submission_id IS NOT NULL
-          ORDER BY a.agency_name, p.program_name";
-
-$stmt = $conn->prepare($query);
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $programs[] = $row;
-    $programs_with_submissions[] = $row;
-}
-
-// Get all agencies for filtering
-$agencies = [];
-$agencies_query = "SELECT agency_id, agency_name FROM agency ORDER BY agency_name";
-$result = $conn->query($agencies_query);
-while ($agency = $result->fetch_assoc()) {
-    $agencies[] = $agency;
-}
-
-// Get all active initiatives for filtering
-$active_initiatives = [];
-$initiatives_query = "SELECT initiative_id, initiative_name, initiative_number FROM initiatives ORDER BY initiative_name";
-$result = $conn->query($initiatives_query);
-while ($initiative = $result->fetch_assoc()) {
-    $active_initiatives[] = $initiative;
-}
+// Fetch data using the model instead of direct SQL in view
+$programs = $adminProgramsModel->getFinalizedPrograms();
+$programs_with_submissions = $programs; // Both arrays are the same in this context
+$agencies = $adminProgramsModel->getAllAgencies();
+$active_initiatives = $adminProgramsModel->getActiveInitiatives();
 
 
 // Set up base layout variables
 $pageTitle = 'Admin Programs Overview';
 $cssBundle = 'admin-view-programs'; // Vite bundle for admin view programs page
 $jsBundle = 'admin-view-programs';
+$additionalScripts = [
+    'js/admin/programs/admin-finalized-programs.js'
+];
 
 // Configure modern page header
 $header_config = [

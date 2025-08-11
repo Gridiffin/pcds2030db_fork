@@ -14,8 +14,10 @@ require_once PROJECT_ROOT_PATH . 'app/config/config.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/db_connect.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/session.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/functions.php';
-require_once PROJECT_ROOT_PATH . 'app/lib/agencies/index.php';
 require_once PROJECT_ROOT_PATH . 'app/lib/agencies/program_attachments.php';
+
+// Include admin core functions for is_admin() function
+require_once PROJECT_ROOT_PATH . 'app/lib/admins/core.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -62,10 +64,28 @@ try {
     }
     
     // Check if file exists
-    if (!file_exists($attachment['file_path'])) {
+    $file_path = $attachment['file_path'];
+    
+    // Try different path resolutions for compatibility
+    $possible_paths = [
+        $file_path, // Try as-is first
+        PROJECT_ROOT_PATH . ltrim($file_path, './'), // Remove ./ prefix and prepend PROJECT_ROOT_PATH
+        PROJECT_ROOT_PATH . $file_path, // Direct prepend
+        str_replace('../../', PROJECT_ROOT_PATH, $file_path) // Replace ../ with PROJECT_ROOT_PATH
+    ];
+    
+    $actual_file_path = null;
+    foreach ($possible_paths as $path) {
+        if (file_exists($path)) {
+            $actual_file_path = $path;
+            break;
+        }
+    }
+    
+    if (!$actual_file_path) {
         log_audit_action(
             'attachment_download_file_missing',
-            "Physical file missing for attachment ID {$attachment_id}: {$attachment['file_path']}",
+            "Physical file missing for attachment ID {$attachment_id}. Tried paths: " . implode(', ', $possible_paths),
             'failure',
             $_SESSION['user_id']
         );
@@ -96,7 +116,7 @@ try {
     }
     
     // Output file content
-    readfile($attachment['file_path']);
+    readfile($actual_file_path);
     exit;
     
 } catch (Exception $e) {

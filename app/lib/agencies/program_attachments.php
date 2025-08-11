@@ -522,10 +522,13 @@ function get_attachment_for_download($attachment_id) {
     $attachment_id = intval($attachment_id);
     
     $stmt = $conn->prepare("
-        SELECT pa.*, p.agency_id 
+        SELECT pa.*, ps.program_id, p.agency_id,
+               pa.file_name as original_filename,
+               pa.file_type as mime_type
         FROM program_attachments pa 
-        JOIN programs p ON pa.program_id = p.program_id 
-        WHERE pa.attachment_id = ? AND pa.is_active = 1
+        JOIN program_submissions ps ON pa.submission_id = ps.submission_id
+        JOIN programs p ON ps.program_id = p.program_id 
+        WHERE pa.attachment_id = ? AND pa.is_deleted = 0 AND ps.is_deleted = 0
     ");
     $stmt->bind_param("i", $attachment_id);
     $stmt->execute();

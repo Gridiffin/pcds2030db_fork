@@ -1,0 +1,98 @@
+/**
+ * Admin Rating Styles
+ * CSS for program rating badges in admin interface
+ */
+
+/* Rating Info Container */
+.admin-rating-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Rating Badge Styles */
+.admin-rating-info .badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    white-space: nowrap;
+    text-transform: none;
+}
+
+/* Rating Badge Icons */
+.admin-rating-info .badge i {
+    font-size: 0.875rem;
+}
+
+/* Custom badge colors for better visibility */
+.admin-rating-info .badge.bg-success {
+    background-color: #198754 !important;
+    color: white;
+}
+
+.admin-rating-info .badge.bg-info {
+    background-color: #0dcaf0 !important;
+    color: #000;
+}
+
+.admin-rating-info .badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000;
+}
+
+.admin-rating-info .badge.bg-danger {
+    background-color: #dc3545 !important;
+    color: white;
+}
+
+.admin-rating-info .badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: white;
+}
+
+/* Hover effects for rating badges */
+.admin-rating-info .badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+/* Rating filter styles */
+#finalizedRatingFilter option[value="monthly_target_achieved"] {
+    color: #198754;
+    font-weight: 500;
+}
+
+#finalizedRatingFilter option[value="on_track_for_year"] {
+    color: #ffc107;
+    font-weight: 500;
+}
+
+#finalizedRatingFilter option[value="severe_delay"] {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+#finalizedRatingFilter option[value="not_started"] {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Rating badges in filter area */
+.filter-badges .badge {
+    margin: 0.125rem;
+    font-size: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-rating-info .badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .admin-rating-info .badge i {
+        font-size: 0.75rem;
+    }
+}

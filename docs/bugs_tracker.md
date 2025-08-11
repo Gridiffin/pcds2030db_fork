@@ -1,3 +1,93 @@
+### 43. Fatal Error - Missing program_agency_assignments Table (2025-01-09) ✅ FIXED
+
+- **Problem:** Admin program details page crashed with fatal error: "Table 'pcds2030_db.program_agency_assignments' doesn't exist"
+- **Root Cause:**
+  - Code assumed existence of `program_agency_assignments` table for agency-level program permissions
+  - Database schema only contains `program_user_assignments` table for user-level permissions
+  - Query attempted to fetch from non-existent table during admin program details loading
+- **Error Details:**
+  ```
+  Fatal error: Uncaught mysqli_sql_exception: Table 'pcds2030_db.program_agency_assignments' doesn't exist
+  in admin_program_details_data.php:217
+  ```
+- **Solution - Database Schema Alignment:**
+  1. **Investigated Database Schema:**
+     - Confirmed `program_user_assignments` table exists with proper structure
+     - Confirmed `program_agency_assignments` table does not exist
+     - Updated code to work with actual database schema
+  2. **Fixed Data Layer:**
+     - Removed agency-level assignments query from `AdminProgramsModel`
+     - Updated to only fetch user-level assignments from existing table
+     - Added fallback display for programs with no specific user assignments
+  3. **Updated UI Logic:**
+     - Modified view to handle only user assignments (no agency assignments)
+     - Added "Default agency access applies" message when no user assignments exist
+     - Maintained same visual design with proper role badges
+- **Files Changed:**
+  - `app/lib/admins/admin_program_details_data.php` (Fixed queries)
+  - `app/views/admin/programs/partials/admin_program_details_content.php` (Updated UI logic)
+- **Testing:**
+  - Build process completed successfully
+  - No more fatal errors on admin program details page
+  - User assignments display correctly when they exist
+  - Graceful fallback when no assignments exist
+- **Database Alignment:**
+  - Code now matches actual database schema
+  - Only queries tables that exist in production database
+  - Maintains program access control functionality through user assignments
+- **Prevention:**
+  - Always verify database schema before implementing database-dependent features
+  - Use database introspection tools to confirm table existence
+  - Test with actual production database schema, not assumed schema
+
+### 42. Architecture Security Issue - SQL Queries in View Files (2025-01-09) ✅ FIXED
+
+- **Problem:** Admin programs view (programs.php) contained complex SQL queries directly in the view file, violating separation of concerns and creating potential security risks.
+- **Root Cause:**
+  - Complex JOIN queries for fetching programs with ratings were written directly in the view layer
+  - No proper data access layer between view and database
+  - Violated MVC architecture principles
+  - Made code harder to maintain and test
+- **Security & Architecture Concerns:**
+  - SQL injection risks if view logic became more complex
+  - Difficulty in maintaining and testing database operations
+  - Mixed presentation and data access logic
+  - No centralized error handling for database operations
+- **Solution - Created AdminProgramsModel Class:**
+  1. **Created Data Access Layer:**
+     - New file: `app/lib/admins/AdminProgramsModel.php`
+     - Centralized all admin program database operations
+     - Proper error handling with logging
+     - Prepared statements for all queries
+  2. **Refactored View File:**
+     - Modified `app/views/admin/programs/programs.php`
+     - Removed direct SQL queries from view
+     - Uses AdminProgramsModel for data access
+     - Proper separation of concerns implemented
+  3. **Model Methods Created:**
+     - `getFinalizedPrograms()` - Complex JOIN for all programs with ratings
+     - `getAllAgencies()` - Fetch agencies for filtering
+     - `getActiveInitiatives()` - Fetch initiatives for filtering  
+     - `getProgramStatistics()` - Future use for admin dashboard
+- **Files Changed:**
+  - `app/lib/admins/AdminProgramsModel.php` (NEW - Data access layer)
+  - `app/views/admin/programs/programs.php` (REFACTORED - Uses model)
+- **Benefits:**
+  - **Security**: Eliminated SQL injection risks from view layer
+  - **Maintainability**: Single place to update admin program queries
+  - **Reusability**: Model methods can be used by other admin components
+  - **Testability**: Model can be unit tested independently
+  - **Error Handling**: Centralized database error handling with logging
+- **Testing:**
+  - Build process completed successfully
+  - No functionality changes to user interface
+  - Same query efficiency with better architecture
+- **Prevention:**
+  - Always use dedicated model/service classes for data access
+  - Never put SQL queries directly in view files
+  - Follow proper MVC separation of concerns
+  - Implement proper error handling for all database operations
+
 ### 41. View Programs Tooltips Invisible on Live (Bootstrap .tooltip collision) (2025-08-08) ✅ FIXED
 
 - Problem: On the View Programs page, hovering status/rating/initiative badges showed no tooltip on the live host, while localhost worked. Program Details page tooltips were unaffected.

@@ -64,6 +64,7 @@ $hold_points = $program_data['hold_points'];
 $attachments = $program_data['attachments'];
 $agency_info = $program_data['agency_info'];
 $submission_info = $program_data['submission_info'];
+$program_assignees = $program_data['program_assignees'];
 
 // Admin can view and edit all programs
 $can_edit = true;

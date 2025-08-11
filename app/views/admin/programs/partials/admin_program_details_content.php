@@ -73,12 +73,16 @@
                                 </div>
                             </div>
                             
-                            <?php if (!empty($program['description'])): ?>
                             <div class="col-12 mb-3">
                                 <label class="form-label text-muted">Description</label>
-                                <div><?php echo nl2br(htmlspecialchars($program['description'])); ?></div>
+                                <div>
+                                    <?php if (!empty($program['description'])): ?>
+                                        <?php echo nl2br(htmlspecialchars($program['description'])); ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">-</span>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                            <?php endif; ?>
                             
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Created Date</label>
@@ -91,46 +95,82 @@
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-muted">Sector</label>
-                                <div>
-                                    <?php echo htmlspecialchars($program['sector_name'] ?? 'Not specified'); ?>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Submission Information Card -->
+            <!-- Program Access & Submission Info Card -->
             <div class="col-lg-4 mb-4">
                 <div class="card shadow-sm">
                     <div class="card-header">
                         <h5 class="card-title m-0">
-                            <i class="fas fa-user-check me-2"></i>Submission Info
+                            <i class="fas fa-users me-2"></i>Program Access & Info
                         </h5>
                     </div>
                     <div class="card-body">
+                        <!-- Program Assignees -->
+                        <?php if (!empty($program_assignees)): ?>
+                            <div class="mb-4">
+                                <label class="form-label text-muted small">Program Editors & Viewers</label>
+                                <div class="assignees-list">
+                                    <?php foreach ($program_assignees as $assignee): ?>
+                                        <div class="assignee-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                            <div>
+                                                <div class="fw-medium">
+                                                    <i class="fas fa-user me-1 text-success"></i>
+                                                    <?php echo htmlspecialchars($assignee['name']); ?>
+                                                    <?php if (!empty($assignee['agency_name'])): ?>
+                                                        <small class="text-muted d-block"><?php echo htmlspecialchars($assignee['agency_name']); ?></small>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <?php 
+                                                $role_classes = [
+                                                    'owner' => 'bg-danger',
+                                                    'editor' => 'bg-warning',
+                                                    'viewer' => 'bg-info'
+                                                ];
+                                                $role_class = $role_classes[$assignee['role']] ?? 'bg-secondary';
+                                                ?>
+                                                <span class="badge <?php echo $role_class; ?> small">
+                                                    <?php echo ucfirst($assignee['role']); ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <div class="mb-4">
+                                <label class="form-label text-muted small">Program Access</label>
+                                <div class="text-center py-3">
+                                    <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                                    <div class="text-muted small">
+                                        No specific user assignments.<br>
+                                        Default agency access applies.
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Submission Information -->
                         <?php if ($submission_info): ?>
                             <div class="finalization-details">
+                                <label class="form-label text-muted small">Latest Submission</label>
                                 <div class="mb-3">
-                                    <label class="form-label text-muted small">Submitted By</label>
                                     <div class="fw-medium">
                                         <i class="fas fa-user me-2 text-success"></i>
                                         <?php echo htmlspecialchars($submission_info['submitted_by_name']); ?>
                                     </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label text-muted small">Submitted Date</label>
-                                    <div class="fw-medium">
-                                        <i class="fas fa-clock me-2 text-success"></i>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-clock me-1"></i>
                                         <?php echo date('M j, Y g:i A', strtotime($submission_info['submitted_at'])); ?>
                                     </div>
                                 </div>
                                 
-                                <div class="text-center mt-3">
+                                <div class="text-center">
                                     <span class="badge bg-success">
                                         <i class="fas fa-check-circle me-1"></i>
                                         Finalized Submission
@@ -155,10 +195,14 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card shadow-sm">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title m-0">
                             <i class="fas fa-lightbulb me-2"></i>Initiative Information
                         </h5>
+                        <a href="<?php echo APP_URL; ?>/app/views/admin/initiatives/view_initiative.php?id=<?php echo $program['initiative_id']; ?>" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt me-1"></i>View Initiative Details
+                        </a>
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -206,9 +250,20 @@
                                     <div class="mt-2">
                                         <?php foreach (array_slice($related_programs, 0, 5) as $related): ?>
                                             <div class="small mb-1">
-                                                <a href="program_details.php?id=<?php echo $related['program_id']; ?>" class="text-decoration-none">
-                                                    <?php echo htmlspecialchars($related['program_name']); ?>
-                                                </a>
+                                                <?php if ($related['is_draft_only']): ?>
+                                                    <a href="#" class="text-decoration-none text-muted draft-program-link" 
+                                                       data-program-name="<?php echo htmlspecialchars($related['program_name']); ?>"
+                                                       data-bs-toggle="tooltip" 
+                                                       title="This program is still in draft status">
+                                                        <i class="fas fa-lock me-1"></i>
+                                                        <?php echo htmlspecialchars($related['program_name']); ?>
+                                                        <span class="badge bg-warning ms-1 small">Draft</span>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <a href="program_details.php?id=<?php echo $related['program_id']; ?>" class="text-decoration-none">
+                                                        <?php echo htmlspecialchars($related['program_name']); ?>
+                                                    </a>
+                                                <?php endif; ?>
                                                 <div class="text-muted small"><?php echo htmlspecialchars($related['agency_name']); ?></div>
                                             </div>
                                         <?php endforeach; ?>
@@ -216,58 +271,6 @@
                                 <?php endif; ?>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <!-- Current Submission Details -->
-        <?php if ($has_submissions && $latest_submission): ?>
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title m-0">
-                            <i class="fas fa-tasks me-2"></i>Latest Submission Details
-                        </h5>
-                        <div>
-                            <span class="badge bg-info"><?php echo $latest_submission['period_display']; ?></span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <?php if (!empty($targets)): ?>
-                            <div class="targets-list">
-                                <?php foreach ($targets as $index => $target): ?>
-                                    <div class="target-item border rounded p-3 mb-3">
-                                        <div class="row">
-                                            <div class="col-lg-6">
-                                                <h6 class="text-primary">
-                                                    Target <?php echo $index + 1; ?>
-                                                    <?php if (!empty($target['target_number'])): ?>
-                                                        <span class="badge bg-info ms-1"><?php echo htmlspecialchars($target['target_number']); ?></span>
-                                                    <?php endif; ?>
-                                                </h6>
-                                                <p class="mb-2"><?php echo nl2br(htmlspecialchars($target['target_description'])); ?></p>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <h6 class="text-success">Status & Progress</h6>
-                                                <?php if (!empty($target['status_description'])): ?>
-                                                    <p class="mb-0"><?php echo nl2br(htmlspecialchars($target['status_description'])); ?></p>
-                                                <?php else: ?>
-                                                    <p class="text-muted fst-italic mb-0">No status update provided</p>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else: ?>
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                No targets specified for this submission.
-                            </div>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -385,3 +388,54 @@
         </div>
     </div>
 </main>
+
+<!-- Draft Program Modal -->
+<div class="modal fade" id="draftProgramModal" tabindex="-1" aria-labelledby="draftProgramModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="draftProgramModalLabel">
+                    <i class="fas fa-lock me-2 text-warning"></i>Program Not Available
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-file-alt fa-3x text-warning mb-3"></i>
+                    <h6 class="mb-3">Program Still in Draft</h6>
+                    <p class="text-muted mb-0">
+                        The program "<span id="draftProgramName" class="fw-bold"></span>" cannot be viewed because it is still in draft status. 
+                        Only finalized submissions are visible in the admin view.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle draft program link clicks
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Handle draft program clicks
+    document.querySelectorAll('.draft-program-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var programName = this.getAttribute('data-program-name');
+            document.getElementById('draftProgramName').textContent = programName;
+            var modal = new bootstrap.Modal(document.getElementById('draftProgramModal'));
+            modal.show();
+        });
+    });
+});
+</script>

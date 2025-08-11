@@ -54,10 +54,10 @@
                                             <span class="badge bg-success">Finalized</span>
                                         </div>
                                     </div>
-                                    <?php if (!empty($sub['finalized_by_name'])): ?>
+                                    <?php if (!empty($sub['submitted_by_name'])): ?>
                                         <small class="text-muted d-block mt-1">
                                             <i class="fas fa-user-check me-1"></i>
-                                            Finalized by: <?php echo htmlspecialchars($sub['finalized_by_name']); ?>
+                                            Submitted by: <?php echo htmlspecialchars($sub['submitted_by_name']); ?>
                                         </small>
                                     <?php endif; ?>
                                 </a>
@@ -124,14 +124,14 @@
                                 </div>
                                 
                                 <div class="col-md-6">
-                                    <label class="form-label text-muted small">Finalized By</label>
+                                    <label class="form-label text-muted small">Submitted By</label>
                                     <div>
-                                        <?php if (!empty($submission['finalized_by_name'])): ?>
+                                        <?php if (!empty($submission['submitted_by_name'])): ?>
                                             <i class="fas fa-user-check me-2 text-success"></i>
-                                            <?php echo htmlspecialchars($submission['finalized_by_name']); ?>
-                                            <?php if (!empty($submission['finalized_at'])): ?>
+                                            <?php echo htmlspecialchars($submission['submitted_by_name']); ?>
+                                            <?php if (!empty($submission['submitted_at'])): ?>
                                                 <small class="text-muted d-block">
-                                                    <?php echo date('M j, Y g:i A', strtotime($submission['finalized_at'])); ?>
+                                                    <?php echo date('M j, Y g:i A', strtotime($submission['submitted_at'])); ?>
                                                 </small>
                                             <?php endif; ?>
                                         <?php else: ?>
@@ -142,14 +142,14 @@
                             </div>
 
                             <!-- Description -->
-                            <?php if (!empty($submission['description'])): ?>
                             <div class="mb-4">
                                 <label class="form-label text-muted small">Submission Description</label>
                                 <div class="border rounded p-3 bg-light">
-                                    <?php echo nl2br(htmlspecialchars($submission['description'])); ?>
+                                    <?php echo !empty($submission['description']) 
+                                        ? nl2br(htmlspecialchars($submission['description'])) 
+                                        : '<span class="text-muted">-</span>'; ?>
                                 </div>
                             </div>
-                            <?php endif; ?>
 
                             <!-- Program Information Section -->
                             <div class="mb-4">
@@ -598,11 +598,11 @@
                                                         </div>
 
                                                         <!-- Key Metrics -->
-                                                        <div class="row small">
+                                                            <div class="row small">
                                                             <div class="col-12 mb-2">
                                                                 <div class="d-flex justify-content-between">
                                                                     <span><strong>Target Number:</strong></span>
-                                                                    <span class="text-primary"><?php echo htmlspecialchars($target['target_number'] ?? 'Not specified'); ?></span>
+                                                                        <span class="text-primary"><?php echo !empty($target['target_number']) ? htmlspecialchars($target['target_number']) : '-'; ?></span>
                                                                 </div>
                                                             </div>
                                                             <?php if ($target_start && $target_end): ?>
@@ -631,14 +631,7 @@
                                                                 </div>
                                                             </div>
                                                             <?php endif; ?>
-                                                            <div class="col-12 mb-2">
-                                                                <div class="d-flex justify-content-between">
-                                                                    <span><strong>Data Quality:</strong></span>
-                                                                    <span class="text-<?php echo $status_consistent ? 'success' : 'warning'; ?>">
-                                                                        <?php echo $status_consistent ? 'Consistent' : 'Needs Review'; ?>
-                                                                    </span>
-                                                                </div>
-                                                            </div>
+                                                            
                                                         </div>
 
                                                         <!-- Action Items (if any inconsistencies) -->
@@ -653,67 +646,6 @@
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                                    <?php if (!empty($target['target_number'])): ?>
-                                                        <span class="badge bg-info ms-1"><?php echo htmlspecialchars($target['target_number']); ?></span>
-                                                    <?php endif; ?>
-                                                    <?php if (!empty($target['status_indicator'])): ?>
-                                                        <span class="badge bg-<?php 
-                                                            echo match($target['status_indicator']) {
-                                                                'not_started' => 'secondary',
-                                                                'in_progress' => 'warning',
-                                                                'completed' => 'success',
-                                                                'delayed' => 'danger',
-                                                                default => 'secondary'
-                                                            };
-                                                        ?> ms-1">
-                                                            <?php echo ucwords(str_replace('_', ' ', $target['status_indicator'])); ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </h6>
-                                                
-                                                <label class="form-label text-muted small">Target Description</label>
-                                                <p class="mb-2"><?php echo nl2br(htmlspecialchars($target['target_description'])); ?></p>
-                                                
-                                                <?php if (!empty($target['start_date']) || !empty($target['end_date'])): ?>
-                                                <div class="mb-2">
-                                                    <label class="form-label text-muted small">Timeline</label>
-                                                    <div class="small">
-                                                        <?php if (!empty($target['start_date'])): ?>
-                                                            <i class="fas fa-play text-success me-1"></i>
-                                                            Start: <?php echo date('M j, Y', strtotime($target['start_date'])); ?>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($target['end_date'])): ?>
-                                                            <br><i class="fas fa-flag text-danger me-1"></i>
-                                                            End: <?php echo date('M j, Y', strtotime($target['end_date'])); ?>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                                <?php endif; ?>
-                                            </div>
-                                            
-                                            <div class="col-lg-6">
-                                                <h6 class="text-success">Status & Progress</h6>
-                                                
-                                                <label class="form-label text-muted small">Status Description</label>
-                                                <?php if (!empty($target['status_description'])): ?>
-                                                    <div class="bg-light border rounded p-2 mb-2">
-                                                        <?php echo nl2br(htmlspecialchars($target['status_description'])); ?>
-                                                    </div>
-                                                <?php else: ?>
-                                                    <p class="text-muted fst-italic mb-2">No status update provided</p>
-                                                <?php endif; ?>
-                                                
-                                                <?php if (!empty($target['remarks'])): ?>
-                                                <div>
-                                                    <label class="form-label text-muted small">Remarks</label>
-                                                    <div class="alert alert-light mb-0 small">
-                                                        <?php echo nl2br(htmlspecialchars($target['remarks'])); ?>
-                                                    </div>
-                                                </div>
-                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
@@ -799,64 +731,6 @@
             </div>
         </div>
 
-        <!-- Program Overview (Bottom Section) -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        <h5 class="card-title m-0">
-                            <i class="fas fa-info-circle me-2"></i>Program Overview
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <dl class="row mb-0">
-                                    <dt class="col-4">Program Name:</dt>
-                                    <dd class="col-8"><?php echo htmlspecialchars($program['program_name']); ?></dd>
-                                    
-                                    <dt class="col-4">Agency:</dt>
-                                    <dd class="col-8"><?php echo htmlspecialchars($agency_info['agency_name']); ?></dd>
-                                    
-                                    <dt class="col-4">Current Rating:</dt>
-                                    <dd class="col-8">
-                                        <span class="badge bg-<?php echo $rating_info['class']; ?>">
-                                            <?php echo $rating_info['label']; ?>
-                                        </span>
-                                    </dd>
-                                </dl>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <dl class="row mb-0">
-                                    <dt class="col-4">Initiative:</dt>
-                                    <dd class="col-8">
-                                        <?php if (!empty($program['initiative_name'])): ?>
-                                            <?php echo htmlspecialchars($program['initiative_name']); ?>
-                                        <?php else: ?>
-                                            <span class="text-muted">Not linked</span>
-                                        <?php endif; ?>
-                                    </dd>
-                                    
-                                    <dt class="col-4">Total Submissions:</dt>
-                                    <dd class="col-8">
-                                        <span class="badge bg-info"><?php echo count($all_submissions); ?> finalized</span>
-                                    </dd>
-                                    
-                                    <dt class="col-4">Created:</dt>
-                                    <dd class="col-8">
-                                        <?php if (!empty($program['created_at'])): ?>
-                                            <?php echo date('M j, Y', strtotime($program['created_at'])); ?>
-                                        <?php else: ?>
-                                            <span class="text-muted">Not available</span>
-                                        <?php endif; ?>
-                                    </dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        
     </div>
 </main>

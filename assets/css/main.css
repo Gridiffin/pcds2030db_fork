@@ -43,6 +43,9 @@
 @import 'pages/view-programs.css';
 @import url('pages/add_submission.css');
 
+/* Admin Modules */
+@import 'admin/admin-ratings.css';
+
 /* Custom */
 @import 'custom/theme.css';
 

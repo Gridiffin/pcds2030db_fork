@@ -25,7 +25,8 @@ function get_admin_program_details_view_data($program_id) {
                              i.start_date as initiative_start_date,
                              i.end_date as initiative_end_date,
                              a.agency_name,
-                             a.agency_id
+                             a.agency_id,
+                             p.program_description as description
                       FROM programs p 
                       LEFT JOIN initiatives i ON p.initiative_id = i.initiative_id 
                       LEFT JOIN agency a ON p.agency_id = a.agency_id
@@ -186,12 +187,21 @@ function get_admin_program_details_view_data($program_id) {
     $related_programs = [];
     if (!empty($program['initiative_id'])) {
         $related_query = "SELECT p.program_id, p.program_name, p.program_number, 
-                                 p.rating, a.agency_name
+                                 p.rating, a.agency_name,
+                                 CASE 
+                                    WHEN COUNT(ps.submission_id) = 0 THEN 1
+                                    WHEN COUNT(CASE WHEN ps.is_draft = 0 THEN 1 END) = 0 THEN 1
+                                    ELSE 0
+                                 END as is_draft_only
                           FROM programs p 
                           LEFT JOIN agency a ON p.agency_id = a.agency_id
+                          LEFT JOIN program_submissions ps ON p.program_id = ps.program_id 
+                              AND ps.is_deleted = 0
                           WHERE p.initiative_id = ? 
                           AND p.program_id != ? 
                           AND p.is_deleted = 0
+                          GROUP BY p.program_id, p.program_name, p.program_number, 
+                                   p.rating, a.agency_name
                           ORDER BY a.agency_name, p.program_name";
         
         $stmt = $conn->prepare($related_query);
@@ -202,6 +212,32 @@ function get_admin_program_details_view_data($program_id) {
         while ($related = $result->fetch_assoc()) {
             $related_programs[] = $related;
         }
+    }
+    
+    // Get program assignees and editors (only user-level assignments exist)
+    $program_assignees = [];
+    
+    // Get user-level assignments (only table that exists)
+    $user_assignments_query = "SELECT pua.role, u.fullname, u.email, a.agency_name 
+                              FROM program_user_assignments pua
+                              JOIN users u ON pua.user_id = u.user_id
+                              LEFT JOIN agency a ON u.agency_id = a.agency_id
+                              WHERE pua.program_id = ? AND pua.is_active = 1
+                              ORDER BY u.fullname";
+    
+    $stmt = $conn->prepare($user_assignments_query);
+    $stmt->bind_param("i", $program_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    while ($assignment = $result->fetch_assoc()) {
+        $program_assignees[] = [
+            'type' => 'user',
+            'name' => $assignment['fullname'],
+            'email' => $assignment['email'],
+            'role' => $assignment['role'],
+            'agency_name' => $assignment['agency_name']
+        ];
     }
     
     // Get hold points/issues (if any)
@@ -229,6 +265,7 @@ function get_admin_program_details_view_data($program_id) {
         'attachments' => $attachments,
         'related_programs' => $related_programs,
         'submission_info' => $submission_info,
+        'program_assignees' => $program_assignees,
         'alert_flags' => $alert_flags,
         'permissions' => [
             'can_edit' => true,    // Admin can edit all
