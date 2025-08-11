@@ -208,6 +208,28 @@
                                 <?php endif; ?>
                             </div>
                         </div>
+                        <div class="card-footer bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-muted">
+                                    <small>
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        This submission can be edited to update targets, achievements, and attachments.
+                                    </small>
+                                </div>
+                                <div>
+                                    <?php if ($submission): ?>
+                                        <?php 
+                                        // Use the period_id from URL if available, otherwise use the submission's period_id
+                                        $edit_period_id = $period_id ?? $submission['period_id'];
+                                        ?>
+                                        <a href="edit_submission.php?program_id=<?php echo $program_id; ?>&period_id=<?php echo $edit_period_id; ?>" 
+                                           class="btn btn-primary">
+                                            <i class="fas fa-edit me-2"></i>Edit Submission
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Enhanced Program Targets -->

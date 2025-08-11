@@ -128,9 +128,13 @@ $header_config['actions'][] = [
     'class' => 'btn-info'
 ];
 
-if ($submission && $period_id) {
+// Add edit button if there's a submission to edit
+if ($submission) {
+    // Use the period_id from URL if available, otherwise use the submission's period_id
+    $edit_period_id = $period_id ?? $submission['period_id'];
+    
     $header_config['actions'][] = [
-        'url' => 'edit_submission.php?program_id=' . $program_id . '&period_id=' . $period_id,
+        'url' => 'edit_submission.php?program_id=' . $program_id . '&period_id=' . $edit_period_id,
         'text' => 'Edit Submission',
         'icon' => 'fas fa-edit',
         'class' => 'btn-primary'

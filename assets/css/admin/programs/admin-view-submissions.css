@@ -31,6 +31,25 @@
     background-color: #f8f9fa;
 }
 
+/* Ensure text turns black on hover for non-active items in the submissions list */
+.list-group-item:not(.active):hover,
+.list-group-item:not(.active):hover h6,
+.list-group-item:not(.active):hover small,
+.list-group-item:not(.active):hover .text-muted,
+.list-group-item:not(.active):hover *:not(.badge):not(i) {
+    color: #000000 !important;
+}
+
+/* Ensure text turns black on hover for active item as its background becomes light */
+.list-group-item.active:hover,
+.list-group-item.active:hover h6,
+.list-group-item.active:hover small,
+.list-group-item.active:hover .text-muted,
+.list-group-item.active:hover i,
+.list-group-item.active:hover *:not(.badge) {
+    color: #000000 !important;
+}
+
 .list-group-item h6 {
     font-weight: 600;
     margin-bottom: 0.25rem;

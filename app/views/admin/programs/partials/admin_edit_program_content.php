@@ -218,24 +218,23 @@
                                 <dt class="col-5">Current Rating:</dt>
                                 <dd class="col-7">
                                     <?php
-                                    $status_labels = [
-                                        'active' => 'Active',
-                                        'on_hold' => 'On Hold',
-                                        'completed' => 'Completed',
-                                        'delayed' => 'Delayed',
-                                        'cancelled' => 'Cancelled'
+                                    // Rating mapping consistent with admin program details
+                                    $rating_map = [
+                                        'not_started' => ['label' => 'Not Started', 'class' => 'secondary', 'icon' => 'fas fa-hourglass-start'],
+                                        'on_track_for_year' => ['label' => 'On Track for Year', 'class' => 'warning', 'icon' => 'fas fa-calendar-check'],
+                                        'monthly_target_achieved' => ['label' => 'Monthly Target Achieved', 'class' => 'success', 'icon' => 'fas fa-check-circle'],
+                                        'severe_delay' => ['label' => 'Severe Delays', 'class' => 'danger', 'icon' => 'fas fa-exclamation-triangle']
                                     ];
-                                    $status_classes = [
-                                        'active' => 'success',
-                                        'on_hold' => 'warning',
-                                        'completed' => 'primary',
-                                        'delayed' => 'danger',
-                                        'cancelled' => 'secondary'
-                                    ];
-                                    $current_status = $program['status'] ?? 'active';
+                                    $current_rating = $program['rating'] ?? 'not_started';
+                                    
+                                    // Fallback if rating is not in map
+                                    if (!isset($rating_map[$current_rating])) {
+                                        $current_rating = 'not_started';
+                                    }
                                     ?>
-                                    <span class="badge bg-<?php echo $status_classes[$current_status]; ?>">
-                                        <?php echo $status_labels[$current_status]; ?>
+                                    <span class="badge bg-<?php echo $rating_map[$current_rating]['class']; ?>">
+                                        <i class="<?php echo $rating_map[$current_rating]['icon']; ?> me-1"></i>
+                                        <?php echo $rating_map[$current_rating]['label']; ?>
                                     </span>
                                 </dd>
                             </dl>

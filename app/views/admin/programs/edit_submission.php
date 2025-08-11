@@ -41,7 +41,7 @@ if (!$program_id) {
 if (!$period_id) {
     // Get available periods for this program to show selection
     require_once PROJECT_ROOT_PATH . 'app/lib/admins/admin_program_details_data.php';
-    $program_data = get_admin_program_details($program_id);
+    $program_data = get_admin_program_details_view_data($program_id);
     
     if (!$program_data) {
         $_SESSION['message'] = 'Program not found or access denied.';
