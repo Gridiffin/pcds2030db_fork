@@ -1,0 +1,151 @@
+{
+  "scan_date": "2025-08-12T10:49:25.867Z",
+  "total_assets": 10,
+  "total_sources": 710,
+  "unreferenced_assets": [
+    {
+      "path": "assets\\images\\logo.png",
+      "filename": "logo.png",
+      "size": 16534,
+      "extension": ".png",
+      "last_modified": "2025-07-09T02:05:06.603Z",
+      "references": []
+    },
+    {
+      "path": "assets\\images\\sarawak_crest.png",
+      "filename": "sarawak_crest.png",
+      "size": 111396,
+      "extension": ".png",
+      "last_modified": "2025-07-09T02:05:06.606Z",
+      "references": []
+    },
+    {
+      "path": "assets\\fonts\\fontawesome\\fa-solid-900.woff2",
+      "filename": "fa-solid-900.woff2",
+      "size": 78268,
+      "extension": ".woff2",
+      "last_modified": "2025-07-09T02:05:06.597Z",
+      "references": []
+    },
+    {
+      "path": "assets\\fonts\\nunito\\nunito-v26-latin-500.woff2",
+      "filename": "nunito-v26-latin-500.woff2",
+      "size": 39124,
+      "extension": ".woff2",
+      "last_modified": "2025-07-09T02:05:06.598Z",
+      "references": []
+    },
+    {
+      "path": "assets\\fonts\\nunito\\nunito-v26-latin-600.woff2",
+      "filename": "nunito-v26-latin-600.woff2",
+      "size": 39124,
+      "extension": ".woff2",
+      "last_modified": "2025-07-09T02:05:06.599Z",
+      "references": []
+    },
+    {
+      "path": "assets\\fonts\\nunito\\nunito-v26-latin-700.woff2",
+      "filename": "nunito-v26-latin-700.woff2",
+      "size": 39124,
+      "extension": ".woff2",
+      "last_modified": "2025-07-09T02:05:06.599Z",
+      "references": []
+    },
+    {
+      "path": "assets\\fonts\\nunito\\nunito-v26-latin-regular.woff2",
+      "filename": "nunito-v26-latin-regular.woff2",
+      "size": 39124,
+      "extension": ".woff2",
+      "last_modified": "2025-07-09T02:05:06.601Z",
+      "references": []
+    }
+  ],
+  "referenced_assets": [
+    {
+      "path": "assets\\images\\favicon.ico",
+      "filename": "favicon.ico",
+      "size": 15406,
+      "extension": ".ico",
+      "last_modified": "2025-07-21T01:27:58.472Z",
+      "references": [
+        {
+          "file": "app\\views\\layouts\\base.php",
+          "line": 54
+        },
+        {
+          "file": "app\\views\\layouts\\base_admin.php",
+          "line": 56
+        }
+      ]
+    },
+    {
+      "path": "assets\\images\\forest-icon.png",
+      "filename": "forest-icon.png",
+      "size": 1991,
+      "extension": ".png",
+      "last_modified": "2025-07-09T02:05:06.603Z",
+      "references": [
+        {
+          "file": "assets\\js\\report-modules\\report-slide-populator.js",
+          "line": 162
+        }
+      ]
+    },
+    {
+      "path": "assets\\img\\favicon.ico",
+      "filename": "favicon.ico",
+      "size": 445,
+      "extension": ".ico",
+      "last_modified": "2025-07-21T01:27:58.474Z",
+      "references": [
+        {
+          "file": "app\\views\\layouts\\base.php",
+          "line": 54
+        },
+        {
+          "file": "app\\views\\layouts\\base_admin.php",
+          "line": 56
+        }
+      ]
+    }
+  ],
+  "analysis": {
+    "by_type": {
+      ".ico": {
+        "total": 2,
+        "unreferenced": 0
+      },
+      ".png": {
+        "total": 3,
+        "unreferenced": 2
+      },
+      ".woff2": {
+        "total": 5,
+        "unreferenced": 5
+      }
+    },
+    "by_size": {
+      "< 1KB": {
+        "total": 1,
+        "unreferenced": 0
+      },
+      "1-10KB": {
+        "total": 1,
+        "unreferenced": 0
+      },
+      "10-100KB": {
+        "total": 7,
+        "unreferenced": 6
+      },
+      "100KB-1MB": {
+        "total": 1,
+        "unreferenced": 1
+      },
+      "> 1MB": {
+        "total": 0,
+        "unreferenced": 0
+      }
+    },
+    "total_unreferenced_size": 362694
+  }
+}

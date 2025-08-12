@@ -104,35 +104,35 @@ function createRichRatingBadge(rating) {
     return badge;
 }
 
-// For backward compatibility - use function declarations to avoid redeclaration errors
+// For backward compatibility - use conditional assignments instead of function declarations
 if (typeof initStatusPills === 'undefined') {
-    function initStatusPills() {
+    window.initStatusPills = function() {
         return initRatingPills();
-    }
+    };
 }
 
 if (typeof getStatusColorClass === 'undefined') {
-    function getStatusColorClass(status) {
+    window.getStatusColorClass = function(status) {
         return getRatingColorClass(status);
-    }
+    };
 }
 
 if (typeof getStatusIconClass === 'undefined') {
-    function getStatusIconClass(status) {
+    window.getStatusIconClass = function(status) {
         return getRatingIconClass(status);
-    }
+    };
 }
 
 if (typeof createStatusBadge === 'undefined') {
-    function createStatusBadge(status) {
+    window.createStatusBadge = function(status) {
         return createRatingBadge(status);
-    }
+    };
 }
 
 if (typeof createRichStatusBadge === 'undefined') {
-    function createRichStatusBadge(status) {
+    window.createRichStatusBadge = function(status) {
         return createRichRatingBadge(status);
-    }
+    };
 }
 
 // Initialize on document load if auto-init is needed

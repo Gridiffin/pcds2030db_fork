@@ -1,29 +1,50 @@
 <?php
-// Start session FIRST before any output
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
+// Standardize root path
+if (!defined('PROJECT_ROOT_PATH')) {
+    define('PROJECT_ROOT_PATH', rtrim(dirname(dirname(__DIR__)), DIRECTORY_SEPARATOR));
+}
+$__ROOT = rtrim(PROJECT_ROOT_PATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+// Core includes
+require_once $__ROOT . 'app/config/config.php';
+// Load minimal deps first (avoid DB until after validation)
+require_once $__ROOT . 'app/lib/session.php';
+require_once $__ROOT . 'app/lib/admins/core.php';
+require_once $__ROOT . 'app/lib/agencies/core.php';
+require_once $__ROOT . 'app/helpers/ajax_helpers.php';
+
+// JSON header
+ajax_set_json_header();
+
+// Method gating (GET only)
+if (!ajax_method_allowed(['GET'])) {
+    http_response_code(405);
+    ajax_send_error('Method not allowed. Use GET.', 405);
+    return;
 }
 
-// AJAX endpoint to get latest reporting periods and submission statuses for a program
-require_once '../config/config.php';
-require_once '../lib/db_connect.php';
-require_once '../lib/session.php';
-require_once '../lib/functions.php';
-require_once '../lib/agencies/programs.php';
-require_once '../lib/admins/core.php';
-
-header('Content-Type: application/json');
-
+// Role gating (agency, focal, or admin)
 if (!is_agency() && !is_admin()) {
-    echo json_encode(['success' => false, 'error' => 'Access denied.']);
-    exit;
+    http_response_code(403);
+    ajax_send_error('Access denied.', 403);
+    return;
 }
 
-$program_id = isset($_GET['program_id']) ? intval($_GET['program_id']) : 0;
-if (!$program_id) {
-    echo json_encode(['success' => false, 'error' => 'Missing program_id.']);
-    exit;
+// Validate required params
+$missing = ajax_missing_params(['program_id'], $_GET);
+if (!empty($missing)) {
+    http_response_code(400);
+    ajax_send_error('Missing required parameter(s): ' . implode(', ', $missing), 400);
+    return;
 }
+
+$program_id = (int)($_GET['program_id'] ?? 0);
+
+// Build response
+// Now include DB and feature libs
+require_once $__ROOT . 'app/lib/db_connect.php';
+require_once $__ROOT . 'app/lib/functions.php';
+require_once $__ROOT . 'app/lib/agencies/programs.php';
 
 $periods = [];
 $reporting_periods = get_reporting_periods_for_submissions(true);
@@ -54,4 +75,5 @@ foreach ($reporting_periods as $period) {
     ];
 }
 
-echo json_encode(['success' => true, 'periods' => $periods]); 
+echo json_encode(['success' => true, 'periods' => $periods]);
+return;

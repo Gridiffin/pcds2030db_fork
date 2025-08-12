@@ -1,0 +1,4 @@
+
+> pcds2030_dashboard_fork@1.0.0 lint-unused
+> eslint assets/js/ --ext .js --rule 'no-unused-vars: error' --format json
+

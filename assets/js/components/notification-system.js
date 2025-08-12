@@ -240,7 +240,7 @@ class NotificationSystem {
     showToast(notification) {
         // Toast notifications are disabled to prevent spam and improve UX
         console.log('Toast notification blocked for better UX:', notification.message);
-        return;
+        
     }
     
     async markAsRead(notificationId) {

@@ -531,7 +531,7 @@ class SubmissionSelectionModal {
         
         if (!this.modal) {
             console.warn('Submission selection modal not found');
-            return;
+            
         }
     }
     

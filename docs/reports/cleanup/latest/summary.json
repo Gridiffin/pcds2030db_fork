@@ -1,0 +1,221 @@
+{
+  "analysis_date": "2024-12-19",
+  "tool_status": {
+    "phpstan": "configured_with_882_errors",
+    "psalm": "configured_with_errors",
+    "rector": "working",
+    "deptrac": "working_generated_report",
+    "eslint": "working_876_problems",
+    "jscpd": "working_no_duplicates_found"
+  },
+  "priority_actions": [
+    {
+      "category": "high_priority",
+      "description": "Fix PHPStan baseline errors (882 total)",
+      "files_affected": [
+        "app/views/agency/initiatives/partials/initiative_metrics.php",
+        "app/views/agency/initiatives/partials/initiative_overview.php", 
+        "app/views/agency/initiatives/partials/initiatives_table.php",
+        "app/views/agency/outcomes/partials/edit_content.php",
+        "app/views/agency/programs/partials/add_submission_content.php",
+        "app/views/agency/programs/partials/edit_program_content.php",
+        "app/views/agency/programs/partials/edit_submission_content.php",
+        "app/views/agency/programs/partials/program_details_content.php",
+        "app/views/agency/programs/partials/program_sidebar.php",
+        "app/views/agency/programs/partials/program_targets.php",
+        "app/views/agency/programs/partials/submission_overview.php",
+        "app/views/agency/programs/partials/submission_sidebar.php",
+        "app/views/agency/programs/partials/view_submissions_content.php",
+        "app/views/agency/users/partials/notifications_content.php",
+        "app/views/agency/users/partials/profile_content.php",
+        "app/views/layouts/admin/navbar.php",
+        "app/views/layouts/base.php",
+        "app/views/layouts/base_admin.php",
+        "app/views/layouts/navbar-modern.php",
+        "app/views/layouts/page_header.php",
+        "live/breadcrumb_helpers.php"
+      ],
+      "action": "define_missing_variables",
+      "estimated_effort": "2-3_days"
+    },
+    {
+      "category": "high_priority", 
+      "description": "Fix ESLint errors (218 errors, 658 warnings)",
+      "files_affected": [
+        "assets/js/agency/outcomes/submit.js",
+        "assets/js/agency/program_details.js",
+        "assets/js/agency/program_form.js",
+        "assets/js/agency/program_management.js",
+        "assets/js/agency/program_submission.js",
+        "assets/js/agency/programs/add_submission.js",
+        "assets/js/agency/programs/editProgramLogic.js",
+        "assets/js/agency/programs/view_submissions.js",
+        "assets/js/agency/reports/public_reports.js",
+        "assets/js/agency/reports/view_reports.js",
+        "assets/js/agency/simple-finalize.js",
+        "assets/js/agency/submission-audit-history.js",
+        "assets/js/agency/unsubmit_submission.js",
+        "assets/js/agency/users/ajax.js",
+        "assets/js/agency/users/interactions.js",
+        "assets/js/agency/view-programs/dom.js",
+        "assets/js/agency/view-programs/logic.js",
+        "assets/js/agency/view_programs.js",
+        "assets/js/utilities/form_utils.js",
+        "assets/js/utilities/form_validation.js",
+        "assets/js/utilities/rating_utils.js",
+        "assets/js/utilities/mobile_dropdown_position.js",
+        "assets/js/report-generator.js",
+        "assets/js/report-modules/report-slide-styler.js"
+      ],
+      "action": "fix_eslint_errors_and_warnings",
+      "estimated_effort": "3-4_days"
+    },
+    {
+      "category": "medium_priority",
+      "description": "Consolidate duplicate functions identified by manual review",
+      "files_affected": [
+        "app/views/agency/programs/partials/",
+        "app/views/agency/outcomes/partials/",
+        "app/views/agency/initiatives/partials/",
+        "assets/js/utilities/",
+        "assets/js/agency/programs/"
+      ],
+      "action": "create_shared_helpers",
+      "estimated_effort": "1-2_weeks"
+    },
+    {
+      "category": "low_priority",
+      "description": "Remove unused CSS selectors (PurgeCSS report needed)",
+      "files_affected": [
+        "assets/css/"
+      ],
+      "action": "remove_unused_css",
+      "estimated_effort": "1_day"
+    }
+  ],
+  "dead_code_candidates": [
+    {
+      "file": "assets/js/utilities/form_utils.js",
+      "functions": [
+        "validateForm",
+        "clearValidationError", 
+        "createFormAlert",
+        "validateDateRange",
+        "addCharacterCounter",
+        "setButtonLoading",
+        "initPasswordToggle"
+      ],
+      "status": "unused_functions"
+    },
+    {
+      "file": "assets/js/utilities/form_validation.js",
+      "functions": [
+        "validateDateRange",
+        "showValidationError",
+        "clearValidationError",
+        "createFormAlert",
+        "initCharacterCounter"
+      ],
+      "status": "unused_functions"
+    },
+    {
+      "file": "assets/js/utilities/rating_utils.js",
+      "functions": [
+        "initStatusPills",
+        "getStatusColorClass",
+        "getStatusIconClass", 
+        "createStatusBadge",
+        "createRichStatusBadge"
+      ],
+      "status": "unused_functions"
+    },
+    {
+      "file": "assets/js/utilities/filter_utils.js",
+      "functions": [
+        "initializeFilters"
+      ],
+      "status": "unused_functions"
+    },
+    {
+      "file": "assets/js/utilities/pagination.js",
+      "functions": [
+        "TablePagination"
+      ],
+      "status": "unused_functions"
+    },
+    {
+      "file": "assets/js/utilities/responsive-test.js",
+      "functions": [
+        "testAllViewports"
+      ],
+      "status": "unused_functions"
+    },
+    {
+      "file": "assets/js/utilities/program-history.js",
+      "functions": [
+        "handleProgramHistoryClick",
+        "handleSubmissionHistoryClick"
+      ],
+      "status": "unused_functions"
+    },
+    {
+      "file": "assets/js/utilities/program_details_responsive.js",
+      "functions": [
+        "handleResponsiveToggle"
+      ],
+      "status": "unused_functions"
+    },
+    {
+      "file": "assets/js/utilities/target_number_utils.js",
+      "functions": [
+        "module.exports"
+      ],
+      "status": "unused_functions"
+    },
+    {
+      "file": "assets/js/utilities/mobile_dropdown_position.js",
+      "functions": [
+        "adjustDropdownPosition"
+      ],
+      "status": "unused_functions"
+    }
+  ],
+  "duplicate_code_patterns": [
+    {
+      "pattern": "form_validation_functions",
+      "files": [
+        "assets/js/utilities/form_utils.js",
+        "assets/js/utilities/form_validation.js"
+      ],
+      "action": "consolidate_into_shared_form_helpers"
+    },
+    {
+      "pattern": "rating_status_functions", 
+      "files": [
+        "assets/js/utilities/rating_utils.js",
+        "assets/js/agency/program_management.js",
+        "assets/js/agency/program_submission.js"
+      ],
+      "action": "consolidate_into_shared_rating_helpers"
+    },
+    {
+      "pattern": "bootstrap_modal_functions",
+      "files": [
+        "assets/js/agency/program_details.js",
+        "assets/js/agency/view_programs.js",
+        "assets/js/utilities/dropdown_init.js",
+        "assets/js/utilities/initialization.js"
+      ],
+      "action": "consolidate_into_shared_modal_helpers"
+    }
+  ],
+  "next_steps": [
+    "1. Fix PHPStan variable definition errors in view files",
+    "2. Fix ESLint errors in JavaScript files", 
+    "3. Create shared helper modules for duplicate functions",
+    "4. Remove confirmed unused functions",
+    "5. Generate PurgeCSS report for unused CSS",
+    "6. Run Rector to identify additional dead code",
+    "7. Create CI rules to prevent future duplicates"
+  ]
+}

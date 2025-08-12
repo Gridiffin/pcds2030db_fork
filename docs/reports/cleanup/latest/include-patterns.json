@@ -1,0 +1,1732 @@
+{
+    "direct_includes": [],
+    "dynamic_includes": [
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\admin_dashboard_data.php",
+            "line": 14,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\admin_dashboard_data.php",
+            "line": 15,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\admin_dashboard_data.php",
+            "line": 16,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\admin_dashboard_data.php",
+            "line": 17,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\admin_dashboard_data.php",
+            "line": 18,
+            "pattern": "..\/lib\/admin_functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\admin_dashboard_data.php",
+            "line": 19,
+            "pattern": "..\/lib\/audit_log.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\admin_outcomes.php",
+            "line": 10,
+            "pattern": "..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\admin_user_tables.php",
+            "line": 8,
+            "pattern": "..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\check_period_exists.php",
+            "line": 20,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\check_period_overlap.php",
+            "line": 14,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\check_program_number_duplicate.php",
+            "line": 7,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\check_program_number_duplicate.php",
+            "line": 8,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\check_program_number_duplicate.php",
+            "line": 9,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\check_program_number_duplicate.php",
+            "line": 10,
+            "pattern": "..\/lib\/agencies\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\dashboard_data.php",
+            "line": 14,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\dashboard_data.php",
+            "line": 15,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\dashboard_data.php",
+            "line": 16,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\dashboard_data.php",
+            "line": 17,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\dashboard_data.php",
+            "line": 18,
+            "pattern": "..\/lib\/agency_functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\dashboard_data.php",
+            "line": 19,
+            "pattern": "..\/lib\/DashboardController.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\delete_period.php",
+            "line": 57,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\export_audit_logs.php",
+            "line": 14,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\finalize_submission.php",
+            "line": 12,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\finalize_submission.php",
+            "line": 13,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\finalize_submission.php",
+            "line": 14,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\finalize_submission.php",
+            "line": 15,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\finalize_submission.php",
+            "line": 16,
+            "pattern": "..\/lib\/notifications_core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_audit_field_changes.php",
+            "line": 12,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_audit_field_changes.php",
+            "line": 13,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_audit_field_changes.php",
+            "line": 14,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_audit_field_changes.php",
+            "line": 15,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_audit_field_changes.php",
+            "line": 16,
+            "pattern": "..\/lib\/admins\/index.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_audit_field_changes.php",
+            "line": 17,
+            "pattern": "..\/lib\/audit_log.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_field_history.php",
+            "line": 7,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_field_history.php",
+            "line": 8,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_field_history.php",
+            "line": 9,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_field_history.php",
+            "line": 10,
+            "pattern": "..\/lib\/agencies\/programs.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_incomplete_targets.php",
+            "line": 20,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_incomplete_targets.php",
+            "line": 21,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_incomplete_targets.php",
+            "line": 22,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_incomplete_targets.php",
+            "line": 23,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_incomplete_targets.php",
+            "line": 24,
+            "pattern": "..\/lib\/agencies\/programs.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_draft_periods.php",
+            "line": 12,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_draft_periods.php",
+            "line": 13,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_draft_periods.php",
+            "line": 14,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_draft_periods.php",
+            "line": 15,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_stats.php",
+            "line": 18,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submission.php",
+            "line": 13,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submission.php",
+            "line": 14,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submission.php",
+            "line": 15,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submission.php",
+            "line": 16,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submission.php",
+            "line": 17,
+            "pattern": "..\/lib\/agencies\/index.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submission.php",
+            "line": 18,
+            "pattern": "..\/lib\/admins\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submission.php",
+            "line": 19,
+            "pattern": "..\/lib\/admins\/statistics.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions.php",
+            "line": 13,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions.php",
+            "line": 14,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions.php",
+            "line": 15,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions.php",
+            "line": 16,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions.php",
+            "line": 17,
+            "pattern": "..\/lib\/agencies\/programs.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions.php",
+            "line": 18,
+            "pattern": "..\/lib\/agencies\/program_permissions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions_list.php",
+            "line": 20,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions_list.php",
+            "line": 21,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions_list.php",
+            "line": 22,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions_list.php",
+            "line": 23,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions_list.php",
+            "line": 24,
+            "pattern": "..\/lib\/agencies\/programs.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions_list.php",
+            "line": 25,
+            "pattern": "..\/lib\/agencies\/program_permissions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_public_reports.php",
+            "line": 10,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_public_reports.php",
+            "line": 11,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_public_reports.php",
+            "line": 12,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_public_reports.php",
+            "line": 13,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_public_reports.php",
+            "line": 14,
+            "pattern": "..\/lib\/agencies\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_public_reports.php",
+            "line": 15,
+            "pattern": "..\/lib\/agencies\/reports.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_public_reports.php",
+            "line": 16,
+            "pattern": "..\/lib\/admins\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_reports.php",
+            "line": 10,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_reports.php",
+            "line": 11,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_reports.php",
+            "line": 12,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_reports.php",
+            "line": 13,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_reports.php",
+            "line": 14,
+            "pattern": "..\/lib\/agencies\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_reports.php",
+            "line": 15,
+            "pattern": "..\/lib\/agencies\/reports.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_reports.php",
+            "line": 16,
+            "pattern": "..\/lib\/admins\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_audit_history.php",
+            "line": 2,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_audit_history.php",
+            "line": 3,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_audit_history.php",
+            "line": 4,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_audit_history.php",
+            "line": 5,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_by_period.php",
+            "line": 20,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_by_period.php",
+            "line": 21,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_by_period.php",
+            "line": 22,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_by_period.php",
+            "line": 23,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_by_period.php",
+            "line": 24,
+            "pattern": "..\/lib\/agencies\/programs.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_by_period.php",
+            "line": 25,
+            "pattern": "..\/lib\/admins\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_by_period.php",
+            "line": 26,
+            "pattern": "..\/lib\/admins\/statistics.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_preview.php",
+            "line": 12,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_preview.php",
+            "line": 13,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_preview.php",
+            "line": 14,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_preview.php",
+            "line": 15,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_target_progress.php",
+            "line": 17,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\load_audit_logs.php",
+            "line": 20,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\numbering.php",
+            "line": 12,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\periods_data.php",
+            "line": 18,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\program_numbering.php",
+            "line": 10,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\save_period.php",
+            "line": 14,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\save_submission.php",
+            "line": 20,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\save_submission.php",
+            "line": 21,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\save_submission.php",
+            "line": 22,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\save_submission.php",
+            "line": 23,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\save_submission.php",
+            "line": 24,
+            "pattern": "..\/lib\/agencies\/programs.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\save_submission.php",
+            "line": 25,
+            "pattern": "..\/lib\/admins\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\save_submission.php",
+            "line": 26,
+            "pattern": "..\/lib\/admins\/statistics.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\save_submission.php",
+            "line": 27,
+            "pattern": "..\/lib\/notifications_core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_finalize.php",
+            "line": 13,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_finalize.php",
+            "line": 14,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_finalize.php",
+            "line": 15,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_finalize.php",
+            "line": 16,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_finalize.php",
+            "line": 17,
+            "pattern": "..\/lib\/agencies\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_periods.php",
+            "line": 8,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_periods.php",
+            "line": 9,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_periods.php",
+            "line": 10,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_periods.php",
+            "line": 11,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_periods.php",
+            "line": 12,
+            "pattern": "..\/lib\/agencies\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_submission.php",
+            "line": 8,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_submission.php",
+            "line": 9,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_submission.php",
+            "line": 10,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_submission.php",
+            "line": 11,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_submission.php",
+            "line": 12,
+            "pattern": "..\/lib\/agencies\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\toggle_period_status.php",
+            "line": 14,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\update_period.php",
+            "line": 14,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\command_palette_data.php",
+            "line": 12,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\command_palette_data.php",
+            "line": 13,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\command_palette_data.php",
+            "line": 14,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\command_palette_data.php",
+            "line": 15,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\command_palette_data.php",
+            "line": 16,
+            "pattern": "..\/lib\/agencies\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\command_palette_data.php",
+            "line": 17,
+            "pattern": "..\/lib\/admins\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\delete_report.php",
+            "line": 10,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\delete_report.php",
+            "line": 11,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\delete_report.php",
+            "line": 12,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\delete_report.php",
+            "line": 13,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\delete_report.php",
+            "line": 14,
+            "pattern": "..\/lib\/admins\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\delete_report.php",
+            "line": 15,
+            "pattern": "..\/lib\/audit_log.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_outcomes.php",
+            "line": 12,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_outcomes.php",
+            "line": 13,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_outcomes.php",
+            "line": 14,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_outcomes.php",
+            "line": 15,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_outcomes.php",
+            "line": 16,
+            "pattern": "..\/lib\/admins\/outcomes.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_period_programs.php",
+            "line": 23,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_period_programs.php",
+            "line": 24,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_period_programs.php",
+            "line": 25,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_period_programs.php",
+            "line": 26,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_period_programs.php",
+            "line": 27,
+            "pattern": "..\/lib\/admins\/index.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_program_targets.php",
+            "line": 10,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_program_targets.php",
+            "line": 11,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_program_targets.php",
+            "line": 12,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_program_targets.php",
+            "line": 13,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_program_targets.php",
+            "line": 14,
+            "pattern": "..\/lib\/admins\/index.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\initiatives.php",
+            "line": 13,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\initiatives.php",
+            "line": 14,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\initiatives.php",
+            "line": 15,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\initiatives.php",
+            "line": 16,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\initiatives.php",
+            "line": 17,
+            "pattern": "..\/lib\/admins\/index.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\initiatives.php",
+            "line": 20,
+            "pattern": "..\/config\/db_names.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\initiatives.php",
+            "line": 227,
+            "pattern": "..\/lib\/initiative_functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\outcomes\\get_outcome_history_data.php",
+            "line": 9,
+            "pattern": "..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\programs.php",
+            "line": 12,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\programs.php",
+            "line": 13,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\programs.php",
+            "line": 14,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\programs.php",
+            "line": 15,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\programs.php",
+            "line": 16,
+            "pattern": "..\/lib\/admins\/index.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_outcome_links.php",
+            "line": 13,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_outcome_links.php",
+            "line": 14,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_outcome_links.php",
+            "line": 15,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_outcome_links.php",
+            "line": 16,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_outcome_links.php",
+            "line": 17,
+            "pattern": "..\/lib\/admins\/index.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_status.php",
+            "line": 10,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_status.php",
+            "line": 11,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_status.php",
+            "line": 12,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_status.php",
+            "line": 13,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_status.php",
+            "line": 14,
+            "pattern": "..\/lib\/agencies\/core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_submissions.php",
+            "line": 8,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_submissions.php",
+            "line": 9,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_submissions.php",
+            "line": 10,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_submissions.php",
+            "line": 11,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_submissions.php",
+            "line": 12,
+            "pattern": "..\/lib\/notifications_core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_user_assignments.php",
+            "line": 8,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_user_assignments.php",
+            "line": 9,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_user_assignments.php",
+            "line": 10,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\program_user_assignments.php",
+            "line": 11,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\save_outcome_json.php",
+            "line": 10,
+            "pattern": "..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\save_outcome_json.php",
+            "line": 11,
+            "pattern": "..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\save_outcome_json.php",
+            "line": 12,
+            "pattern": "..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\save_outcome_json.php",
+            "line": 13,
+            "pattern": "..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\save_outcome_json.php",
+            "line": 14,
+            "pattern": "..\/lib\/admins\/outcomes.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\handlers\\admin\\get_user.php",
+            "line": 9,
+            "pattern": "..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\index.php",
+            "line": 9,
+            "pattern": "core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\index.php",
+            "line": 10,
+            "pattern": "periods.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\index.php",
+            "line": 11,
+            "pattern": "statistics.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\index.php",
+            "line": 12,
+            "pattern": "users.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\index.php",
+            "line": 13,
+            "pattern": "metrics.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\index.php",
+            "line": 14,
+            "pattern": "outcomes.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\index.php",
+            "line": 15,
+            "pattern": "settings.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\index.php",
+            "line": 16,
+            "pattern": "program_management.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\metrics.php",
+            "line": 10,
+            "pattern": "core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\metrics.php",
+            "line": 11,
+            "pattern": "outcomes.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\outcomes.php",
+            "line": 9,
+            "pattern": "core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\periods.php",
+            "line": 9,
+            "pattern": "core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\settings.php",
+            "line": 10,
+            "pattern": "core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\statistics.php",
+            "line": 9,
+            "pattern": "core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\users.php",
+            "line": 9,
+            "pattern": "core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\index.php",
+            "line": 9,
+            "pattern": "core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\index.php",
+            "line": 12,
+            "pattern": "programs.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\index.php",
+            "line": 13,
+            "pattern": "statistics.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\index.php",
+            "line": 14,
+            "pattern": "metrics.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\index.php",
+            "line": 15,
+            "pattern": "program_attachments.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\index.php",
+            "line": 19,
+            "pattern": "reports.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\programs.php",
+            "line": 13,
+            "pattern": "core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\program_attachments.php",
+            "line": 16,
+            "pattern": "core.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\functions.php",
+            "line": 7,
+            "pattern": "rating_helpers.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\functions.php",
+            "line": 9,
+            "pattern": "program_status_helpers.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\functions.php",
+            "line": 11,
+            "pattern": "asset_helpers.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\outcome_automation.php",
+            "line": 8,
+            "pattern": "db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\outcome_automation.php",
+            "line": 9,
+            "pattern": "audit_log.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\program_status_helpers.php",
+            "line": 9,
+            "pattern": "rating_helpers.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\get_programs_list.php",
+            "line": 7,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_paginated.php",
+            "line": 10,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_paginated.php",
+            "line": 11,
+            "pattern": "..\/..\/..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_paginated.php",
+            "line": 12,
+            "pattern": "..\/..\/..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_paginated.php",
+            "line": 13,
+            "pattern": "..\/..\/..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_paginated.php",
+            "line": 14,
+            "pattern": "..\/..\/..\/lib\/admins\/index.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_table.php",
+            "line": 10,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_table.php",
+            "line": 11,
+            "pattern": "..\/..\/..\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_table.php",
+            "line": 12,
+            "pattern": "..\/..\/..\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_table.php",
+            "line": 13,
+            "pattern": "..\/..\/..\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_table.php",
+            "line": 14,
+            "pattern": "..\/..\/..\/lib\/admins\/index.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_table.php",
+            "line": 42,
+            "pattern": "recent_reports_paginated.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_table_new.php",
+            "line": 8,
+            "pattern": "..\/..\/..\/..\/app\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_table_new.php",
+            "line": 9,
+            "pattern": "..\/..\/..\/..\/app\/lib\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_table_new.php",
+            "line": 10,
+            "pattern": "..\/..\/..\/..\/app\/lib\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\ajax\\recent_reports_table_new.php",
+            "line": 11,
+            "pattern": "..\/..\/..\/..\/app\/lib\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\audit\\audit_log.php",
+            "line": 8,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\audit\\audit_log.php",
+            "line": 34,
+            "pattern": "..\/..\/layouts\/header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\audit\\audit_log.php",
+            "line": 43,
+            "pattern": "..\/..\/layouts\/page_header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\audit\\audit_log.php",
+            "line": 128,
+            "pattern": "..\/..\/layouts\/footer.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\initiatives\\debug_ajax.php",
+            "line": 8,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\links\\manage_program_outcome_links.php",
+            "line": 8,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\links\\manage_program_outcome_links.php",
+            "line": 24,
+            "pattern": "..\/..\/layouts\/header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\links\\manage_program_outcome_links.php",
+            "line": 42,
+            "pattern": "..\/..\/layouts\/page_header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\links\\manage_program_outcome_links.php",
+            "line": 260,
+            "pattern": "..\/..\/layouts\/footer.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\periods\\manage_periods.php",
+            "line": 2,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\periods\\manage_periods.php",
+            "line": 3,
+            "pattern": "..\/..\/..\/models\/Period.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\periods\\manage_periods.php",
+            "line": 4,
+            "pattern": "..\/..\/..\/lib\/admin_functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\add_submission.php",
+            "line": 137,
+            "pattern": "..\/..\/layouts\/page_header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\delete_program.php",
+            "line": 9,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\list_program_submissions.php",
+            "line": 105,
+            "pattern": "..\/..\/layouts\/header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\list_program_submissions.php",
+            "line": 115,
+            "pattern": "..\/..\/layouts\/page_header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\list_program_submissions.php",
+            "line": 306,
+            "pattern": "..\/..\/layouts\/footer.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\reopen_program.php",
+            "line": 10,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\reopen_program.php",
+            "line": 115,
+            "pattern": "..\/layouts\/header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\reopen_program.php",
+            "line": 133,
+            "pattern": "..\/..\/layouts\/page_header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\reopen_program.php",
+            "line": 191,
+            "pattern": "..\/layouts\/footer.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\resubmit.php",
+            "line": 11,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\unsubmit.php",
+            "line": 9,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\view_program.php",
+            "line": 9,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\view_program.php",
+            "line": 190,
+            "pattern": "..\/..\/layouts\/header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\view_program.php",
+            "line": 208,
+            "pattern": "..\/..\/layouts\/page_header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\view_program.php",
+            "line": 697,
+            "pattern": "..\/..\/layouts\/footer.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\reports\\BACKUPgenerate_reports.php",
+            "line": 179,
+            "pattern": "..\/..\/layouts\/page_header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\settings\\manage_periods.php",
+            "line": 32,
+            "pattern": "..\/layouts\/header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\settings\\manage_periods.php",
+            "line": 43,
+            "pattern": "..\/layouts\/page_header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\settings\\manage_periods.php",
+            "line": 146,
+            "pattern": "..\/layouts\/footer.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\settings\\reporting_periods.php",
+            "line": 9,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\settings\\reporting_periods.php",
+            "line": 122,
+            "pattern": "..\/..\/layouts\/header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\settings\\reporting_periods.php",
+            "line": 141,
+            "pattern": "..\/..\/layouts\/page_header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\settings\\reporting_periods.php",
+            "line": 384,
+            "pattern": "..\/..\/layouts\/footer.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\style_guide\\style-guide.php",
+            "line": 2,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\users\\_user_table.php",
+            "line": 6,
+            "pattern": "_user_table.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\ajax\\dashboard_data.php",
+            "line": 9,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\ajax\\dashboard_data.php",
+            "line": 10,
+            "pattern": "..\/..\/..\/includes\/db_connect.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\ajax\\dashboard_data.php",
+            "line": 11,
+            "pattern": "..\/..\/..\/includes\/session.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\ajax\\dashboard_data.php",
+            "line": 12,
+            "pattern": "..\/..\/..\/includes\/functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\ajax\\dashboard_data.php",
+            "line": 13,
+            "pattern": "..\/..\/..\/includes\/agency_functions.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\outcomes\\delete_outcome.php",
+            "line": 8,
+            "pattern": "..\/..\/..\/config\/config.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\programs\\edit_submission.php",
+            "line": 89,
+            "pattern": "..\/..\/layouts\/header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\programs\\partials\\create_program_content.php",
+            "line": 51,
+            "pattern": "program_form.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\programs\\partials\\create_program_content.php",
+            "line": 55,
+            "pattern": "timeline_section.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\programs\\partials\\create_program_content.php",
+            "line": 56,
+            "pattern": "permissions_section.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\programs\\partials\\create_program_content.php",
+            "line": 57,
+            "pattern": "info_section.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\programs\\program_details_legacy.php",
+            "line": 193,
+            "pattern": "..\/..\/layouts\/header.php"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\layouts\\page_header.php",
+            "line": 26,
+            "pattern": "path\/to\/page_header.php"
+        }
+    ],
+    "conditional_includes": [
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\delete_period.php",
+            "line": 80,
+            "code": "if (!$conn) {\n    error_log(\"MySQLi connection object (\\$conn) not available in delete_period.php after includes.\");\n    send_json_response(false, 'Database connection failed. Check server logs.');\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\finalize_submission.php",
+            "line": 32,
+            "code": "if (!$submission_id || !$program_id || !$period_id) {\r\n    echo json_encode(['success' => false, 'message' => 'Missing required parameters']);\r\n    exit;\r\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_field_history.php",
+            "line": 36,
+            "code": "if (!$program_id || !$period_id || !$field_name) {\n    error_log(\"get_field_history.php: Missing parameters - program_id: $program_id, period_id: $period_id, field_name: $field_name\");\n    http_response_code(400);\n    echo json_encode(['error' => 'Missing required parameters: program_id, period_id, and field_name']);\n    exit;\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_incomplete_targets.php",
+            "line": 47,
+            "code": "if (!$program_id || !$period_id) {\n    http_response_code(400);\n    echo json_encode(['error' => 'Program ID and Period ID are required.']);\n    exit;\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_draft_periods.php",
+            "line": 26,
+            "code": "if (!$program_id) {\n    echo json_encode(['success' => false, 'message' => 'Program ID is required']);\n    exit;\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions.php",
+            "line": 40,
+            "code": "if (!$program_id) {\r\n    http_response_code(400);\r\n    echo json_encode(['success' => false, 'error' => 'Program ID is required']);\r\n    exit;\r\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_program_submissions_list.php",
+            "line": 40,
+            "code": "if (!$program_id) {\n    http_response_code(400);\n    echo json_encode(['error' => 'Program ID is required.']);\n    exit;\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_by_period.php",
+            "line": 49,
+            "code": "if (!$program_id || !$period_id) {\n    http_response_code(400);\n    echo json_encode(['error' => 'Program ID and Period ID are required.']);\n    exit;\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\get_submission_preview.php",
+            "line": 26,
+            "code": "if (!$submission_id) {\n    echo json_encode(['success' => false, 'message' => 'Submission ID is required']);\n    exit;\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\save_submission.php",
+            "line": 52,
+            "code": "if (!$program_id || !$period_id) {\r\n    http_response_code(400);\r\n    echo json_encode(['error' => 'Program ID and Period ID are required.']);\r\n    exit;\r\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_finalize.php",
+            "line": 41,
+            "code": "if (!$submission_id || !$program_id || !$period_id) {\n    echo json_encode(['success' => false, 'message' => 'Missing required parameters']);\n    exit;\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_periods.php",
+            "line": 25,
+            "code": "if (!$program_id) {\n    echo json_encode(['success' => false, 'message' => 'Program ID is required']);\n    exit;\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\ajax\\simple_get_submission.php",
+            "line": 25,
+            "code": "if (!$submission_id) {\n    echo json_encode(['success' => false, 'message' => 'Submission ID is required']);\n    exit;\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\generate_report.php",
+            "line": 48,
+            "code": "if (!$period_id) {\n        throw new Exception('Period is required.');\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_period_programs.php",
+            "line": 67,
+            "code": "if ($period_data && $period_data['period_type'] === 'half') {\n    $period_number = (int)$period_data['period_number'];\n    $year = $period_data['year'];\n    \n    if ($period_number == 1) { \/\/ Half Yearly 1 includes Q1 and Q2\n        \/\/ Find all Q1 and Q2 periods for the same year\n        $q1q2_query = \"SELECT period_id FROM reporting_periods WHERE year = ? AND period_type = 'quarter' AND period_number IN (1, 2)\";\n        $stmt = $conn->prepare($q1q2_query);\n        $stmt->bind_param(\"i\", $year);\n        $stmt->execute();\n        $q1q2_result = $stmt->get_result();\n        \n        $period_ids = [$period_id]; \/\/ Always include the original period\n        while ($row = $q1q2_result->fetch_assoc()) {\n            $period_ids[] = $row['period_id'];\n        }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_period_programs.php",
+            "line": 85,
+            "code": "if ($period_number == 2) { \/\/ Half Yearly 2 includes Q3 and Q4\n        \/\/ Find all Q3 and Q4 periods for the same year\n        $q3q4_query = \"SELECT period_id FROM reporting_periods WHERE year = ? AND period_type = 'quarter' AND period_number IN (3, 4)\";\n        $stmt = $conn->prepare($q3q4_query);\n        $stmt->bind_param(\"i\", $year);\n        $stmt->execute();\n        $q3q4_result = $stmt->get_result();\n        \n        $period_ids = [$period_id]; \/\/ Always include the original period\n        while ($row = $q3q4_result->fetch_assoc()) {\n            $period_ids[] = $row['period_id'];\n        }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_program_targets.php",
+            "line": 34,
+            "code": "if (!$period_id) {\n        throw new Exception('Missing required parameter: period_id');\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_program_targets.php",
+            "line": 71,
+            "code": "if ($period_data && $period_data['period_type'] === 'half') {\n        $period_number = (int)$period_data['period_number'];\n        $year = $period_data['year'];\n        \n        if ($period_number == 1) { \/\/ Half Yearly 1 includes Q1 and Q2\n            $q1q2_query = \"SELECT period_id FROM reporting_periods WHERE year = ? AND period_type = 'quarter' AND period_number IN (1, 2)\";\n            $stmt = $conn->prepare($q1q2_query);\n            $stmt->bind_param(\"i\", $year);\n            $stmt->execute();\n            $q1q2_result = $stmt->get_result();\n            \n            $period_ids = [$period_id];\n            while ($row = $q1q2_result->fetch_assoc()) {\n                $period_ids[] = $row['period_id'];\n            }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\get_program_targets.php",
+            "line": 86,
+            "code": "if ($period_number == 2) { \/\/ Half Yearly 2 includes Q3 and Q4\n            $q3q4_query = \"SELECT period_id FROM reporting_periods WHERE year = ? AND period_type = 'quarter' AND period_number IN (3, 4)\";\n            $stmt = $conn->prepare($q3q4_query);\n            $stmt->bind_param(\"i\", $year);\n            $stmt->execute();\n            $q3q4_result = $stmt->get_result();\n            \n            $period_ids = [$period_id];\n            while ($row = $q3q4_result->fetch_assoc()) {\n                $period_ids[] = $row['period_id'];\n            }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\report_data.php",
+            "line": 57,
+            "code": "if ($period_type == 'half' && $period_number == 1) { \/\/ Half Yearly 1 includes Q1 and Q2\r\n        \/\/ Find all Q1 and Q2 periods for the same year\r\n        $q1q2_query = \"SELECT period_id FROM reporting_periods WHERE year = ? AND period_type = 'quarter' AND period_number IN (1, 2)\";\r\n        $stmt = $conn->prepare($q1q2_query);\r\n        $stmt->bind_param(\"i\", $year);\r\n        $stmt->execute();\r\n        $q1q2_result = $stmt->get_result();\r\n        \r\n        $period_ids = [$period_id]; \/\/ Always include the original period\r\n        while ($row = $q1q2_result->fetch_assoc()) {\r\n            $period_ids[] = $row['period_id'];\r\n        }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\report_data.php",
+            "line": 71,
+            "code": "if ($period_type == 'half' && $period_number == 2) { \/\/ Half Yearly 2 includes Q3 and Q4\r\n        \/\/ Find all Q3 and Q4 periods for the same year\r\n        $q3q4_query = \"SELECT period_id FROM reporting_periods WHERE year = ? AND period_type = 'quarter' AND period_number IN (3, 4)\";\r\n        $stmt = $conn->prepare($q3q4_query);\r\n        $stmt->bind_param(\"i\", $year);\r\n        $stmt->execute();\r\n        $q3q4_result = $stmt->get_result();\r\n        \r\n        $period_ids = [$period_id]; \/\/ Always include the original period\r\n        while ($row = $q3q4_result->fetch_assoc()) {\r\n            $period_ids[] = $row['period_id'];\r\n        }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\api\\simple_gantt_data.php",
+            "line": 57,
+            "code": "if (!$initiative_id) {\n        throw new Exception('Initiative ID is required');\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\handlers\\admin\\process_user.php",
+            "line": 98,
+            "code": "if (!$user_id) {\n            $result = ['error' => 'User ID is required'];\n            log_audit_action(\n                'user_delete_failed',\n                'Failed to delete user: User ID is required',\n                'failure'\n            );\n        }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\handlers\\admin\\process_user.php",
+            "line": 130,
+            "code": "if (!$user_id || $is_active === null) {\n            $result = ['error' => 'User ID and status are required'];\n            log_audit_action(\n                'user_status_toggle_failed',\n                'Failed to toggle user status: User ID and status are required',\n                'failure'\n            );\n        }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\handlers\\admin\\save_submission.php",
+            "line": 50,
+            "code": "if (!$program_id || !$period_id) {\r\n    $_SESSION['message'] = 'Program ID and Period ID are required.';\r\n    $_SESSION['message_type'] = 'danger';\r\n    header('Location: ' . APP_URL . '\/app\/views\/admin\/programs\/programs.php');\r\n    exit;\r\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\handlers\\admin\\save_submission.php",
+            "line": 125,
+            "code": "if (!$submission_id) {\r\n            throw new Exception('Submission ID is required for updates.');\r\n        }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\periods.php",
+            "line": 88,
+            "code": "if (!$year || !$period_type || !$period_number || !$start_date || !$end_date) {\n        return ['error' => 'All fields are required'];\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\admins\\periods.php",
+            "line": 164,
+            "code": "if (!$period_id || !$year || !$period_type || !$period_number || !$start_date || !$end_date) {\n        return ['error' => 'All fields are required'];\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\programs.php",
+            "line": 213,
+            "code": "if (!$period_id) {\r\n        return ['error' => 'Reporting quarter selection is required'];\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\programs.php",
+            "line": 213,
+            "code": "if (!$period_id) {\r\n        return ['error' => 'Reporting quarter selection is required'];\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\agencies\\program_attachments.php",
+            "line": 48,
+            "code": "if ($submission_id === null || $submission_id <= 0) {\r\n        return ['error' => 'Submission ID is required for attachment upload'];\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\db_names_helper.php",
+            "line": 15,
+            "code": "if ($db_names === null) {\r\n        \/\/ Always use absolute path relative to this file\r\n        $config_path = __DIR__ . '\/..\/config\/db_names.php';\r\n        if (file_exists($config_path)) {\r\n            $db_names = require $config_path;\r\n            error_log(\"[db_names_helper] Loaded db_names from: $config_path\");\r\n        }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\functions.php",
+            "line": 428,
+            "code": "if (!$conn || $conn->connect_error) {\r\n        \/\/ Make sure db_connect.php path is correct if this file is moved\r\n        $db_connect_path = dirname(__FILE__) . '\/db_connect.php'; \/\/ Assumes db_connect.php is in the same directory\r\n        if (!file_exists($db_connect_path)) {\r\n             \/\/ Try one level up if functions.php is in includes\/ and db_connect.php is in root\r\n            $db_connect_path = dirname(__DIR__) . '\/db_connect.php';\r\n        }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\notifications_core.php",
+            "line": 91,
+            "code": "if (!$program_id || !$creator_user_id) {\r\n        error_log(\"notify_program_created: Missing required parameters\");\r\n        return false;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\notifications_core.php",
+            "line": 169,
+            "code": "if (!$program_id || !$editor_user_id) {\r\n        error_log(\"notify_program_edited: Missing required parameters\");\r\n        return false;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\notifications_core.php",
+            "line": 262,
+            "code": "if (!$program_id || !$deleter_user_id) {\r\n        error_log(\"notify_program_deleted: Missing required parameters\");\r\n        return false;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\notifications_core.php",
+            "line": 356,
+            "code": "if (!$submission_id || !$program_id || !$creator_user_id || !$period_id) {\r\n        error_log(\"notify_submission_created: Missing required parameters\");\r\n        return false;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\notifications_core.php",
+            "line": 464,
+            "code": "if (!$submission_id || !$program_id || !$editor_user_id) {\r\n        error_log(\"notify_submission_edited: Missing required parameters\");\r\n        return false;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\notifications_core.php",
+            "line": 572,
+            "code": "if (!$submission_id || !$program_id || !$deleter_user_id) {\r\n        error_log(\"notify_submission_deleted: Missing required parameters\");\r\n        return false;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\notifications_core.php",
+            "line": 676,
+            "code": "if (!$submission_id || !$program_id || !$finalizer_user_id) {\r\n        error_log(\"notify_submission_finalized: Missing required parameters\");\r\n        return false;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\notifications_core.php",
+            "line": 784,
+            "code": "if (!$program_id || !$assigned_user_id || !$assigner_user_id) {\r\n        error_log(\"notify_program_assignment: Missing required parameters\");\r\n        return false;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\notifications_core.php",
+            "line": 878,
+            "code": "if (!$message) {\r\n        error_log(\"notify_system_wide: Message is required\");\r\n        return false;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\lib\\user_functions.php",
+            "line": 285,
+            "code": "if (!$is_valid) {\r\n        $message = 'Password is too weak. Please include: ' . implode(', ', $feedback);\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\outcomes\\edit_kpi.php",
+            "line": 46,
+            "code": "if ($_SERVER['REQUEST_METHOD'] === 'POST') {\r\n    $title = trim($_POST['title'] ?? '');\r\n    $description = trim($_POST['description'] ?? '');\r\n    $data = $_POST['data'] ?? [];\r\n    \/\/ Basic validation\r\n    if ($title === '') {\r\n        $error_message = 'Title is required.';\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\outcomes\\partials\\edit_outcome_content.php",
+            "line": 240,
+            "code": "if (newColumn !== oldColumn && newColumn !== '') {\r\n            if (columns.includes(newColumn)) {\r\n                alert('Column name already exists!');\r\n                this.textContent = oldColumn;\r\n                return;\r\n            }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\edit_submission.php",
+            "line": 33,
+            "code": "if (!$program_id) {\r\n    $_SESSION['message'] = 'Missing required parameter (program_id).';\r\n    $_SESSION['message_type'] = 'danger';\r\n    header('Location: programs.php');\r\n    exit;\r\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\edit_submission.php",
+            "line": 41,
+            "code": "if (!$period_id) {\r\n    \/\/ Get available periods for this program to show selection\r\n    require_once PROJECT_ROOT_PATH . 'app\/lib\/admins\/admin_program_details_data.php';\r\n    $program_data = get_admin_program_details_view_data($program_id);\r\n    \r\n    if (!$program_data) {\r\n        $_SESSION['message'] = 'Program not found or access denied.';\r\n        $_SESSION['message_type'] = 'danger';\r\n        header('Location: programs.php');\r\n        exit;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\list_program_submissions.php",
+            "line": 35,
+            "code": "if (!$program_id) {\r\n    $_SESSION['message'] = 'Missing required parameter (program_id).';\r\n    $_SESSION['message_type'] = 'danger';\r\n    header('Location: programs.php');\r\n    exit;\r\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\partials\\admin_edit_program_content.php",
+            "line": 270,
+            "code": "if (!$can_delete) {\r\n                                    \/\/ Include program permissions for non-admin users\r\n                                    require_once PROJECT_ROOT_PATH . 'app\/lib\/agencies\/program_permissions.php';\r\n                                    $can_delete = is_focal_user() || is_program_creator($program_id);\r\n                                }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\partials\\admin_edit_program_content.php",
+            "line": 371,
+            "code": "if (!programName || !agencyId || !rating) {\r\n        e.preventDefault();\r\n        alert('Please fill in all required fields (Program Name, Agency, and Rating).');\r\n        return;\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\programs\\view_submissions.php",
+            "line": 35,
+            "code": "if (!$program_id) {\r\n    $_SESSION['message'] = 'Missing required parameter (program_id).';\r\n    $_SESSION['message_type'] = 'danger';\r\n    header('Location: programs.php');\r\n    exit;\r\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\users\\partials\\add_user_content.php",
+            "line": 167,
+            "code": "if (roleSelect.value === 'agency' || roleSelect.value === 'focal') {\r\n                agencyFields.style.display = 'block';\r\n                agencyId.setAttribute('required', '');\r\n            }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\users\\partials\\add_user_content.php",
+            "line": 278,
+            "code": "if (roleSelect.value === 'agency' || roleSelect.value === 'focal') {\r\n                if (!agencyId.value) {\r\n                    isValid = false;\r\n                    setInputFeedback(agencyId, false, 'Agency is required');\r\n                }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\users\\partials\\edit_user_content.php",
+            "line": 150,
+            "code": "if (roleSelect && agencyFields) {\r\n        \/\/ Function to update required status based on role\r\n        const updateRequiredFields = function() {\r\n            if (roleSelect.value === 'agency' || roleSelect.value === 'focal') {\r\n                agencyFields.style.display = 'block';\r\n                agencyId.setAttribute('required', '');\r\n            }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\admin\\users\\partials\\edit_user_content.php",
+            "line": 241,
+            "code": "if (roleSelect.value === 'agency' || roleSelect.value === 'focal') {\r\n                    if (!agencyId.value.trim()) {\r\n                        isValid = false;\r\n                        setInputFeedback(agencyId, false, 'Agency is required');\r\n                    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\outcomes\\edit_kpi.php",
+            "line": 48,
+            "code": "if ($_SERVER['REQUEST_METHOD'] === 'POST') {\r\n    $title = trim($_POST['title'] ?? '');\r\n    $description = trim($_POST['description'] ?? '');\r\n    $data = $_POST['data'] ?? [];\r\n    \/\/ Basic validation\r\n    if ($title === '') {\r\n        $error_message = 'Title is required.';\r\n    }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\outcomes\\partials\\edit_outcome_content.php",
+            "line": 240,
+            "code": "if (newColumn !== oldColumn && newColumn !== '') {\r\n            if (columns.includes(newColumn)) {\r\n                alert('Column name already exists!');\r\n                this.textContent = oldColumn;\r\n                return;\r\n            }"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\programs\\view_submissions.php",
+            "line": 34,
+            "code": "if (!$program_id || !$period_id) {\n    $_SESSION['message'] = 'Missing required parameters (program_id and period_id).';\n    $_SESSION['message_type'] = 'danger';\n    header('Location: view_programs.php');\n    exit;\n}"
+        },
+        {
+            "file": "C:\\laragon\\www\\pcds2030_dashboard_fork\\app\\views\\agency\\programs\\view_submissions_original.php",
+            "line": 36,
+            "code": "if (!$program_id || !$period_id) {\n    $_SESSION['message'] = 'Missing required parameters (program_id and period_id).';\n    $_SESSION['message_type'] = 'danger';\n    header('Location: view_programs.php');\n    exit;\n}"
+        }
+    ]
+}

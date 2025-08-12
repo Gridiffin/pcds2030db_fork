@@ -14,6 +14,7 @@ class ProgramDetailsManager {
         this.programId = this.getProgramIdFromUrl();
         this.currentUser = this.getCurrentUser();
         this.isOwner = this.checkOwnership();
+        this.liveRegion = null; // Initialize liveRegion property
         this.init();
     }
 
@@ -108,10 +109,11 @@ class ProgramDetailsManager {
         
         attachmentItems.forEach(item => {
             const downloadBtn = item.querySelector('.btn-outline-primary');
-            const fileName = item.querySelector('h6').textContent;
+            const fileNameElement = item.querySelector('h6');
             
-            if (downloadBtn) {
-                downloadBtn.addEventListener('click', (e) => {
+            if (downloadBtn && fileNameElement) {
+                const fileName = fileNameElement.textContent;
+                downloadBtn.addEventListener('click', () => {
                     this.trackDownload(fileName);
                 });
             }
@@ -199,20 +201,24 @@ class ProgramDetailsManager {
      * Initialize Bootstrap tooltips
      */
     initializeTooltips() {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
     }
 
     /**
      * Initialize Bootstrap popovers
      */
     initializePopovers() {
-        const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-        popoverTriggerList.map(function (popoverTriggerEl) {
-            return new bootstrap.Popover(popoverTriggerEl);
-        });
+        if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+            const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+        }
     }
 
     /**
@@ -359,8 +365,10 @@ class ProgramDetailsManager {
         const modal = this.createStatusModal(status);
         document.body.appendChild(modal);
         
-        const bsModal = new bootstrap.Modal(modal);
-        bsModal.show();
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        }
     }
 
     /**
@@ -391,6 +399,8 @@ class ProgramDetailsManager {
      */
     toggleTargetCard(card) {
         const content = card.querySelector('.card-text');
+        if (!content) return;
+        
         const isExpanded = card.classList.contains('expanded');
         
         if (isExpanded) {
@@ -526,7 +536,9 @@ class ProgramDetailsManager {
         `;
         
         const container = document.querySelector('.container-fluid');
-        container.insertBefore(notification, container.firstChild);
+        if (container) {
+            container.insertBefore(notification, container.firstChild);
+        }
     }
 
     /**
@@ -604,13 +616,15 @@ class ProgramDetailsManager {
      * Close all modals
      */
     closeAllModals() {
-        const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => {
-            const bsModal = bootstrap.Modal.getInstance(modal);
-            if (bsModal) {
-                bsModal.hide();
-            }
-        });
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                const bsModal = bootstrap.Modal.getInstance(modal);
+                if (bsModal) {
+                    bsModal.hide();
+                }
+            });
+        }
     }
 
     /**
@@ -627,6 +641,8 @@ class ProgramDetailsManager {
         const focusableElements = modal.querySelectorAll(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
+        
+        if (focusableElements.length === 0) return;
         
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];

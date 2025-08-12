@@ -3,37 +3,43 @@
  * Ensures notification dropdown stays within viewport bounds on mobile devices
  */
 
+/**
+ * Adjust dropdown position to stay within viewport bounds
+ */
+function adjustDropdownPosition() {
+    const notificationDropdown = document.getElementById('notificationsDropdown');
+    const dropdownMenu = document.querySelector('.notification-dropdown');
+    
+    if (!notificationDropdown || !dropdownMenu) return;
+    
+    // Only apply on mobile devices
+    if (window.innerWidth <= 767) {
+        const rect = notificationDropdown.getBoundingClientRect();
+        const dropdownWidth = 280; // Min width from CSS
+        const margin = 20; // Minimum margin from edges
+        
+        // Calculate if dropdown would overflow
+        const wouldOverflow = (rect.right - dropdownWidth) < margin;
+        
+        if (wouldOverflow) {
+            // Calculate how much to move left
+            const adjustment = margin - (rect.right - dropdownWidth);
+            dropdownMenu.style.transform = `translateX(-${10 + adjustment}px)`;
+        } else {
+            // Reset to default
+            dropdownMenu.style.transform = 'translateX(-10px)';
+        }
+    } else {
+        // Reset for desktop
+        dropdownMenu.style.transform = '';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const notificationDropdown = document.getElementById('notificationsDropdown');
     const dropdownMenu = document.querySelector('.notification-dropdown');
     
     if (notificationDropdown && dropdownMenu) {
-        // Function to adjust dropdown position
-        function adjustDropdownPosition() {
-            // Only apply on mobile devices
-            if (window.innerWidth <= 767) {
-                const rect = notificationDropdown.getBoundingClientRect();
-                const dropdownWidth = 280; // Min width from CSS
-                const viewportWidth = window.innerWidth;
-                const margin = 20; // Minimum margin from edges
-                
-                // Calculate if dropdown would overflow
-                const wouldOverflow = (rect.right - dropdownWidth) < margin;
-                
-                if (wouldOverflow) {
-                    // Calculate how much to move left
-                    const adjustment = margin - (rect.right - dropdownWidth);
-                    dropdownMenu.style.transform = `translateX(-${10 + adjustment}px)`;
-                } else {
-                    // Reset to default
-                    dropdownMenu.style.transform = 'translateX(-10px)';
-                }
-            } else {
-                // Reset for desktop
-                dropdownMenu.style.transform = '';
-            }
-        }
-        
         // Adjust position when dropdown is shown
         notificationDropdown.addEventListener('shown.bs.dropdown', adjustDropdownPosition);
         
