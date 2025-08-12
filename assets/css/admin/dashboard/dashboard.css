@@ -11,6 +11,7 @@
 @import '../../components/admin-dashboard-modern.css';
 @import '../../components/dashboard-cards.css';
 @import '../../components/cards.css';
+@import '../../components/cards-modern.css';
 
 /* Dashboard stats and quick actions */
 .dashboard-stats {

@@ -38,6 +38,11 @@
                     <?php require_once __DIR__ . '/_outcomes_overview_modern.php'; ?>
                 </div>
 
+                <!-- KPI Overview - Separate Card -->
+                <div class="admin-bento-kpis">
+                    <?php require_once __DIR__ . '/_kpi_overview_modern.php'; ?>
+                </div>
+
             </div>
         </div>
     </section>
