@@ -52,6 +52,97 @@
   - Establish clear naming conventions for view vs details interfaces
   - Use constants for common navigation targets to avoid scattered URLs
 
+### 50. Incorrect Redirection - Program update redirects to dashboard instead of program list (2025-08-13) ✅ FIXED
+
+- **Problem:** After successfully updating a program, the system redirects to the dashboard instead of the program list:
+  - User expects to return to programs overview after update
+  - Current redirection goes to `index.php?page=admin_edit_program&id=X`
+  - Should redirect to programs list page for better UX
+- **Root Cause:**
+  - `save_program.php` handler redirects back to edit page instead of programs list
+  - Redirection logic designed for staying on edit page, not for list navigation
+  - Inconsistent with other admin actions that return to list views
+- **Impact:**
+  - **Medium Severity**: Poor user experience, unexpected navigation flow
+  - **Scope**: Admin program editing functionality
+  - **User Experience**: Confusing navigation after program updates
+- **Solution - Fix Redirection Logic:**
+  1. **Updated Success Redirection:**
+     - Changed from: `index.php?page=admin_edit_program&id=X`
+     - Changed to: `app/views/admin/programs/programs.php`
+     - Now redirects to programs list after successful update
+  2. **Updated Error Redirection:**
+     - Consistent redirection to programs list for both success and error cases
+     - Maintains user context in programs section
+  3. **Maintained Error Handling:**
+     - Error messages still displayed via session
+     - User can see what went wrong and navigate appropriately
+- **Files Changed:**
+  - `app/handlers/admin/save_program.php` (Updated redirection URLs)
+- **Testing:**
+  - ✅ Program updates now redirect to programs list
+  - ✅ Success messages display correctly on programs page
+  - ✅ Error handling maintains proper redirection
+  - ✅ Consistent navigation flow with other admin actions
+- **Verification:**
+  - After updating a program, user lands on programs overview page
+  - Success/error messages appear as expected
+  - Navigation flow is intuitive and consistent
+
+### 51. TypeError - Cannot access offset of type string on string in audit_log.php (2025-08-13) ✅ FIXED
+
+- **Problem:** Fatal error when updating programs:
+  ```
+  Fatal error: Uncaught TypeError: Cannot access offset of type string on string in 
+  C:\laragon\www\pcds2030_dashboard_fork\app\lib\audit_log.php:475
+  ```
+- **Root Cause:**
+  - `log_field_changes()` function called with wrong parameter order in `program_management.php`
+  - Function expects: `log_field_changes($audit_log_id, $field_changes)`
+  - Was being called with: `log_field_changes($old_data, $new_data, $audit_log_id)`
+  - Parameters in wrong order caused type mismatch error
+  - Missing include for `audit_log.php` in `program_management.php`
+- **Impact:**
+  - **High Severity**: Complete failure of program update functionality
+  - **Scope**: Admin program editing after creating save_program.php handler
+  - **User Experience**: Cannot update programs, fatal error occurs
+- **Solution - Fix Parameter Order and Add Missing Include:**
+  1. **Fixed Parameter Order:**
+     - Updated `log_field_changes()` call in `program_management.php` line 170
+     - Changed from: `log_field_changes($old_data, $new_data, $audit_log_id)`
+     - Changed to: `log_field_changes($audit_log_id, $field_changes)`
+  2. **Created Proper Field Changes Array:**
+     - Added logic to compare old and new data
+     - Creates proper `$field_changes` array with required structure:
+       ```php
+       [
+           'field_name' => 'field_name',
+           'field_type' => 'type',
+           'old_value' => 'old_value',
+           'new_value' => 'new_value',
+           'change_type' => 'modified|added|removed'
+       ]
+       ```
+  3. **Added Missing Include:**
+     - Added `require_once __DIR__ . '/../audit_log.php';` to `program_management.php`
+     - Ensures `get_field_type()` function is available
+  4. **Enhanced Field Change Detection:**
+     - Compares each field between old and new data
+     - Only logs actual changes (not unchanged fields)
+     - Handles added, modified, and removed fields
+     - Uses proper field type detection
+- **Files Changed:**
+  - `app/lib/admins/program_management.php` (Fixed parameter order and added include)
+- **Testing:**
+  - ✅ Program updates now work without fatal errors
+  - ✅ Audit logging functions correctly
+  - ✅ Field changes are properly tracked
+  - ✅ No more TypeError exceptions
+- **Verification:**
+  - Admin can successfully update program information
+  - Audit logs show detailed field-level changes
+  - All program update functionality works as expected
+
 ### 48. Missing Handler - Non-existent save_program.php causing 404 error on program update (2025-08-13) ✅ FIXED
 
 - **Problem:** Admin program update form leads to non-existent page:

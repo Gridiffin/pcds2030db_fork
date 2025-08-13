@@ -124,8 +124,8 @@ try {
     $_SESSION['message'] = 'Program updated successfully.';
     $_SESSION['message_type'] = 'success';
     
-    // Redirect back to the edit page
-    header('Location: ' . APP_URL . '/index.php?page=admin_edit_program&id=' . $program_id);
+    // Redirect to the programs list page
+    header('Location: ' . APP_URL . '/app/views/admin/programs/programs.php');
     exit;
 
 } catch (Exception $e) {
@@ -138,8 +138,8 @@ try {
     $_SESSION['message'] = 'Failed to update program: ' . $e->getMessage();
     $_SESSION['message_type'] = 'danger';
     
-    // Redirect back to the edit page
-    header('Location: ' . APP_URL . '/index.php?page=admin_edit_program&id=' . $program_id);
+    // Redirect to the programs list page
+    header('Location: ' . APP_URL . '/app/views/admin/programs/programs.php');
     exit;
 }
 ?>

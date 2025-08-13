@@ -5,6 +5,9 @@
  * Functions for admin users to manage programs across all agencies
  */
 
+// Include audit logging functions
+require_once __DIR__ . '/../audit_log.php';
+
 /**
  * Get all assignable users from all agencies for admin program management
  * 
@@ -167,7 +170,40 @@ function update_admin_program($program_data) {
                     'initiative_id' => $initiative_id,
                     'rating' => $rating
                 ];
-                log_field_changes($old_data, $new_data, $audit_log_id);
+                
+                // Create field changes array by comparing old and new data
+                $field_changes = [];
+                foreach ($new_data as $field => $new_value) {
+                    $old_value = $old_data[$field] ?? null;
+                    // Check if the value actually changed
+                    if ($old_value !== $new_value) {
+                        $field_changes[] = [
+                            'field_name' => $field,
+                            'field_type' => get_field_type($new_value),
+                            'old_value' => $old_value,
+                            'new_value' => $new_value,
+                            'change_type' => $old_value === null ? 'added' : 'modified'
+                        ];
+                    }
+                }
+                
+                // Check for removed fields
+                foreach ($old_data as $field => $old_value) {
+                    if (!array_key_exists($field, $new_data) && $old_value !== null) {
+                        $field_changes[] = [
+                            'field_name' => $field,
+                            'field_type' => get_field_type($old_value),
+                            'old_value' => $old_value,
+                            'new_value' => null,
+                            'change_type' => 'removed'
+                        ];
+                    }
+                }
+                
+                // Only log if there are actual changes
+                if (!empty($field_changes)) {
+                    log_field_changes($audit_log_id, $field_changes);
+                }
             }
         }
         
