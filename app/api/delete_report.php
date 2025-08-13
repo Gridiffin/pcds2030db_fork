@@ -76,10 +76,11 @@ $conn->begin_transaction();
 try {
     // Get the report details before deletion for audit logging
     $query = "SELECT r.report_id, r.report_name, r.pptx_path, r.generated_at,
-                     u.username, u.agency_name,
+                     u.username, a.agency_name,
                      rp.period_type, rp.period_number, rp.year
               FROM reports r 
               LEFT JOIN users u ON r.generated_by = u.user_id 
+              LEFT JOIN agency a ON u.agency_id = a.agency_id
               LEFT JOIN reporting_periods rp ON r.period_id = rp.period_id 
               WHERE r.report_id = ?";
     $stmt = $conn->prepare($query);
@@ -106,7 +107,19 @@ try {
         $filePath = ROOT_PATH . 'app/reports/' . $report['pptx_path'];
     }
     
-    $report_info = "{$report['agency_name']} - Q{$report['quarter']} {$report['year']} (Generated: {$report['generated_at']})";
+    // Build period description based on period_type and period_number
+    $period_desc = '';
+    if ($report['period_type'] === 'quarter') {
+        $period_desc = "Q{$report['period_number']}";
+    } elseif ($report['period_type'] === 'half') {
+        $period_desc = "H{$report['period_number']}";
+    } elseif ($report['period_type'] === 'yearly') {
+        $period_desc = "Y{$report['period_number']}";
+    } else {
+        $period_desc = "Period {$report['period_number']}";
+    }
+    
+    $report_info = "{$report['agency_name']} - {$period_desc} {$report['year']} (Generated: {$report['generated_at']})";
     
     // Delete from database
     $deleteQuery = "DELETE FROM reports WHERE report_id = ?";

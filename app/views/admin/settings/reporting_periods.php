@@ -39,17 +39,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['save_period'])) {
         $period_id = intval($_POST['period_id'] ?? 0);
         $year = intval($_POST['year'] ?? 0);
-        $quarter = intval($_POST['quarter'] ?? 0);
+        $period_type = $_POST['period_type'] ?? 'quarter';
+        $period_number = intval($_POST['period_number'] ?? 1);
         $start_date = $_POST['start_date'] ?? '';
         $end_date = $_POST['end_date'] ?? '';
         $status = $_POST['status'] ?? 'open';
         
         if ($period_id) {
             // Update existing period
-            $result = update_reporting_period($period_id, $year, $quarter, $start_date, $end_date, $status);
+            $result = update_reporting_period($period_id, $year, $period_type, $period_number, $start_date, $end_date, $status);
         } else {
             // Add new period
-            $result = add_reporting_period($year, $quarter, $start_date, $end_date, $status);
+            $result = add_reporting_period($year, $period_type, $period_number, $start_date, $end_date, $status);
         }
         
         if (isset($result['success'])) {
@@ -288,15 +289,21 @@ function get_admin_quarter_display_name($quarter_val) {
                             <label for="year" class="form-label">Year</label>
                             <input type="number" class="form-control" id="year" name="year" required>
                         </div>
-                        <div class="col-md-6">
-                            <label for="quarter" class="form-label">Reporting Period</label>
-                            <select class="form-select" id="quarter" name="quarter" required>
-                                <option value="1">Q1</option>
-                                <option value="2">Q2</option>
-                                <option value="3">Q3</option>
-                                <option value="4">Q4</option>
-                                <option value="5">Half Yearly 1</option>
-                                <option value="6">Half Yearly 2</option>
+                        <div class="col-md-3">
+                            <label for="period_type" class="form-label">Period Type</label>
+                            <select class="form-select" id="period_type" name="period_type" required>
+                                <option value="quarter">Quarter</option>
+                                <option value="half">Half Yearly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="period_number" class="form-label">Period Number</label>
+                            <select class="form-select" id="period_number" name="period_number" required>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
                             </select>
                         </div>
                     </div>

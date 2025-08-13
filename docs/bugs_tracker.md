@@ -1,3 +1,84 @@
+### 46. PHP Warning - Undefined array key "quarter" in delete_report.php (2025-08-13) ✅ FIXED
+
+- **Problem:** PHP Warning when deleting reports:
+  ```
+  [13-Aug-2025 06:10:35 UTC] PHP Warning: Undefined array key "quarter" in C:\laragon\www\pcds2030_dashboard_fork\app\api\delete_report.php on line 110
+  ```
+- **Root Cause:**
+  - Database schema was updated to use flexible period structure (`period_type`, `period_number`) instead of simple `quarter` field
+  - Code was still trying to access `$report['quarter']` which no longer exists
+  - Query selects `rp.period_type, rp.period_number, rp.year` but code expected `quarter` field
+  - Multiple files had similar issues with old `quarter` field references
+- **Impact:**
+  - **Medium Severity**: PHP warnings in error logs, potential audit log issues
+  - **Scope**: All report deletion operations, admin period management
+  - **User Experience**: Functionality works but generates warnings
+- **Solution - Comprehensive Schema Migration:**
+  1. **Fixed Period Description Logic in delete_report.php:**
+     - Replaced direct `$report['quarter']` access with dynamic period description
+     - Added logic to handle different period types (quarter, half, yearly)
+     - Builds appropriate period description based on `period_type` and `period_number`
+  2. **Updated Admin Settings Form:**
+     - Changed form fields from `quarter` to `period_type` and `period_number`
+     - Updated PHP form handling to use new field names
+     - Fixed function calls to `update_reporting_period()` and `add_reporting_period()`
+  3. **Updated JavaScript for Admin Interface:**
+     - Modified `reporting_periods.js` to handle new field structure
+     - Added dynamic period number options based on period type
+     - Updated form validation and date calculation logic
+  4. **Fixed Recent Reports Table:**
+     - Updated `formatPeriod()` function to use correct field names
+     - Fixed field validation in `recent_reports_table_new.php`
+  5. **Updated Code Examples:**
+     ```php
+     // Build period description based on period_type and period_number
+     $period_desc = '';
+     if ($report['period_type'] === 'quarter') {
+         $period_desc = "Q{$report['period_number']}";
+     } elseif ($report['period_type'] === 'half') {
+         $period_desc = "H{$report['period_number']}";
+     } elseif ($report['period_type'] === 'yearly') {
+         $period_desc = "Y{$report['period_number']}";
+     } else {
+         $period_desc = "Period {$report['period_number']}";
+     }
+     
+     $report_info = "{$report['agency_name']} - {$period_desc} {$report['year']} (Generated: {$report['generated_at']})";
+     ```
+     ```javascript
+     // Dynamic period number options
+     function updatePeriodNumberOptions(periodType, periodNumberField) {
+         if (periodType === 'quarter') {
+             options = [{ value: '1', text: '1' }, { value: '2', text: '2' }, { value: '3', text: '3' }, { value: '4', text: '4' }];
+         } else if (periodType === 'half') {
+             options = [{ value: '1', text: '1' }, { value: '2', text: '2' }];
+         } else if (periodType === 'yearly') {
+             options = [{ value: '1', text: '1' }];
+         }
+     }
+     ```
+- **Files Changed:**
+  - `app/api/delete_report.php` (Fixed period description logic)
+  - `app/views/admin/settings/reporting_periods.php` (Updated form fields and PHP handling)
+  - `assets/js/admin/reporting_periods.js` (Updated JavaScript for new field structure)
+  - `app/views/admin/ajax/recent_reports_table_new.php` (Fixed field validation)
+- **Testing:**
+  - ✅ No more PHP warnings about undefined "quarter" key
+  - ✅ Audit logs will show correct period descriptions (Q1, Q2, H1, H2, Y1, etc.)
+  - ✅ Supports all period types: quarter, half, yearly
+  - ✅ Admin period management form works with new schema
+  - ✅ JavaScript dynamically updates period number options
+- **Verification:**
+  - Report deletion should work without warnings
+  - Audit logs will display proper period information
+  - Admin can create/edit periods with new flexible structure
+  - Future period types can be easily added to the logic
+- **Prevention:**
+  - Always update code when database schema changes
+  - Use database field names that match actual schema
+  - Test API endpoints after schema migrations
+  - Update both backend and frontend code consistently
+
 ### 45. Report Generator - Timber Export Chart Shows "No Data Available" (2025-08-13) ✅ FIXED
 
 - **Problem:** PowerPoint report generator shows "No data available for timber export value" despite actual data existing in database

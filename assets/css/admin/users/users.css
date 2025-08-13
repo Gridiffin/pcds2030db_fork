@@ -7,30 +7,31 @@
 /* Import shared admin foundation */
 @import '../shared/base.css';
 
-/* Modal centering styles */
-#deleteUserModal {
+/* Modal positioning fix - use Bootstrap's standard modal centering */
+#deleteUserModal .modal-dialog {
+    max-width: 500px;
+    margin: 1.75rem auto;
+}
+
+/* Standard modal positioning with proper vertical centering */
+#deleteUserModal.modal {
     display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
+    align-items: center;
 }
 
 #deleteUserModal .modal-dialog {
-    margin: 0 auto !important;
-    max-width: 500px !important;
-    width: 90% !important;
-    position: relative !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
+    margin: auto;
+    max-width: 500px;
+    width: 90%;
 }
 
-/* Ensure modal backdrop covers full screen */
+/* Ensure proper z-index stacking */
 .modal-backdrop {
-    z-index: 1040 !important;
+    z-index: 1040;
 }
 
 #deleteUserModal {
-    z-index: 1050 !important;
+    z-index: 1050;
 }
 
 /* User management specific styles */

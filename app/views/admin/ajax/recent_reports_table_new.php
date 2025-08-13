@@ -37,7 +37,7 @@ if ($result) {
 
 // Format period function
 function formatPeriod($report) {
-    if (!$report || !isset($report['quarter'], $report['year'])) {
+    if (!$report || !isset($report['period_type'], $report['period_number'], $report['year'])) {
         return 'Unknown';
     }
     

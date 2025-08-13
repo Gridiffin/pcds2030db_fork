@@ -8,6 +8,7 @@ function UserFormManager() {
     
     // Flag for tracking initialization - moved inside the closure
     let initialized = false;
+    let deleteModalInstance = null; // Store the modal instance to prevent multiple instances
 
     /**
      * Initialize the form manager
@@ -62,9 +63,31 @@ function UserFormManager() {
             
             document.body.appendChild(deleteModal);
             
+            // Create Bootstrap modal instance only once
+            deleteModalInstance = new bootstrap.Modal(deleteModal, {
+                backdrop: 'static', // Prevent backdrop click issues
+                keyboard: true
+            });
+            
             // Add event listener to the confirm button - only once
             document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
                 document.getElementById('deleteUserForm').submit();
+            });
+            
+            // Add cleanup event listeners to prevent backdrop issues
+            deleteModal.addEventListener('hidden.bs.modal', function () {
+                // Ensure proper cleanup when modal is hidden
+                document.body.classList.remove('modal-open');
+                
+                // Remove any remaining backdrops
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(backdrop => backdrop.remove());
+                
+                // Reset modal state
+                deleteModal.style.display = 'none';
+                deleteModal.setAttribute('aria-hidden', 'true');
+                deleteModal.removeAttribute('aria-modal');
+                deleteModal.removeAttribute('role');
             });
         }
         
@@ -72,9 +95,14 @@ function UserFormManager() {
         document.getElementById('delete-username').textContent = username;
         document.getElementById('delete-user-id').value = userId;
         
-        // Show the modal
-        const modal = new bootstrap.Modal(deleteModal);
-        modal.show();
+        // Show the modal using the stored instance or create new one if needed
+        if (deleteModalInstance) {
+            deleteModalInstance.show();
+        } else {
+            // Fallback: create instance if it doesn't exist
+            deleteModalInstance = new bootstrap.Modal(deleteModal);
+            deleteModalInstance.show();
+        }
     }
 
     // Other form methods can go here...
@@ -86,7 +114,7 @@ function UserFormManager() {
      * Hide any open forms/modals
      */
     function hideForm() {
-        // Hide any open Bootstrap modals
+        // Hide any open Bootstrap modals properly
         const openModals = document.querySelectorAll('.modal.show');
         openModals.forEach(modal => {
             const bsModal = bootstrap.Modal.getInstance(modal);
@@ -94,6 +122,18 @@ function UserFormManager() {
                 bsModal.hide();
             }
         });
+        
+        // Clean up our specific modal instance
+        if (deleteModalInstance) {
+            deleteModalInstance.hide();
+        }
+        
+        // Force cleanup of any remaining modal artifacts
+        setTimeout(() => {
+            document.body.classList.remove('modal-open');
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+        }, 300);
     }
 
     // Public API

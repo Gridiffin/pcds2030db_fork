@@ -178,11 +178,13 @@ if (!window.reportingPeriodsInitialized) {
                 const yearField = safeSelect('#year');
                 if (yearField) yearField.value = currentYear;
                 
-                // Set default quarter based on current date
+                // Set default period based on current date
                 const currentMonth = new Date().getMonth() + 1;
                 const currentQuarter = Math.ceil(currentMonth / 3);
-                const quarterField = safeSelect('#quarter');
-                if (quarterField) quarterField.value = currentQuarter;
+                const periodTypeField = safeSelect('#period_type');
+                const periodNumberField = safeSelect('#period_number');
+                if (periodTypeField) periodTypeField.value = 'quarter';
+                if (periodNumberField) periodNumberField.value = currentQuarter;
                 
                 // Standard dates mode is checked by default
                 const useStandardDates = safeSelect('#useStandardDates');
@@ -198,50 +200,106 @@ if (!window.reportingPeriodsInitialized) {
             });
         });
         
-        // Function to get standard quarter dates
-        function getStandardQuarterDates(year, quarter) {
+        // Function to get standard period dates
+        function getStandardQuarterDates(year, periodType, periodNumber) {
             let startDate, endDate;
-            const intQuarter = parseInt(quarter);
+            const intPeriodNumber = parseInt(periodNumber);
 
-            switch (intQuarter) {
-                case 1:
-                    startDate = `${year}-01-01`;
-                    endDate = `${year}-03-31`;
-                    break;
-                case 2:
-                    startDate = `${year}-04-01`;
-                    endDate = `${year}-06-30`;
-                    break;
-                case 3:
-                    startDate = `${year}-07-01`;
-                    endDate = `${year}-09-30`;
-                    break;
-                case 4:
-                    startDate = `${year}-10-01`;
-                    endDate = `${year}-12-31`;
-                    break;
-                case 5: // Half Yearly 1 (Jan-Jun)
-                    startDate = `${year}-01-01`;
-                    endDate = `${year}-06-30`;
-                    break;
-                case 6: // Half Yearly 2 (Jul-Dec)
-                    startDate = `${year}-07-01`;
-                    endDate = `${year}-12-31`;
-                    break;
-                default:
-                    // Default to Q1 if quarter is somehow invalid, or handle error
-                    console.warn(`Invalid quarter/period type: ${quarter}. Defaulting dates.`);
-                    startDate = `${year}-01-01`;
-                    endDate = `${year}-03-31`;
-                    break;
+            if (periodType === 'quarter') {
+                switch (intPeriodNumber) {
+                    case 1:
+                        startDate = `${year}-01-01`;
+                        endDate = `${year}-03-31`;
+                        break;
+                    case 2:
+                        startDate = `${year}-04-01`;
+                        endDate = `${year}-06-30`;
+                        break;
+                    case 3:
+                        startDate = `${year}-07-01`;
+                        endDate = `${year}-09-30`;
+                        break;
+                    case 4:
+                        startDate = `${year}-10-01`;
+                        endDate = `${year}-12-31`;
+                        break;
+                    default:
+                        console.warn(`Invalid quarter number: ${periodNumber}. Defaulting to Q1.`);
+                        startDate = `${year}-01-01`;
+                        endDate = `${year}-03-31`;
+                        break;
+                }
+            } else if (periodType === 'half') {
+                switch (intPeriodNumber) {
+                    case 1: // Half Yearly 1 (Jan-Jun)
+                        startDate = `${year}-01-01`;
+                        endDate = `${year}-06-30`;
+                        break;
+                    case 2: // Half Yearly 2 (Jul-Dec)
+                        startDate = `${year}-07-01`;
+                        endDate = `${year}-12-31`;
+                        break;
+                    default:
+                        console.warn(`Invalid half-yearly number: ${periodNumber}. Defaulting to H1.`);
+                        startDate = `${year}-01-01`;
+                        endDate = `${year}-06-30`;
+                        break;
+                }
+            } else if (periodType === 'yearly') {
+                startDate = `${year}-01-01`;
+                endDate = `${year}-12-31`;
+            } else {
+                console.warn(`Invalid period type: ${periodType}. Defaulting to Q1.`);
+                startDate = `${year}-01-01`;
+                endDate = `${year}-03-31`;
             }
             
             return { startDate, endDate };
         }
         
+        // Function to update period number options based on period type
+        function updatePeriodNumberOptions(periodType, periodNumberField) {
+            if (!periodNumberField) return;
+            
+            // Clear existing options
+            periodNumberField.innerHTML = '';
+            
+            let options = [];
+            if (periodType === 'quarter') {
+                options = [
+                    { value: '1', text: '1' },
+                    { value: '2', text: '2' },
+                    { value: '3', text: '3' },
+                    { value: '4', text: '4' }
+                ];
+            } else if (periodType === 'half') {
+                options = [
+                    { value: '1', text: '1' },
+                    { value: '2', text: '2' }
+                ];
+            } else if (periodType === 'yearly') {
+                options = [
+                    { value: '1', text: '1' }
+                ];
+            }
+            
+            // Add options to select
+            options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option.value;
+                optionElement.textContent = option.text;
+                periodNumberField.appendChild(optionElement);
+            });
+            
+            // Set default value
+            if (options.length > 0) {
+                periodNumberField.value = options[0].value;
+            }
+        }
+        
         // Function to set standard dates
-        function setStandardDates(year, quarter) {
-            const { startDate, endDate } = getStandardQuarterDates(year, quarter);
+        function setStandardDates(year, periodType, periodNumber) {
+            const { startDate, endDate } = getStandardQuarterDates(year, periodType, periodNumber);
             const startDateField = safeSelect('#startDate'); // Changed from #start_date
             const endDateField = safeSelect('#endDate');   // Changed from #end_date
             const nonStandardStartIndicator = safeSelect('#nonStandardStartIndicator');
@@ -255,29 +313,46 @@ if (!window.reportingPeriodsInitialized) {
             if (nonStandardEndIndicator) nonStandardEndIndicator.classList.add('d-none');
         }
         
-        // Year and quarter change handlers - auto-update dates
+        // Year and period change handlers - auto-update dates
         const yearFieldModal = safeSelect('#addPeriodForm #year'); // Scoped to the modal form
         if (yearFieldModal) {
             safeAttachEvent(yearFieldModal, 'change', function() {
-                const quarterFieldModal = safeSelect('#addPeriodForm #quarter'); // Scoped to the modal form
-                if (quarterFieldModal && quarterFieldModal.value && this.value) {
-                    setStandardDates(this.value, quarterFieldModal.value);
+                const periodTypeFieldModal = safeSelect('#addPeriodForm #period_type');
+                const periodNumberFieldModal = safeSelect('#addPeriodForm #period_number');
+                if (periodTypeFieldModal && periodNumberFieldModal && periodTypeFieldModal.value && periodNumberFieldModal.value && this.value) {
+                    setStandardDates(this.value, periodTypeFieldModal.value, periodNumberFieldModal.value);
                 }
             });
             safeAttachEvent(yearFieldModal, 'input', function() { // Also trigger on input for better UX
-                const quarterFieldModal = safeSelect('#addPeriodForm #quarter');
-                if (quarterFieldModal && quarterFieldModal.value && this.value) {
-                    setStandardDates(this.value, quarterFieldModal.value);
+                const periodTypeFieldModal = safeSelect('#addPeriodForm #period_type');
+                const periodNumberFieldModal = safeSelect('#addPeriodForm #period_number');
+                if (periodTypeFieldModal && periodNumberFieldModal && periodTypeFieldModal.value && periodNumberFieldModal.value && this.value) {
+                    setStandardDates(this.value, periodTypeFieldModal.value, periodNumberFieldModal.value);
                 }
             });
         }
         
-        const quarterFieldModal = safeSelect('#addPeriodForm #quarter'); // Scoped to the modal form
-        if (quarterFieldModal) {
-            safeAttachEvent(quarterFieldModal, 'change', function() {
-                const yearFieldModal = safeSelect('#addPeriodForm #year'); // Scoped to the modal form
-                if (yearFieldModal && yearFieldModal.value && this.value) {
-                    setStandardDates(yearFieldModal.value, this.value);
+        const periodTypeFieldModal = safeSelect('#addPeriodForm #period_type');
+        const periodNumberFieldModal = safeSelect('#addPeriodForm #period_number');
+        if (periodTypeFieldModal) {
+            safeAttachEvent(periodTypeFieldModal, 'change', function() {
+                const yearFieldModal = safeSelect('#addPeriodForm #year');
+                const periodNumberFieldModal = safeSelect('#addPeriodForm #period_number');
+                
+                // Update period number options based on period type
+                updatePeriodNumberOptions(this.value, periodNumberFieldModal);
+                
+                if (yearFieldModal && yearFieldModal.value && this.value && periodNumberFieldModal && periodNumberFieldModal.value) {
+                    setStandardDates(yearFieldModal.value, this.value, periodNumberFieldModal.value);
+                }
+            });
+        }
+        if (periodNumberFieldModal) {
+            safeAttachEvent(periodNumberFieldModal, 'change', function() {
+                const yearFieldModal = safeSelect('#addPeriodForm #year');
+                const periodTypeFieldModal = safeSelect('#addPeriodForm #period_type');
+                if (yearFieldModal && yearFieldModal.value && periodTypeFieldModal && periodTypeFieldModal.value && this.value) {
+                    setStandardDates(yearFieldModal.value, periodTypeFieldModal.value, this.value);
                 }
             });
         }
@@ -320,9 +395,9 @@ if (!window.reportingPeriodsInitialized) {
                 const quarterFieldNew = safeSelect('#addPeriodForm #quarter');
                 if (quarterFieldNew) quarterFieldNew.value = defaultPeriodType.toString();
                 
-                // Auto-populate dates based on default year and quarter
-                if (yearFieldNew && quarterFieldNew && yearFieldNew.value && quarterFieldNew.value) {
-                    setStandardDates(yearFieldNew.value, quarterFieldNew.value);
+                // Auto-populate dates based on default year and period
+                if (yearFieldNew && periodTypeField && periodNumberField && yearFieldNew.value && periodTypeField.value && periodNumberField.value) {
+                    setStandardDates(yearFieldNew.value, periodTypeField.value, periodNumberField.value);
                 }
                 
                 // Set default status (optional, if not handled by HTML)
@@ -344,14 +419,20 @@ if (!window.reportingPeriodsInitialized) {
                 }
 
                 // Basic client-side validation
-                const quarter = form.quarter.value;
+                const periodType = form.period_type.value;
+                const periodNumber = form.period_number.value;
                 const year = form.year.value;
                 const startDate = form.start_date.value;
                 const endDate = form.end_date.value;
 
-                if (!quarter) {
+                if (!periodType) {
                     alert("Please select a period type.");
-                    form.quarter.focus();
+                    form.period_type.focus();
+                    return;
+                }
+                if (!periodNumber) {
+                    alert("Please select a period number.");
+                    form.period_number.focus();
                     return;
                 }
                 if (!year || year.length !== 4 || isNaN(parseInt(year))) {
