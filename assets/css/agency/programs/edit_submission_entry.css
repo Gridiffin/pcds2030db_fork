@@ -1,2 +1,10 @@
 @import '../shared/base.css';
-@import './edit_program.css'; /* If there is a specific edit_submission.css, use that instead */ 
+@import './edit_program.css';
+
+/* Target Counter Styles - Specific fix for black text */
+.target-container .card-header .card-title {
+    color: #000 !important;
+    font-weight: 600;
+    font-size: 1rem;
+    margin: 0;
+} 

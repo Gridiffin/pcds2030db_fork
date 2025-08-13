@@ -48,7 +48,7 @@
 }
 
 .target-container .card-header .card-title {
-    color: #495057;
+    color: #000 !important;
     font-weight: 600;
     font-size: 1rem;
     margin: 0;
