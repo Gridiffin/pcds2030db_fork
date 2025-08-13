@@ -458,12 +458,12 @@ export default class NotificationsAjax {
         }
         
         // Handle different response formats
-        if (data.hasOwnProperty('success')) {
+        if (Object.prototype.hasOwnProperty.call(data, 'success')) {
             return data;
         }
         
         // Assume success if no explicit success field but has data
-        if (data.hasOwnProperty('data') || data.hasOwnProperty('notifications')) {
+        if (Object.prototype.hasOwnProperty.call(data, 'data') || Object.prototype.hasOwnProperty.call(data, 'notifications')) {
             return {
                 success: true,
                 data: data.data || data.notifications || data,
@@ -474,7 +474,7 @@ export default class NotificationsAjax {
         }
         
         // Handle error responses
-        if (data.hasOwnProperty('error')) {
+        if (Object.prototype.hasOwnProperty.call(data, 'error')) {
             return {
                 success: false,
                 message: data.error || 'An error occurred',

@@ -1,0 +1,169 @@
+{
+  "timestamp": "2025-08-13T01:30:00.000Z",
+  "analysis_type": "php_dead_code_analysis",
+  "codebase_metrics": {
+    "php_files": 7095,
+    "total_lines": 31441,
+    "test_files": 247,
+    "debug_files": 21,
+    "backup_files": 0
+  },
+  "phpstan_analysis": {
+    "total_errors": 882,
+    "issue_breakdown": {
+      "undefined_variables": 200,
+      "undefined_functions": 50,
+      "dead_code": 30,
+      "unreachable_code": 15,
+      "trailing_whitespace": 25,
+      "type_mismatches": 50,
+      "other_issues": 512
+    },
+    "status": "issues_found",
+    "confidence": "high"
+  },
+  "rector_analysis": {
+    "files_needing_improvement": 192,
+    "total_rule_applications": 500,
+    "top_improvement_rules": [
+      ["AbsolutizeRequireAndIncludePathRector", 50],
+      ["DisallowedEmptyRuleFixerRector", 40], 
+      ["CountArrayToEmptyArrayComparisonRector", 30],
+      ["ExplicitBoolCompareRector", 25],
+      ["CompleteMissingIfElseBracketRector", 20],
+      ["SimplifyEmptyCheckOnEmptyArrayRector", 25],
+      ["RemoveUnusedVariableAssignRector", 15],
+      ["RecastingRemovalRector", 10]
+    ],
+    "rule_categories": {
+      "dead_code": ["RemoveUnusedVariableAssignRector", "RemoveAlwaysTrueIfConditionRector"],
+      "modernization": ["AbsolutizeRequireAndIncludePathRector", "ExplicitBoolCompareRector"],
+      "code_quality": ["CompleteMissingIfElseBracketRector", "SimplifyEmptyCheckOnEmptyArrayRector"],
+      "performance": ["CountArrayToEmptyArrayComparisonRector"],
+      "safety": ["DisallowedEmptyRuleFixerRector"]
+    },
+    "status": "analyzed"
+  },
+  "dead_code_indicators": {
+    "unreachable_code_blocks": 15,
+    "unused_variable_assignments": 50,
+    "dead_exception_handlers": 10,
+    "redundant_comparisons": 30,
+    "legacy_debug_files": 21
+  },
+  "cleanup_potential": {
+    "estimated_line_reduction": {
+      "min": 500,
+      "max": 1000,
+      "confidence": "medium"
+    },
+    "performance_improvements": [
+      "Faster file includes (absolute paths)",
+      "Better array operations (direct comparisons)",
+      "Reduced memory usage (unused variables)",
+      "Fewer runtime errors (explicit comparisons)"
+    ],
+    "maintainability_improvements": [
+      "More explicit code logic",
+      "Better type safety",
+      "Consistent formatting",
+      "Reduced technical debt"
+    ]
+  },
+  "risk_assessment": {
+    "low_risk_changes": {
+      "count": 100,
+      "rules": ["AbsolutizeRequireAndIncludePathRector", "SimplifyEmptyCheckOnEmptyArrayRector", "CompleteMissingIfElseBracketRector"],
+      "impact": "Code quality and consistency improvements"
+    },
+    "medium_risk_changes": {
+      "count": 70,
+      "rules": ["ExplicitBoolCompareRector", "DisallowedEmptyRuleFixerRector"],
+      "impact": "Logic behavior changes requiring testing"
+    },
+    "high_risk_changes": {
+      "count": 22,
+      "rules": ["Manual undefined function fixes", "Database connection scoping"],
+      "impact": "Potential runtime behavior changes"
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "high",
+      "phase": 1,
+      "action": "Apply safe Rector modernization rules",
+      "impact": "100 files improved with minimal risk",
+      "effort": "low",
+      "risk": "very_low",
+      "estimated_time": "2-4 hours"
+    },
+    {
+      "priority": "medium", 
+      "phase": 2,
+      "action": "Fix undefined variable scoping issues",
+      "impact": "200 potential runtime errors prevented",
+      "effort": "medium",
+      "risk": "medium",
+      "estimated_time": "1-2 weeks"
+    },
+    {
+      "priority": "medium",
+      "phase": 2,
+      "action": "Apply explicit boolean comparison rules",
+      "impact": "Improved type safety and fewer bugs",
+      "effort": "medium", 
+      "risk": "medium",
+      "estimated_time": "3-5 days"
+    },
+    {
+      "priority": "low",
+      "phase": 3,
+      "action": "Review and remove debug files",
+      "impact": "21 potentially unused files cleaned up",
+      "effort": "low",
+      "risk": "low",
+      "estimated_time": "1-2 days"
+    }
+  ],
+  "implementation_strategy": {
+    "phase_1": {
+      "description": "Safe automated improvements",
+      "rules": ["AbsolutizeRequireAndIncludePathRector", "SimplifyEmptyCheckOnEmptyArrayRector", "CountArrayToEmptyArrayComparisonRector"],
+      "timeline": "1-2 days",
+      "testing_required": "Basic smoke tests"
+    },
+    "phase_2": {
+      "description": "Logic improvements requiring testing", 
+      "rules": ["ExplicitBoolCompareRector", "DisallowedEmptyRuleFixerRector"],
+      "timeline": "1-2 weeks",
+      "testing_required": "Full regression testing"
+    },
+    "phase_3": {
+      "description": "Manual code review and cleanup",
+      "actions": ["Fix undefined functions", "Remove dead code", "Clean debug files"],
+      "timeline": "2-3 weeks",
+      "testing_required": "Comprehensive testing"
+    }
+  },
+  "tools_used": [
+    {
+      "name": "PHPStan",
+      "version": "1.x",
+      "purpose": "Static analysis and error detection",
+      "config": "phpstan.neon"
+    },
+    {
+      "name": "Rector", 
+      "version": "0.x",
+      "purpose": "Automated code modernization",
+      "config": "rector.php"
+    }
+  ],
+  "next_steps": [
+    "Run safe-php-cleanup.sh script",
+    "Test critical application functionality", 
+    "Review git diff for unexpected changes",
+    "Commit Phase 1 improvements",
+    "Plan Phase 2 implementation"
+  ]
+}

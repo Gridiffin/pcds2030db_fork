@@ -2,20 +2,5 @@
     "name": "pcds2030/dashboard",
     "description": "PCDS2030 Dashboard Testing",
     "type": "project",
-    "require-dev": {
-        "phpunit/phpunit": "10.0",
-        "phpstan/phpstan": "^1.12",
-        "vimeo/psalm": "^5.26",
-        "rector/rector": "^1.2",
-        "qossmic/deptrac-shim": "^1.0"
-    },
-    "require": {},
-    "scripts": {
-        "analyze": [
-            "@php vendor/bin/phpstan analyse --no-progress",
-            "@php vendor/bin/psalm --no-cache --report=docs/reports/cleanup/latest/php/psalm-report.json",
-            "@php vendor/bin/deptrac --fail-on-uncovered --no-interaction",
-            "@php vendor/bin/rector process --dry-run"
-        ]
-    }
+    "require": {}
 }

@@ -261,7 +261,7 @@ export class ViewProgramsDOM {
         if (typeof window.showToast === 'function') {
             window.showToast(title, message, type);
         } else {
-            
+            // No toast function available, could add fallback error display here
         }
     }
     

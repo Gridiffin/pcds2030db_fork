@@ -345,7 +345,7 @@ export class ViewReports {
         if (typeof window.showToast === 'function') {
             window.showToast('Error', message, 'danger');
         } else {
-            
+            // No toast function available, could add fallback error display here
         }
     }
     

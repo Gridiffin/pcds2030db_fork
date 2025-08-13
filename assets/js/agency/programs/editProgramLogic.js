@@ -145,7 +145,7 @@ function initStatusManagement(programId, apiUrl) {
                         loadStatus();
                         if (editModal) editModal.hide();
                     } else {
-                        
+                        // No action needed for this case
                     }
                 });
         });

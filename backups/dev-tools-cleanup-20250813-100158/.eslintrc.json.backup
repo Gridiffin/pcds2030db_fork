@@ -1,0 +1,65 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "jest": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "globals": {
+    "$": "readonly",
+    "jQuery": "readonly",
+    "bootstrap": "readonly",
+    "Chart": "readonly",
+    "gtag": "readonly",
+    "ReportStyler": "readonly",
+    "ReportAPI": "readonly",
+    "UserFormManager": "readonly",
+    "TableCalculationEngine": "readonly",
+    "ModernAdminDashboard": "readonly",
+    "APP_URL": "readonly",
+    "showToast": "readonly",
+    "showNotification": "readonly",
+    "clearAllProgramSelections": "readonly",
+    "hasActivePeriod": "readonly",
+    "initialMetricData": "readonly",
+    "initialProgramType": "readonly",
+    "periodId": "readonly",
+    "metricId": "readonly",
+    "tableName": "writable",
+    "ratingInput": "readonly",
+    "apiUrl": "readonly",
+    "TablePagination": "readonly",
+    "ReportUI": "readonly",
+    "initRatingPills": "readonly",
+    "outcomeChart": "readonly",
+    "UserTableManager": "readonly",
+    "showPhpMessages": "readonly",
+    "openBulkAssignModal": "readonly",
+    "loadPeriodsTable": "readonly",
+    "openSubmissionSelection": "readonly",
+    "initializeFilters": "readonly",
+    "initializeOutcomeChart": "readonly",
+    "prepareChartData": "readonly",
+    "programNumber": "readonly",
+    "programStatusData": "readonly",
+    "rating": "readonly",
+    "sectorProgramsData": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "args": "after-used", "ignoreRestSiblings": true }],
+    "no-undef": "warn"
+  },
+  "ignorePatterns": [
+    "dist/**",
+    "node_modules/**"
+  ]
+}
+
+

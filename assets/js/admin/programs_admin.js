@@ -476,7 +476,9 @@ function updateFilterBadges(section, filters) {
         if (value) {
             const badge = document.createElement('span');
             badge.className = 'badge bg-primary me-2 mb-1';
-              let label = '';
+            let label = '';
+            let agencySelect, agencyText, initiativeSelect, initiativeText;
+            
             switch (key) {
                 case 'search':
                     label = `Search: ${value}`;
@@ -488,13 +490,13 @@ function updateFilterBadges(section, filters) {
                     label = `Type: ${value}`;
                     break;
                 case 'agency':
-                    const agencySelect = document.getElementById(prefix + 'AgencyFilter');
-                    const agencyText = agencySelect?.options[agencySelect.selectedIndex]?.text || value;
+                    agencySelect = document.getElementById(prefix + 'AgencyFilter');
+                    agencyText = agencySelect?.options[agencySelect.selectedIndex]?.text || value;
                     label = `Agency: ${agencyText}`;
                     break;
                 case 'initiative':
-                    const initiativeSelect = document.getElementById(prefix + 'InitiativeFilter');
-                    const initiativeText = initiativeSelect?.options[initiativeSelect.selectedIndex]?.text || value;
+                    initiativeSelect = document.getElementById(prefix + 'InitiativeFilter');
+                    initiativeText = initiativeSelect?.options[initiativeSelect.selectedIndex]?.text || value;
                     label = `Initiative: ${initiativeText}`;
                     break;
             }

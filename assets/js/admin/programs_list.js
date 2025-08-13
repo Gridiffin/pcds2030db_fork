@@ -4,6 +4,119 @@
  * Handles interactions for the programs listing page
  */
 
+// Show loading spinner
+function showLoading() {
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'flex';
+    }
+}
+
+// Hide loading spinner
+function hideLoading() {
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+    }
+}
+
+// Function to update the programs table via AJAX
+function updateProgramsList(formData) {
+    const tableContainer = document.querySelector('#programsTable_wrapper') || document.querySelector('#programsTable').parentNode;
+    
+    // Show loading indicator
+    showLoading();
+    
+    // If there's an ongoing request, abort it
+    if (window.ajaxRequest) {
+        window.ajaxRequest.abort();
+    }
+    
+    window.ajaxRequest = fetch('/admin/programs.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(html => {
+        // Parse the response to extract just the table content
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newTableContent = doc.querySelector('#programsTable');
+        
+        if (newTableContent) {
+            // Replace the current table with the new one
+            const currentTable = document.querySelector('#programsTable');
+            if (currentTable) {
+                currentTable.innerHTML = newTableContent.innerHTML;
+            }
+        }
+        
+        // Reinitialize tooltips after content update
+        reinitializeTooltips();
+        
+        // Hide loading indicator
+        hideLoading();
+    })
+    .catch(error => {
+        console.error('Error updating programs list:', error);
+        hideLoading();
+        if (error.name !== 'AbortError') {
+            showToast('Error', 'Failed to update programs list. Please try again.', 'error');
+        }
+    });
+}
+
+// Clear all toast notifications
+function clearToasts() {
+    const toasts = document.querySelectorAll('.toast');
+    toasts.forEach(toast => {
+        const bsToast = bootstrap.Toast.getInstance(toast);
+        if (bsToast) {
+            bsToast.hide();
+        }
+    });
+}
+
+// Show toast notification
+function showToast(title, message, type = 'info') {
+    clearToasts();
+    
+    const toastContainer = document.querySelector('.toast-container') || document.body;
+    const toastElement = document.createElement('div');
+    toastElement.className = `toast align-items-center text-bg-${type} border-0`;
+    toastElement.setAttribute('role', 'alert');
+    toastElement.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <strong>${title}</strong>: ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toastElement);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+}
+
+// Reinitialize tooltips after content changes
+function reinitializeTooltips() {
+    // Dispose of existing tooltips
+    const existingTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    existingTooltips.forEach(el => {
+        const tooltip = bootstrap.Tooltip.getInstance(el);
+        if (tooltip) {
+            tooltip.dispose();
+        }
+    });
+    
+    // Initialize new tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize datatable if available
     let dataTable;
@@ -48,182 +161,10 @@ document.addEventListener('DOMContentLoaded', function() {
         tableContainer.style.position = 'relative';
         tableContainer.appendChild(loadingOverlay);
         
-        // Show loading spinner
-        function showLoading() {
-            loadingOverlay.style.display = 'flex';
-        }
-        
-        // Hide loading spinner
-        function hideLoading() {
-            loadingOverlay.style.display = 'none';
-        }
         
         // Hide loading overlay initially
         hideLoading();
         
-        // Create or get toast container
-        let toastContainer = document.querySelector('.toast-container');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            document.body.appendChild(toastContainer);
-        }
-        
-        // Function to update the programs table via AJAX
-        function updateProgramsList(formData) {
-            // If there's an ongoing request, abort it
-            if (ajaxRequest) {
-                ajaxRequest.abort();
-            }
-            
-            // Show loading indicator
-            showLoading();
-            
-            // Update URL with current filters for bookmarking/sharing
-            const params = new URLSearchParams(formData);
-            const newUrl = `${window.location.pathname}?${params.toString()}`;
-            history.pushState({ formData: formData }, '', newUrl);
-            currentUrlParams = params;
-            
-            // Make the AJAX request
-            ajaxRequest = $.ajax({
-                url: '../ajax/get_programs_list.php',
-                method: 'GET',
-                data: formData,
-                dataType: 'json',
-                success: function(response) {
-                    // Always hide loading indicator first
-                    hideLoading();
-                    
-                    if (response.status === 'success') {
-                        // Update the table data
-                        const tableBody = $('#programsTable tbody');
-                        
-                        // Destroy existing DataTable if it exists
-                        if (dataTable) {
-                            try {
-                                dataTable.destroy();
-                            } catch (e) {
-                                console.warn("Error destroying DataTable:", e);
-                            }
-                        }
-                        
-                        // Update HTML
-                        tableBody.html(response.tableHtml);
-                        
-                        // Update program count badge
-                        $('.card-header .badge').text(response.count + ' Programs');
-                        
-                        // Show/hide active filters display - FIXED ERROR HERE
-                        const activeFilters = document.querySelector('.alert-info');
-                        if (activeFilters) {
-                            if (response.filters) {
-                                activeFilters.style.display = 'block';
-                                
-                                // Check if strong element exists before updating it
-                                const strongElement = activeFilters.querySelector('strong');
-                                if (strongElement) {
-                                    strongElement.textContent = response.count;
-                                }
-                            } else {
-                                activeFilters.style.display = 'none';
-                            }
-                        }
-                        
-                        // Try to reinitialize DataTable with safety checks
-                        try {
-                            if (typeof $.fn.DataTable === 'function') {
-                                // Small delay to ensure DOM is ready
-                                setTimeout(function() {
-                                    dataTable = $('#programsTable').DataTable({
-                                        "paging": true,
-                                        "pageLength": 25,
-                                        "lengthChange": true,
-                                        "searching": false,
-                                        "ordering": true,
-                                        "info": true, 
-                                        "autoWidth": false,
-                                        "responsive": true,
-                                        "language": {
-                                            "emptyTable": "No programs found matching your criteria."
-                                        }
-                                    });
-                                }, 100);
-                            } else {
-                                console.warn("DataTable plugin not available for reinitialization");
-                            }
-                        } catch (e) {
-                            console.error("Failed to reinitialize DataTable:", e);
-                        }
-                        
-                        // Reinitialize tooltips for new action buttons
-                        reinitializeTooltips();
-                        
-                        // Clear existing toasts before showing a new one to avoid duplicates
-                        clearToasts();
-                        
-                        // Show success toast notification with shorter text
-                        showToast('Success', 'Programs updated', 'success');
-                        
-                    } else {
-                        console.error('Error fetching programs:', response.error);
-                        
-                        // Clear existing toasts before showing a new one
-                        clearToasts();
-                        showToast('Error', 'Failed to update list', 'danger');
-                    }
-                    
-                    // Clear the request reference
-                    ajaxRequest = null;
-                },
-                error: function(xhr, status, error) {
-                    // Always hide loading indicator
-                    hideLoading();
-                    
-                    // Only show error if not aborted
-                    if (status !== 'abort') {
-                        console.error('AJAX error:', error);
-                        
-                        // Clear existing toasts before showing a new one
-                        clearToasts();
-                        showToast('Error', 'Failed to update program list: ' + error, 'danger');
-                    }
-                    
-                    // Clear the request reference
-                    ajaxRequest = null;
-                }
-            });
-        }
-        
-        // Function to clear all toasts
-        function clearToasts() {
-            const toasts = document.querySelectorAll('.toast');
-            toasts.forEach(toast => {
-                const bsToast = bootstrap.Toast.getInstance(toast);
-                if (bsToast) {
-                    bsToast.hide();
-                }
-                toast.remove();
-            });
-        }
-        
-        // Function to show toast notifications
-        function showToast(title, message, type = 'info') {
-            if (typeof window.showToast === 'function') {
-                window.showToast(title, message, type);
-            } else {
-                // Fallback if global showToast isn't loaded
-                alert(`${title}: ${message}`);
-            }
-        }
-        
-        // Function to reinitialize tooltips for dynamically added elements
-        function reinitializeTooltips() {
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-            tooltipTriggerList.map(function(tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-        }
         
         // Handle browser back/forward navigation
         window.addEventListener('popstate', function(event) {

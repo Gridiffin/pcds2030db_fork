@@ -439,29 +439,369 @@ document.addEventListener('DOMContentLoaded', function() {
         updateOrderNumbers();
     }
     
+    // Function to sort programs numerically by their order values
+    function sortProgramsByOrder() {
+        // Get all visible and checked program checkboxes
+        const checkedPrograms = document.querySelectorAll('#programSelector input[name="selected_program_ids[]"]:checked');
+        if (checkedPrograms.length < 2) {
+            // Show a message if less than 2 programs are selected
+            const programContainer = document.querySelector('.program-selector-container');
+            const existingNotice = document.querySelector('.sort-notice');
+            if (existingNotice) {
+                existingNotice.remove();
+            }
+            
+            const notice = document.createElement('div');
+            notice.className = 'alert alert-warning mb-2 sort-notice';
+            notice.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Select at least two programs to sort them.';
+            
+            // Insert at the top
+            if (programContainer && programContainer.firstChild) {
+                programContainer.insertBefore(notice, programContainer.firstChild);
+                
+                // Auto-dismiss after 3 seconds
+                setTimeout(() => {
+                    notice.classList.add('fade');
+                    setTimeout(() => notice.remove(), 500);
+                }, 3000);
+            }
+            return;
+        }
+        
+        // Collect program IDs and their order values
+        const programOrders = [];
+        let hasDuplicates = false;
+        const orderValues = new Set();
+        
+        checkedPrograms.forEach(checkbox => {
+            const programId = checkbox.value;
+            const orderInput = document.getElementById(`order_${programId}`);
+            if (orderInput) {
+                // Use either the input value or a high default value for blank inputs
+                let orderValue = parseInt(orderInput.value);
+                
+                if (!isNaN(orderValue) && orderValue > 0) {
+                    if (orderValues.has(orderValue)) {
+                        hasDuplicates = true;
+                    }
+                    orderValues.add(orderValue);
+                } else {
+                    orderValue = 999999; // Default high value for blank or invalid inputs
+                }
+                
+                programOrders.push({ programId, orderValue });
+            }
+        });
+        
+        // Sort by order value
+        programOrders.sort((a, b) => a.orderValue - b.orderValue);
+        
+        // Reassign sequential order values
+        programOrders.forEach((program, index) => {
+            const orderInput = document.getElementById(`order_${program.programId}`);
+            if (orderInput) {
+                orderInput.value = index + 1;
+            }
+        });
+        
+        // Show a brief confirmation message
+        const programContainer = document.querySelector('.program-selector-container');
+        const existingNotice = document.querySelector('.sort-notice');
+        if (existingNotice) {
+            existingNotice.remove(); // Remove any existing notice
+        }
+        
+        const notice = document.createElement('div');
+        notice.className = 'alert alert-success mb-2 sort-notice';
+        
+        if (hasDuplicates) {
+            notice.innerHTML = '<i class="fas fa-check-circle me-2"></i>Programs sorted numerically! Duplicate numbers were resolved.';
+        } else {
+            notice.innerHTML = '<i class="fas fa-check-circle me-2"></i>Programs sorted numerically! Programs will appear in this order in the report.';
+        }
+        
+        // Insert at the top
+        if (programContainer && programContainer.firstChild) {
+            programContainer.insertBefore(notice, programContainer.firstChild);
+            
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+                notice.classList.add('fade');
+                setTimeout(() => notice.remove(), 500);
+            }, 3000);
+        }
+    }
+    
     // Initialize the UI
     if (typeof ReportUI !== 'undefined') {
         ReportUI.initUI();
+    }
+    
+    // Show/hide order input when checkbox is checked/unchecked
+    function toggleOrderInput(checkbox) {
+        const programId = checkbox.value;
+        const orderInput = document.getElementById(`order_${programId}`);
+        const orderBadge = checkbox.closest('.program-checkbox-container').querySelector('.program-order-badge');
+        const programContainer = checkbox.closest('.program-checkbox-container');
+        const agencyName = programContainer.getAttribute('data-agency-name');
+        const programName = programContainer.getAttribute('data-program-name');
+        const programNumber = programContainer.getAttribute('data-program-number');
         
-              // Function to sort programs numerically by their order values
-            function sortProgramsByOrder() {
-                // Get all visible and checked program checkboxes
-                const checkedPrograms = document.querySelectorAll('#programSelector input[name="selected_program_ids[]"]:checked');
-                if (checkedPrograms.length < 2) {
-                    // Show a message if less than 2 programs are selected
-                    const programContainer = document.querySelector('.program-selector-container');
-                    const existingNotice = document.querySelector('.sort-notice');
-                    if (existingNotice) {
-                        existingNotice.remove();
+        if (checkbox.checked) {
+            // Calculate the next available order based on currently selected programs
+            const currentlySelected = Array.from(globalProgramSelections.values()).filter(p => p.selected);
+            const nextOrder = currentlySelected.length + 1;
+            
+            // Add to global selections with the next sequential order
+            globalProgramSelections.set(programId, {
+                selected: true,
+                order: nextOrder,
+                agency: agencyName,
+                program_name: programName,
+                program_number: programNumber
+            });
+            
+            if (orderInput) {
+                orderInput.style.display = 'inline-block';
+                orderInput.value = nextOrder;
+            }
+            
+            if (orderBadge) {
+                orderBadge.textContent = nextOrder;
+                orderBadge.classList.add('active');
+            }
+        } else {
+            console.log(`=== DESELECTING PROGRAM ${programId} ===`);
+            
+            // Mark as deselected in global selections
+            if (globalProgramSelections.has(programId)) {
+                globalProgramSelections.get(programId).selected = false;
+                console.log(`Marked program ${programId} as deselected`);
+            }
+            
+            if (orderInput) {
+                orderInput.style.display = 'none';
+                orderInput.value = '';
+            }
+            
+            if (orderBadge) {
+                orderBadge.textContent = '#';
+                orderBadge.classList.remove('active');
+            }
+            
+            // Small delay to ensure DOM updates are complete, then renumber
+            setTimeout(() => {
+                console.log('Starting renumbering after deselection...');
+                renumberSelectedPrograms();
+            }, 50);
+        }
+        
+        // Update window reference
+        window.globalProgramSelections = globalProgramSelections;
+        
+        updateSelectedProgramCount();
+    }
+    
+    // Initialize agency-specific select buttons
+    function initializeAgencySelectButtons() {
+        // Select all programs from specific agency
+        document.querySelectorAll('.select-agency-programs').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const agencyName = this.getAttribute('data-agency-name');
+                const agencyProgramContainers = document.querySelectorAll(`[data-agency-name="${agencyName}"]`);
+                
+                agencyProgramContainers.forEach(container => {
+                    const checkbox = container.querySelector('input[type="checkbox"]');
+                    if (checkbox && !checkbox.checked) {
+                        checkbox.checked = true;
+                        toggleOrderInput(checkbox);
                     }
-                    
+                });
+            });
+        });
+        
+        // Deselect all programs from specific agency
+        document.querySelectorAll('.deselect-agency-programs').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const agencyName = this.getAttribute('data-agency-name');
+                const agencyProgramContainers = document.querySelectorAll(`[data-agency-name="${agencyName}"]`);
+                
+                agencyProgramContainers.forEach(container => {
+                    const checkbox = container.querySelector('input[type="checkbox"]');
+                    if (checkbox && checkbox.checked) {
+                        checkbox.checked = false;
+                        toggleOrderInput(checkbox);
+                    }
+                });
+            });
+        });
+        
+        // View selected programs
+        document.getElementById('viewSelectedPrograms')?.addEventListener('click', function() {
+            showSelectedProgramsModal();
+        });
+        
+        // Clear all selections
+        document.getElementById('clearAllSelections')?.addEventListener('click', function() {
+            clearAllProgramSelections();
+        });
+    }
+    
+    // Show modal with selected programs
+    function showSelectedProgramsModal() {
+        const selectedPrograms = Array.from(globalProgramSelections.entries())
+            .filter(([id, data]) => data.selected)
+            .sort((a, b) => a[1].order - b[1].order);
+        
+        let modalHtml = `
+            <div class="modal fade" id="selectedProgramsModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-list-check me-2"></i>Selected Programs (${selectedPrograms.length})
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Order</th>
+                                            <th>Program Name</th>
+                                            <th>Agency</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+        `;
+        
+        selectedPrograms.forEach(([programId, data]) => {
+            modalHtml += `
+                <tr>
+                    <td><span class="badge bg-primary">${data.order}</span></td>
+                    <td>${data.program_number ? `<span class="badge bg-info me-2" title="Program Number">${data.program_number}</span>` : ''}${data.program_name}</td>
+                    <td>${data.agency}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-program" 
+                                data-program-id="${programId}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        modalHtml += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal
+        document.getElementById('selectedProgramsModal')?.remove();
+        
+        // Add new modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Add event listeners for remove buttons
+        document.querySelectorAll('.remove-program').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const programId = this.getAttribute('data-program-id');
+                removeProgramSelection(programId);
+                this.closest('tr').remove();
+            });
+        });
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('selectedProgramsModal'));
+        modal.show();
+    }
+      // Remove program selection
+    function removeProgramSelection(programId) {
+        if (globalProgramSelections.has(programId)) {
+            globalProgramSelections.get(programId).selected = false;
+        }
+        
+        // Update window reference
+        window.globalProgramSelections = globalProgramSelections;
+        
+        // Update UI
+        const checkbox = document.getElementById(`program_${programId}`);
+        if (checkbox) {
+            checkbox.checked = false;
+            toggleOrderInput(checkbox);
+        }
+    }
+
+      // Update all order numbers to ensure they're sequential and valid
+    function updateOrderNumbers() {
+        const orderInputs = document.querySelectorAll('#programSelector .program-order-input[style*="display: inline-block"]');
+        if (orderInputs.length === 0) {
+            return; // No visible order inputs, nothing to do
+        }
+        
+        const usedNumbers = new Set();
+        const duplicateInputs = [];
+        
+        // First pass: identify valid numbers and track duplicates
+        orderInputs.forEach(input => {
+            const value = parseInt(input.value);
+            if (!isNaN(value) && value > 0) {
+                if (usedNumbers.has(value)) {
+                    // This is a duplicate
+                    duplicateInputs.push(input);
+                } else {
+                    usedNumbers.add(value);
+                }
+            } else {
+                // Invalid or empty value
+                duplicateInputs.push(input);
+            }
+        });
+        
+        // Second pass: resolve duplicates and invalid values
+        if (duplicateInputs.length > 0) {
+            let nextAvailable = 1;
+            
+            duplicateInputs.forEach(input => {
+                // Find next available number
+                while (usedNumbers.has(nextAvailable)) {
+                    nextAvailable++;
+                }
+                
+                // Update the input
+                input.value = nextAvailable;
+                usedNumbers.add(nextAvailable);
+                
+                // Briefly highlight the input to show it was updated
+                input.classList.add('border-warning');
+                setTimeout(() => {
+                    input.classList.remove('border-warning');
+                }, 1500);
+            });
+            
+            // Show a notification about duplicates being resolved
+            const programContainer = document.querySelector('.program-selector-container');
+            if (duplicateInputs.length > 0 && programContainer) {
+                const existingDuplicateNotice = document.querySelector('.duplicate-notice');
+                if (!existingDuplicateNotice) {
                     const notice = document.createElement('div');
-                    notice.className = 'alert alert-warning mb-2 sort-notice';
-                    notice.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Select at least two programs to sort them.';
+                    notice.className = 'alert alert-info mb-2 duplicate-notice';
+                    notice.innerHTML = '<i class="fas fa-info-circle me-2"></i>Some order numbers were updated to resolve duplicates or invalid values.';
                     
-                    // Insert at the top
-                    if (programContainer && programContainer.firstChild) {
-                        programContainer.insertBefore(notice, programContainer.firstChild);
+                    // Insert after the header and buttons
+                    const headerDiv = programContainer.querySelector('.pb-2.mb-2.border-bottom');
+                    if (headerDiv && headerDiv.nextSibling) {
+                        programContainer.insertBefore(notice, headerDiv.nextSibling);
                         
                         // Auto-dismiss after 3 seconds
                         setTimeout(() => {
@@ -469,1258 +809,917 @@ document.addEventListener('DOMContentLoaded', function() {
                             setTimeout(() => notice.remove(), 500);
                         }, 3000);
                     }
-                    return;
-                }
-                
-                // Collect program IDs and their order values
-                const programOrders = [];
-                let hasDuplicates = false;
-                const orderValues = new Set();
-                
-                checkedPrograms.forEach(checkbox => {
-                    const programId = checkbox.value;
-                    const orderInput = document.getElementById(`order_${programId}`);
-                    if (orderInput) {
-                        // Use either the input value or a high default value for blank inputs
-                        let orderValue = parseInt(orderInput.value);
-                        
-                        if (!isNaN(orderValue) && orderValue > 0) {
-                            if (orderValues.has(orderValue)) {
-                                hasDuplicates = true;
-                            }
-                            orderValues.add(orderValue);
-                        } else {
-                            orderValue = 999999; // Default high value for blank or invalid inputs
-                        }
-                        
-                        programOrders.push({ programId, orderValue });
-                    }
-                });
-                
-                // Sort by order value
-                programOrders.sort((a, b) => a.orderValue - b.orderValue);
-                
-                // Reassign sequential order values
-                programOrders.forEach((program, index) => {
-                    const orderInput = document.getElementById(`order_${program.programId}`);
-                    if (orderInput) {
-                        orderInput.value = index + 1;
-                    }
-                });
-                
-                // Show a brief confirmation message
-                const programContainer = document.querySelector('.program-selector-container');
-                const existingNotice = document.querySelector('.sort-notice');
-                if (existingNotice) {
-                    existingNotice.remove(); // Remove any existing notice
-                }
-                
-                const notice = document.createElement('div');
-                notice.className = 'alert alert-success mb-2 sort-notice';
-                
-                if (hasDuplicates) {
-                    notice.innerHTML = '<i class="fas fa-check-circle me-2"></i>Programs sorted numerically! Duplicate numbers were resolved.';
-                } else {
-                    notice.innerHTML = '<i class="fas fa-check-circle me-2"></i>Programs sorted numerically! Programs will appear in this order in the report.';
-                }
-                
-                // Insert at the top
-                if (programContainer && programContainer.firstChild) {
-                    programContainer.insertBefore(notice, programContainer.firstChild);
-                    
-                    // Auto-dismiss after 3 seconds
-                    setTimeout(() => {
-                        notice.classList.add('fade');
-                        setTimeout(() => notice.remove(), 500);
-                    }, 3000);
                 }
             }
-        // Show/hide order input when checkbox is checked/unchecked
-        function toggleOrderInput(checkbox) {
-            const programId = checkbox.value;
-            const orderInput = document.getElementById(`order_${programId}`);
-            const orderBadge = checkbox.closest('.program-checkbox-container').querySelector('.program-order-badge');
-            const programContainer = checkbox.closest('.program-checkbox-container');
-            const agencyName = programContainer.getAttribute('data-agency-name');
-            const programName = programContainer.getAttribute('data-program-name');
-            const programNumber = programContainer.getAttribute('data-program-number');
-            
-            if (checkbox.checked) {
-                // Calculate the next available order based on currently selected programs
-                const currentlySelected = Array.from(globalProgramSelections.values()).filter(p => p.selected);
-                const nextOrder = currentlySelected.length + 1;
-                
-                // Add to global selections with the next sequential order
-                globalProgramSelections.set(programId, {
-                    selected: true,
-                    order: nextOrder,
-                    agency: agencyName,
-                    program_name: programName,
-                    program_number: programNumber
-                });
-                
-                if (orderInput) {
-                    orderInput.style.display = 'inline-block';
-                    orderInput.value = nextOrder;
-                }
-                
-                if (orderBadge) {
-                    orderBadge.textContent = nextOrder;
-                    orderBadge.classList.add('active');
-                }
-            } else {
-                console.log(`=== DESELECTING PROGRAM ${programId} ===`);
-                
-                // Mark as deselected in global selections
-                if (globalProgramSelections.has(programId)) {
-                    globalProgramSelections.get(programId).selected = false;
-                    console.log(`Marked program ${programId} as deselected`);
-                }
-                
-                if (orderInput) {
-                    orderInput.style.display = 'none';
-                    orderInput.value = '';
-                }
-                
-                if (orderBadge) {
-                    orderBadge.textContent = '#';
-                    orderBadge.classList.remove('active');
-                }
-                
-                // Small delay to ensure DOM updates are complete, then renumber
-                setTimeout(() => {
-                    console.log('Starting renumbering after deselection...');
-                    renumberSelectedPrograms();
-                }, 50);
-            }
-            
-            // Update window reference
-            window.globalProgramSelections = globalProgramSelections;
-            
-            updateSelectedProgramCount();
         }
         
-        // Initialize agency-specific select buttons
-        function initializeAgencySelectButtons() {
-            // Select all programs from specific agency
-            document.querySelectorAll('.select-agency-programs').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const agencyName = this.getAttribute('data-agency-name');
-                    const agencyProgramContainers = document.querySelectorAll(`[data-agency-name="${agencyName}"]`);
-                    
-                    agencyProgramContainers.forEach(container => {
-                        const checkbox = container.querySelector('input[type="checkbox"]');
-                        if (checkbox && !checkbox.checked) {
-                            checkbox.checked = true;
-                            toggleOrderInput(checkbox);
-                        }
-                    });
-                });
-            });
-            
-            // Deselect all programs from specific agency
-            document.querySelectorAll('.deselect-agency-programs').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const agencyName = this.getAttribute('data-agency-name');
-                    const agencyProgramContainers = document.querySelectorAll(`[data-agency-name="${agencyName}"]`);
-                    
-                    agencyProgramContainers.forEach(container => {
-                        const checkbox = container.querySelector('input[type="checkbox"]');
-                        if (checkbox && checkbox.checked) {
-                            checkbox.checked = false;
-                            toggleOrderInput(checkbox);
-                        }
-                    });
-                });
-            });
-            
-            // View selected programs
-            document.getElementById('viewSelectedPrograms')?.addEventListener('click', function() {
-                showSelectedProgramsModal();
-            });
-            
-            // Clear all selections
-            document.getElementById('clearAllSelections')?.addEventListener('click', function() {
-                clearAllProgramSelections();
-            });
-        }
-        
-        // Show modal with selected programs
-        function showSelectedProgramsModal() {
-            const selectedPrograms = Array.from(globalProgramSelections.entries())
-                .filter(([id, data]) => data.selected)
-                .sort((a, b) => a[1].order - b[1].order);
-            
-            let modalHtml = `
-                <div class="modal fade" id="selectedProgramsModal" tabindex="-1">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">
-                                    <i class="fas fa-list-check me-2"></i>Selected Programs (${selectedPrograms.length})
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Order</th>
-                                                <th>Program Name</th>
-                                                <th>Agency</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-            `;
-            
-            selectedPrograms.forEach(([programId, data]) => {
-                modalHtml += `
-                    <tr>
-                        <td><span class="badge bg-primary">${data.order}</span></td>
-                        <td>${data.program_number ? `<span class="badge bg-info me-2" title="Program Number">${data.program_number}</span>` : ''}${data.program_name}</td>
-                        <td>${data.agency}</td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-outline-danger remove-program" 
-                                    data-program-id="${programId}">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            modalHtml += `
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Remove existing modal
-            document.getElementById('selectedProgramsModal')?.remove();
-            
-            // Add new modal to body
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
-            // Add event listeners for remove buttons
-            document.querySelectorAll('.remove-program').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const programId = this.getAttribute('data-program-id');
-                    removeProgramSelection(programId);
-                    this.closest('tr').remove();
-                });
-            });
-            
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('selectedProgramsModal'));
-            modal.show();
-        }
-          // Remove program selection
-        function removeProgramSelection(programId) {
-            if (globalProgramSelections.has(programId)) {
-                globalProgramSelections.get(programId).selected = false;
-            }
-            
-            // Update window reference
-            window.globalProgramSelections = globalProgramSelections;
-            
-            // Update UI
-            const checkbox = document.getElementById(`program_${programId}`);
-            if (checkbox) {
-                checkbox.checked = false;
-                toggleOrderInput(checkbox);
-            }
-        }
-
-          // Update all order numbers to ensure they're sequential and valid
-        function updateOrderNumbers() {
-            const orderInputs = document.querySelectorAll('#programSelector .program-order-input[style*="display: inline-block"]');
-            if (orderInputs.length === 0) {
-                return; // No visible order inputs, nothing to do
-            }
-            
-            const usedNumbers = new Set();
-            const duplicateInputs = [];
-            
-            // First pass: identify valid numbers and track duplicates
-            orderInputs.forEach(input => {
-                const value = parseInt(input.value);
-                if (!isNaN(value) && value > 0) {
-                    if (usedNumbers.has(value)) {
-                        // This is a duplicate
-                        duplicateInputs.push(input);
-                    } else {
-                        usedNumbers.add(value);
-                    }
-                } else {
-                    // Invalid or empty value
-                    duplicateInputs.push(input);
-                }
-            });
-            
-            // Second pass: resolve duplicates and invalid values
-            if (duplicateInputs.length > 0) {
-                let nextAvailable = 1;
-                
-                duplicateInputs.forEach(input => {
-                    // Find next available number
-                    while (usedNumbers.has(nextAvailable)) {
-                        nextAvailable++;
-                    }
-                    
-                    // Update the input
-                    input.value = nextAvailable;
-                    usedNumbers.add(nextAvailable);
-                    
-                    // Briefly highlight the input to show it was updated
-                    input.classList.add('border-warning');
-                    setTimeout(() => {
-                        input.classList.remove('border-warning');
-                    }, 1500);
-                });
-                
-                // Show a notification about duplicates being resolved
-                const programContainer = document.querySelector('.program-selector-container');
-                if (duplicateInputs.length > 0 && programContainer) {
-                    const existingDuplicateNotice = document.querySelector('.duplicate-notice');
-                    if (!existingDuplicateNotice) {
-                        const notice = document.createElement('div');
-                        notice.className = 'alert alert-info mb-2 duplicate-notice';
-                        notice.innerHTML = '<i class="fas fa-info-circle me-2"></i>Some order numbers were updated to resolve duplicates or invalid values.';
-                        
-                        // Insert after the header and buttons
-                        const headerDiv = programContainer.querySelector('.pb-2.mb-2.border-bottom');
-                        if (headerDiv && headerDiv.nextSibling) {
-                            programContainer.insertBefore(notice, headerDiv.nextSibling);
-                            
-                            // Auto-dismiss after 3 seconds
-                            setTimeout(() => {
-                                notice.classList.add('fade');
-                                setTimeout(() => notice.remove(), 500);
-                            }, 3000);
-                        }
-                    }
-                }
-            }
-            
-            // Update all badges to reflect current order numbers
-            updateOrderBadges();
-        }
-          // Update all order badges to show current numbers
-        function updateOrderBadges() {
-            const orderInputs = document.querySelectorAll('#programSelector .program-order-input[style*="display: inline-block"]');
-            orderInputs.forEach(input => {
-                const programContainer = input.closest('.program-checkbox-container');
-                const badge = programContainer?.querySelector('.program-order-badge');
-                if (badge && input.value) {
-                    badge.textContent = input.value;
-                }
-            });
-        }
-        
-        // Dynamically renumber all selected programs to maintain sequential order
-        function renumberSelectedPrograms() {
-            console.log('=== RENUMBERING PROGRAMS ===');
-            
-            // Get all currently selected programs from global state
-            const selectedPrograms = [];
-            
-            // Collect selected programs from global state
-            globalProgramSelections.forEach((data, programId) => {
-                if (data.selected) {
-                    const checkbox = document.querySelector(`#programSelector input[value="${programId}"]`);
-                    const orderInput = document.getElementById(`order_${programId}`);
-                    
-                    if (checkbox && checkbox.checked && orderInput && orderInput.style.display !== 'none') {
-                        selectedPrograms.push({
-                            programId: programId,
-                            checkbox: checkbox,
-                            orderInput: orderInput,
-                            currentOrder: data.order || 999,
-                            data: data
-                        });
-                        console.log(`Found selected program ${programId} with current order ${data.order}`);
-                    }
-                }
-            });
-            
-            console.log(`Total selected programs found: ${selectedPrograms.length}`);
-            
-            // Sort by current order to maintain user's intended sequence
-            selectedPrograms.sort((a, b) => a.currentOrder - b.currentOrder);
-            
-            // Renumber sequentially starting from 1
-            selectedPrograms.forEach((program, index) => {
-                const newOrder = index + 1;
-                console.log(`Updating program ${program.programId} from order ${program.currentOrder} to ${newOrder}`);
-                
-                // Update the input field
-                program.orderInput.value = newOrder;
-                
-                // Update the badge
-                const orderBadge = program.checkbox.closest('.program-checkbox-container').querySelector('.program-order-badge');
-                if (orderBadge) {
-                    orderBadge.textContent = newOrder;
-                    orderBadge.classList.add('active');
-                }
-                
-                // Update global state
-                program.data.order = newOrder;
-                globalProgramSelections.set(program.programId, program.data);
-            });
-            
-            // Force update window reference
-            window.globalProgramSelections = globalProgramSelections;
-            
-            console.log(`=== RENUMBERING COMPLETE: ${selectedPrograms.length} programs ===`);
-            
-            // Debug: Log final state
-            globalProgramSelections.forEach((data, id) => {
-                if (data.selected) {
-                    console.log(`Final state - Program ${id}: Order ${data.order}`);
-                }
-            });
-        }
-        
-        // Update the program count badge for SELECTED programs
-        function updateSelectedProgramCount() {
-            const selectedCount = Array.from(globalProgramSelections.values()).filter(p => p.selected).length;
-            // This function can be expanded to update a dedicated UI element for selected count if one exists.
-            // For now, the count is mainly shown in the 'View Selected' modal and the dynamic banner.
-        }
-
-          // Set up period and sector change events
-        if (periodSelect && programSelector) {
-            // Load programs when period changes
-            periodSelect.addEventListener('change', function() {
-                loadPrograms();
-            });
-        }
-        if (sectorSelect && programSelector) {
-            // Filter programs when sector changes
-            sectorSelect.addEventListener('change', function() {
-                if (allLoadedPrograms.length > 0) {
-                    // Use enhanced filtering system
-                    applyAllFilters();
-                } else if (periodSelect.value) {
-                    // If a period is selected, reload programs with the new sector filter
-                    loadPrograms();
-                } else {
-                    // If no period is selected yet, show message
-                    if (programContainerElement) {
-                        programContainerElement.innerHTML = `
-                            <div class="alert alert-info border-primary">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Getting Started:</strong> Please select a reporting period above to load available programs for selection.
-                            </div>
-                        `;
-                    }
-                    // Highlight the period selector to indicate it should be selected
-                    if (periodSelect) {
-                        periodSelect.classList.add('border-warning');
-                        setTimeout(() => {
-                            periodSelect.classList.remove('border-warning');
-                        }, 2000);
-                    }
-                }
-            });
-        }
-
-    // Enhanced Filter Bar Event Listeners
-    function setupEnhancedFilterEventListeners() {
-        // Search input with debouncing
-        const searchInput = document.getElementById('programSearchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    applyAllFilters();
-                }, 300); // 300ms debounce
-            });
-        }
-
-        // Clear search button
-        const clearSearchBtn = document.getElementById('clearSearchBtn');
-        if (clearSearchBtn) {
-            clearSearchBtn.addEventListener('click', function() {
-                if (searchInput) {
-                    searchInput.value = '';
-                    applyAllFilters();
-                }
-            });
-        }
-
-        // Select all visible programs
-        const selectAllBtn = document.getElementById('selectAllPrograms');
-        if (selectAllBtn) {
-            selectAllBtn.addEventListener('click', function() {
-                selectAllVisiblePrograms();
-            });
-        }
-
-        // Clear all program selections
-        const clearAllBtn = document.getElementById('clearAllSelections');
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', function() {
-                clearAllProgramSelections();
-            });
-        }
-
-        // Reset all filters
-        const resetFiltersBtn = document.getElementById('resetAllFilters');
-        if (resetFiltersBtn) {
-            resetFiltersBtn.addEventListener('click', function() {
-                resetAllFilters();
-            });
-        }
-
-        // Target selection event listeners
-        const selectAllTargetsBtn = document.getElementById('selectAllTargets');
-        if (selectAllTargetsBtn) {
-            selectAllTargetsBtn.addEventListener('click', function() {
-                selectAllTargets();
-            });
-        }
-
-        const clearAllTargetsBtn = document.getElementById('clearAllTargets');
-        if (clearAllTargetsBtn) {
-            clearAllTargetsBtn.addEventListener('click', function() {
-                clearAllTargets();
-            });
-        }
+        // Update all badges to reflect current order numbers
+        updateOrderBadges();
     }
-
-    // Call the enhanced filter setup
-    setupEnhancedFilterEventListeners();
-    
-          // Show default state in program selector
-        if (programContainerElement) {
-            programContainerElement.innerHTML = `
-                <div class="alert alert-info border-primary">
-                    <strong>Getting Started:</strong> Please select a reporting period above to load available programs for selection.
-                    <div class="mt-2">
-                        <small class="text-muted">
-                            <i class="fas fa-lightbulb me-1"></i>
-                            Tip: Programs are filtered by the selected reporting period to show only relevant submissions.
-                        </small>
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Add visual highlighting when users click in program area without selecting period
-        if (programSelector) {
-            programSelector.addEventListener('click', function(e) {
-                const periodId = periodSelect ? periodSelect.value : null;
-                if (!periodId && periodSelect) {
-                    // Highlight the period selector to draw attention
-                    periodSelect.classList.add('border-warning', 'shadow-sm');
-                    periodSelect.focus();
-                    
-                    // Remove highlight after 3 seconds
-                    setTimeout(() => {
-                        periodSelect.classList.remove('border-warning', 'shadow-sm');
-                    }, 3000);
-                    
-                    // Show a brief tooltip-like message
-                    const tooltip = document.createElement('div');
-                    tooltip.className = 'alert alert-warning alert-dismissible fade show position-absolute';
-                    tooltip.style.cssText = 'top: -60px; left: 0; right: 0; z-index: 1050; font-size: 0.875rem;';
-                    tooltip.innerHTML = `
-                        <i class="fas fa-arrow-up me-1"></i>
-                        <strong>Please select a reporting period first!</strong>
-                        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
-                    `;
-                      // Position relative to period select
-                    const periodContainer = periodSelect.closest('.report-form-group');
-                    if (periodContainer) {
-                        periodContainer.style.position = 'relative';
-                        periodContainer.appendChild(tooltip);
-                        
-                        // Auto-dismiss after 4 seconds
-                        setTimeout(() => {
-                            if (tooltip.parentNode) {
-                                tooltip.classList.remove('show');
-                                setTimeout(() => tooltip.remove(), 150);
-                            }
-                        }, 4000);
-                    }
-                }
-            });
-        }
-        // End of ReportUI check
-    } else {
-        console.error('ReportUI module not found. Make sure report-ui.js is loaded before report-generator.js');
-    }
-
-    // Enhanced filtering functions
-    function updateVisibleProgramCount(count) {
-        const countElement = document.getElementById('programCount');
-        const badgeElement = document.getElementById('programCountBadge');
-        
-        if (countElement) {
-            countElement.textContent = count;
-        }
-        
-        if (badgeElement) {
-            // Update badge color based on count
-            badgeElement.className = count > 0 ? 'badge bg-success' : 'badge bg-secondary';
-        }
-    }
-
-    function searchPrograms(programs, searchText) {
-        if (!searchText || searchText.length < 1) {
-            return programs;
-        }
-        
-        const searchLower = searchText.toLowerCase();
-        return programs.filter(program => {
-            // Search in program name, number, and agency
-            const searchableText = [
-                program.program_name || '',
-                program.program_number || '',
-                program.agency_name || ''
-            ].join(' ').toLowerCase();
-            
-            return searchableText.includes(searchLower);
+      // Update all order badges to show current numbers
+    function updateOrderBadges() {
+        const orderInputs = document.querySelectorAll('#programSelector .program-order-input[style*="display: inline-block"]');
+        orderInputs.forEach(input => {
+            const programContainer = input.closest('.program-checkbox-container');
+            const badge = programContainer?.querySelector('.program-order-badge');
+            if (badge && input.value) {
+                badge.textContent = input.value;
+            }
         });
     }
-    function applyAllFilters() {
-        let programs = [...allLoadedPrograms]; // Start with all loaded programs
+    
+    // Dynamically renumber all selected programs to maintain sequential order
+    function renumberSelectedPrograms() {
+        console.log('=== RENUMBERING PROGRAMS ===');
         
-        // Apply agency filter using new integrated system
-        const selectedAgencies = getSelectedAgencyIds();
-        if (selectedAgencies.length > 0) {
-            programs = programs.filter(program => 
-                selectedAgencies.includes(program.owner_agency_id?.toString()));
-        }
+        // Get all currently selected programs from global state
+        const selectedPrograms = [];
         
-        // Apply search filter
-        const searchInput = document.getElementById('programSearchInput');
-        if (searchInput && searchInput.value.trim()) {
-            programs = searchPrograms(programs, searchInput.value.trim());
-        }
+        // Collect selected programs from global state
+        globalProgramSelections.forEach((data, programId) => {
+            if (data.selected) {
+                const checkbox = document.querySelector(`#programSelector input[value="${programId}"]`);
+                const orderInput = document.getElementById(`order_${programId}`);
+                
+                if (checkbox && checkbox.checked && orderInput && orderInput.style.display !== 'none') {
+                    selectedPrograms.push({
+                        programId: programId,
+                        checkbox: checkbox,
+                        orderInput: orderInput,
+                        currentOrder: data.order || 999,
+                        data: data
+                    });
+                    console.log(`Found selected program ${programId} with current order ${data.order}`);
+                }
+            }
+        });
         
-        // Update filtered programs and count
-        filteredPrograms = programs;
-        updateVisibleProgramCount(programs.length);
+        console.log(`Total selected programs found: ${selectedPrograms.length}`);
         
-        // Re-render the programs display
-        renderProgramsList(programs);
+        // Sort by current order to maintain user's intended sequence
+        selectedPrograms.sort((a, b) => a.currentOrder - b.currentOrder);
         
+        // Renumber sequentially starting from 1
+        selectedPrograms.forEach((program, index) => {
+            const newOrder = index + 1;
+            console.log(`Updating program ${program.programId} from order ${program.currentOrder} to ${newOrder}`);
+            
+            // Update the input field
+            program.orderInput.value = newOrder;
+            
+            // Update the badge
+            const orderBadge = program.checkbox.closest('.program-checkbox-container').querySelector('.program-order-badge');
+            if (orderBadge) {
+                orderBadge.textContent = newOrder;
+                orderBadge.classList.add('active');
+            }
+            
+            // Update global state
+            program.data.order = newOrder;
+            globalProgramSelections.set(program.programId, program.data);
+        });
+        
+        // Force update window reference
+        window.globalProgramSelections = globalProgramSelections;
+        
+        console.log(`=== RENUMBERING COMPLETE: ${selectedPrograms.length} programs ===`);
+        
+        // Debug: Log final state
+        globalProgramSelections.forEach((data, id) => {
+            if (data.selected) {
+                console.log(`Final state - Program ${id}: Order ${data.order}`);
+            }
+        });
+    }
+    
+    // Update the program count badge for SELECTED programs
+    function updateSelectedProgramCount() {
+        const selectedCount = Array.from(globalProgramSelections.values()).filter(p => p.selected).length;
+        // This function can be expanded to update a dedicated UI element for selected count if one exists.
+        // For now, the count is mainly shown in the 'View Selected' modal and the dynamic banner.
+    }
+
+      // Set up period and sector change events
+    if (periodSelect && programSelector) {
+        // Load programs when period changes
+        periodSelect.addEventListener('change', function() {
+            loadPrograms();
+        });
+    }
+    if (sectorSelect && programSelector) {
+        // Filter programs when sector changes
+        sectorSelect.addEventListener('change', function() {
+            if (allLoadedPrograms.length > 0) {
+                // Use enhanced filtering system
+                applyAllFilters();
+            } else if (periodSelect.value) {
+                // If a period is selected, reload programs with the new sector filter
+                loadPrograms();
+            } else {
+                // If no period is selected yet, show message
+                if (programContainerElement) {
+                    programContainerElement.innerHTML = `
+                        <div class="alert alert-info border-primary">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Getting Started:</strong> Please select a reporting period above to load available programs for selection.
+                        </div>
+                    `;
+                }
+                // Highlight the period selector to indicate it should be selected
+                if (periodSelect) {
+                    periodSelect.classList.add('border-warning');
+                    setTimeout(() => {
+                        periodSelect.classList.remove('border-warning');
+                    }, 2000);
+                }
+            }
+        });
+    }
+
+// Enhanced Filter Bar Event Listeners
+function setupEnhancedFilterEventListeners() {
+    // Search input with debouncing
+    const searchInput = document.getElementById('programSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                applyAllFilters();
+            }, 300); // 300ms debounce
+        });
+    }
+
+    // Clear search button
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            if (searchInput) {
+                searchInput.value = '';
+                applyAllFilters();
+            }
+        });
+    }
+
+    // Select all visible programs
+    const selectAllBtn = document.getElementById('selectAllPrograms');
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', function() {
+            selectAllVisiblePrograms();
+        });
+    }
+
+    // Clear all program selections
+    const clearAllBtn = document.getElementById('clearAllSelections');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', function() {
+            clearAllProgramSelections();
+        });
+    }
+
+    // Reset all filters
+    const resetFiltersBtn = document.getElementById('resetAllFilters');
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', function() {
+            resetAllFilters();
+        });
+    }
+
+    // Target selection event listeners
+    const selectAllTargetsBtn = document.getElementById('selectAllTargets');
+    if (selectAllTargetsBtn) {
+        selectAllTargetsBtn.addEventListener('click', function() {
+            selectAllTargets();
+        });
+    }
+
+    const clearAllTargetsBtn = document.getElementById('clearAllTargets');
+    if (clearAllTargetsBtn) {
+        clearAllTargetsBtn.addEventListener('click', function() {
+            clearAllTargets();
+        });
+    }
+}
+
+// Call the enhanced filter setup
+setupEnhancedFilterEventListeners();
+    
+      // Show default state in program selector
+    if (programContainerElement) {
+        programContainerElement.innerHTML = `
+            <div class="alert alert-info border-primary">
+                <strong>Getting Started:</strong> Please select a reporting period above to load available programs for selection.
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        Tip: Programs are filtered by the selected reporting period to show only relevant submissions.
+                    </small>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add visual highlighting when users click in program area without selecting period
+    if (programSelector) {
+        programSelector.addEventListener('click', function(e) {
+            const periodId = periodSelect ? periodSelect.value : null;
+            if (!periodId && periodSelect) {
+                // Highlight the period selector to draw attention
+                periodSelect.classList.add('border-warning', 'shadow-sm');
+                periodSelect.focus();
+                
+                // Remove highlight after 3 seconds
+                setTimeout(() => {
+                    periodSelect.classList.remove('border-warning', 'shadow-sm');
+                }, 3000);
+                
+                // Show a brief tooltip-like message
+                const tooltip = document.createElement('div');
+                tooltip.className = 'alert alert-warning alert-dismissible fade show position-absolute';
+                tooltip.style.cssText = 'top: -60px; left: 0; right: 0; z-index: 1050; font-size: 0.875rem;';
+                tooltip.innerHTML = `
+                    <i class="fas fa-arrow-up me-1"></i>
+                    <strong>Please select a reporting period first!</strong>
+                    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+                `;
+                  // Position relative to period select
+                const periodContainer = periodSelect.closest('.report-form-group');
+                if (periodContainer) {
+                    periodContainer.style.position = 'relative';
+                    periodContainer.appendChild(tooltip);
+                    
+                    // Auto-dismiss after 4 seconds
+                    setTimeout(() => {
+                        if (tooltip.parentNode) {
+                            tooltip.classList.remove('show');
+                            setTimeout(() => tooltip.remove(), 150);
+                        }
+                    }, 4000);
+                }
+            }
+        });
+    }
+    // End of ReportUI check
+
+// Enhanced filtering functions
+function updateVisibleProgramCount(count) {
+    const countElement = document.getElementById('programCount');
+    const badgeElement = document.getElementById('programCountBadge');
+    
+    if (countElement) {
+        countElement.textContent = count;
+    }
+    
+    if (badgeElement) {
+        // Update badge color based on count
+        badgeElement.className = count > 0 ? 'badge bg-success' : 'badge bg-secondary';
+    }
+}
+
+function searchPrograms(programs, searchText) {
+    if (!searchText || searchText.length < 1) {
         return programs;
     }
-
-    function renderProgramsList(programs) {
-        const programContainerElement = document.querySelector('#programSelector .program-selector-container');
-        if (!programContainerElement) return;
-
-        let html = '';
-
-        // Add summary of currently selected programs
-        const selectedCount = Array.from(globalProgramSelections.values()).filter(p => p.selected).length;
-        if (selectedCount > 0) {
-            html += `
-                <div class="alert alert-success mb-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-check-circle me-2"></i>
-                            <strong>${selectedCount} programs selected for report</strong>
-                        </div>
-                        <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-outline-success btn-sm" id="viewSelectedProgramsBtn">
-                                <i class="fas fa-list me-1"></i>View Selected
-                            </button>
-                            <button type="button" class="btn btn-outline-danger btn-sm" id="clearAllSelectionsBtn">
-                                <i class="fas fa-times me-1"></i>Clear All
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        if (programs.length === 0) {
-            html += `
-                <div class="alert alert-warning text-center">
-                    <i class="fas fa-search me-2"></i>
-                    <strong>No programs found</strong><br>
-                    <small>Try adjusting your filters or search terms.</small>
-                </div>
-            `;
-        } else {
-            // Group programs by sector for better organization
-            const programsBySector = {};
-            programs.forEach(program => {
-                const sectorKey = program.sector_name || 'Unknown Sector';
-                if (!programsBySector[sectorKey]) {
-                    programsBySector[sectorKey] = [];
-                }
-                programsBySector[sectorKey].push(program);
-            });
-
-            Object.keys(programsBySector).sort().forEach(sectorName => {
-                const sectorPrograms = programsBySector[sectorName];
-                
-                html += `
-                    <div class="sector-group mb-3">
-                        <h6 class="sector-header d-flex align-items-center mb-2">
-                            <i class="fas fa-industry me-2 text-primary"></i>
-                            <span>${sectorName}</span>
-                            <span class="badge bg-light text-dark ms-2">${sectorPrograms.length}</span>
-                        </h6>
-                `;
-
-                // Group by agency within sector
-                const programsByAgency = {};
-                sectorPrograms.forEach(program => {
-                    const agencyKey = program.agency_name || 'Unknown Agency';
-                    if (!programsByAgency[agencyKey]) {
-                        programsByAgency[agencyKey] = [];
-                    }
-                    programsByAgency[agencyKey].push(program);
-                });
-
-                Object.keys(programsByAgency).sort().forEach(agencyName => {
-                    const agencyPrograms = programsByAgency[agencyName];
-                    
-                    html += `
-                        <div class="agency-group mb-2">
-                            <div class="agency-header ms-2 mb-2">
-                                <small class="text-muted fw-bold">
-                                    <i class="fas fa-building me-1"></i>${agencyName}
-                                </small>
-                            </div>
-                    `;
-
-                    agencyPrograms.forEach(program => {
-                        const programId = program.program_id;
-                        const isSelected = globalProgramSelections.has(programId) && globalProgramSelections.get(programId).selected;
-                        const orderValue = isSelected ? globalProgramSelections.get(programId).order : '';
-                        
-                        html += `
-                            <div class="program-checkbox-container ms-4" data-program-id="${programId}" data-agency-name="${program.agency_name}" data-program-name="${program.program_name}" data-program-number="${program.program_number || ''}">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input program-checkbox" 
-                                        id="program_${programId}" 
-                                        name="selected_program_ids[]" 
-                                        value="${programId}"
-                                        ${isSelected ? 'checked' : ''}>
-                                    <label class="form-check-label" for="program_${programId}">
-                                        ${program.program_number ? `<span class="badge bg-info me-2" title="Program Number">${program.program_number}</span>` : ''}${program.program_name}
-                                    </label>
-                                </div>
-                                <div class="program-order-badge ${isSelected ? 'active' : ''}" title="Click to edit order">
-                                    ${isSelected ? orderValue : '#'}
-                                </div>
-                                <input type="number" min="1" class="program-order-input" 
-                                    name="program_order_${programId}" 
-                                    id="order_${programId}" 
-                                    value="${isSelected ? orderValue : ''}"
-                                    ${isSelected ? '' : 'style="display: none;"'}>
-                            </div>
-                        `;
-                    });
-
-                    html += '</div>'; // Close agency-group
-                });
-
-                html += '</div>'; // Close sector-group
-            });
-        }
-
-        programContainerElement.innerHTML = html;
-
-        // Re-attach event listeners
-        attachProgramEventListeners();
-        document.getElementById('viewSelectedProgramsBtn')?.addEventListener('click', showSelectedProgramsModal);
-        document.getElementById('clearAllSelectionsBtn')?.addEventListener('click', clearAllProgramSelections);
-    }
-    function selectAllVisiblePrograms() {
-        const visibleCheckboxes = document.querySelectorAll('.program-checkbox:not(:disabled)');
-        let selectedCount = 0;
+    
+    const searchLower = searchText.toLowerCase();
+    return programs.filter(program => {
+        // Search in program name, number, and agency
+        const searchableText = [
+            program.program_name || '',
+            program.program_number || '',
+            program.agency_name || ''
+        ].join(' ').toLowerCase();
         
-        visibleCheckboxes.forEach(checkbox => {
-            if (!checkbox.checked) {
-                checkbox.checked = true;
-                
-                // Get program data from the container
-                const container = checkbox.closest('.program-checkbox-container');
-                if (container) {
-                    const programId = parseInt(container.dataset.programId);
-                    const programName = container.dataset.programName;
-                    const programNumber = container.dataset.programNumber;
-                    const agencyName = container.dataset.agencyName;
-                    
-                    // Calculate next available order
-                    const currentlySelected = Array.from(globalProgramSelections.values()).filter(p => p.selected);
-                    const nextOrder = currentlySelected.length + 1;
-                    
-                    // Add to global selections
-                    globalProgramSelections.set(programId, {
-                        selected: true,
-                        order: nextOrder,
-                        program_name: programName,
-                        program_number: programNumber,
-                        agency: agencyName
-                    });
-                    
-                    // Show order input
-                    const orderInput = document.getElementById(`order_${programId}`);
-                    const orderBadge = container.querySelector('.program-order-badge');
-                    if (orderInput && orderBadge) {
-                        orderInput.style.display = 'inline-block';
-                        orderInput.value = globalProgramSelections.get(programId).order;
-                        orderBadge.classList.add('active');
-                        orderBadge.textContent = globalProgramSelections.get(programId).order;
-                    }
-                }
-                selectedCount++;
-            }
-        });
-        
-        // Show success message
-        if (selectedCount > 0) {
-            showNotification(`Selected ${selectedCount} programs`, 'success');
-        } else {
-            showNotification('All visible programs are already selected', 'info');
-        }
-        applyAllFilters();
-        
-        // Load targets for newly selected programs
-        loadTargets();
+        return searchableText.includes(searchLower);
+    });
+}
+function applyAllFilters() {
+    let programs = [...allLoadedPrograms]; // Start with all loaded programs
+    
+    // Apply agency filter using new integrated system
+    const selectedAgencies = getSelectedAgencyIds();
+    if (selectedAgencies.length > 0) {
+        programs = programs.filter(program => 
+            selectedAgencies.includes(program.owner_agency_id?.toString()));
     }
     
-    // Make clearAllProgramSelections globally accessible
-    window.clearAllProgramSelections = function() {
-        // Clear global selections state
-        globalProgramSelections.clear();
-
-        // Update UI
-        const allCheckboxes = document.querySelectorAll('.program-checkbox');
-        let clearedCount = 0;
-        
-        allCheckboxes.forEach(checkbox => {
-            if (checkbox.checked) {
-                checkbox.checked = false;
-                clearedCount++;
-                
-                // Get program data from the container
-                const container = checkbox.closest('.program-checkbox-container');
-                if (container) {
-                    const programId = parseInt(container.dataset.programId);
-                    
-                    // Hide order input
-                    const orderInput = document.getElementById(`order_${programId}`);
-                    const orderBadge = container.querySelector('.program-order-badge');
-                    if (orderInput && orderBadge) {
-                        orderInput.style.display = 'none';
-                        orderInput.value = '';
-                        orderBadge.classList.remove('active');
-                        orderBadge.textContent = '#';
-                    }
-                }
-            }
-        });
-        
-        if (clearedCount > 0) {
-            showNotification(`Cleared ${clearedCount} program selections`, 'info');
-        }
-
-        // Refresh the program list and count
-        applyAllFilters();
-        
-        // Update target selection when programs are cleared
-        loadTargets();
+    // Apply search filter
+    const searchInput = document.getElementById('programSearchInput');
+    if (searchInput && searchInput.value.trim()) {
+        programs = searchPrograms(programs, searchInput.value.trim());
     }
-    function resetAllFilters() {
-        // Clear search
-        const searchInput = document.getElementById('programSearchInput');
-        if (searchInput) {
-            searchInput.value = '';
-        }
-        
-        // Reset agency filters
-        selectedAgencyIds = [];
-        const agencyButtons = document.querySelectorAll('.agency-filter-btn');
-        agencyButtons.forEach(btn => {
-            if (btn.dataset.agencyId === 'all') {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
-        
-        // Reapply filters
-        applyAllFilters();
-        
-        showNotification('All filters reset', 'info');
-    }
+    
+    // Update filtered programs and count
+    filteredPrograms = programs;
+    updateVisibleProgramCount(programs.length);
+    
+    // Re-render the programs display
+    renderProgramsList(programs);
+    
+    return programs;
+}
 
-    function showNotification(message, type = 'info') {
-        // Simple notification - you can enhance this with a toast library
-        const alertClass = type === 'success' ? 'alert-success' : 
-                          type === 'warning' ? 'alert-warning' : 
-                          type === 'error' ? 'alert-danger' : 'alert-info';
-        
-        const notification = document.createElement('div');
-        notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
-        notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 250px;';
-        notification.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+function renderProgramsList(programs) {
+    const programContainerElement = document.querySelector('#programSelector .program-selector-container');
+    if (!programContainerElement) return;
+
+    let html = '';
+
+    // Add summary of currently selected programs
+    const selectedCount = Array.from(globalProgramSelections.values()).filter(p => p.selected).length;
+    if (selectedCount > 0) {
+        html += `
+            <div class="alert alert-success mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>${selectedCount} programs selected for report</strong>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-success btn-sm" id="viewSelectedProgramsBtn">
+                            <i class="fas fa-list me-1"></i>View Selected
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" id="clearAllSelectionsBtn">
+                            <i class="fas fa-times me-1"></i>Clear All
+                        </button>
+                    </div>
+                </div>
+            </div>
         `;
-        
-        document.body.appendChild(notification);
-        
-        // Auto-remove after 3 seconds
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 3000);
     }
 
-    // Function to attach event listeners to program checkboxes and order inputs
-    function attachProgramEventListeners() {
-        const programCheckboxes = document.querySelectorAll('.program-checkbox');
-        const orderInputs = document.querySelectorAll('.program-order-input');
-        
-        // Handle checkbox changes
-        programCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const container = this.closest('.program-checkbox-container');
-                if (!container) return;
+    if (programs.length === 0) {
+        html += `
+            <div class="alert alert-warning text-center">
+                <i class="fas fa-search me-2"></i>
+                <strong>No programs found</strong><br>
+                <small>Try adjusting your filters or search terms.</small>
+            </div>
+        `;
+    } else {
+        // Group programs by sector for better organization
+        const programsBySector = {};
+        programs.forEach(program => {
+            const sectorKey = program.sector_name || 'Unknown Sector';
+            if (!programsBySector[sectorKey]) {
+                programsBySector[sectorKey] = [];
+            }
+            programsBySector[sectorKey].push(program);
+        });
+
+        Object.keys(programsBySector).sort().forEach(sectorName => {
+            const sectorPrograms = programsBySector[sectorName];
+            
+            html += `
+                <div class="sector-group mb-3">
+                    <h6 class="sector-header d-flex align-items-center mb-2">
+                        <i class="fas fa-industry me-2 text-primary"></i>
+                        <span>${sectorName}</span>
+                        <span class="badge bg-light text-dark ms-2">${sectorPrograms.length}</span>
+                    </h6>
+            `;
+
+            // Group by agency within sector
+            const programsByAgency = {};
+            sectorPrograms.forEach(program => {
+                const agencyKey = program.agency_name || 'Unknown Agency';
+                if (!programsByAgency[agencyKey]) {
+                    programsByAgency[agencyKey] = [];
+                }
+                programsByAgency[agencyKey].push(program);
+            });
+
+            Object.keys(programsByAgency).sort().forEach(agencyName => {
+                const agencyPrograms = programsByAgency[agencyName];
                 
+                html += `
+                    <div class="agency-group mb-2">
+                        <div class="agency-header ms-2 mb-2">
+                            <small class="text-muted fw-bold">
+                                <i class="fas fa-building me-1"></i>${agencyName}
+                            </small>
+                        </div>
+                `;
+
+                agencyPrograms.forEach(program => {
+                    const programId = program.program_id;
+                    const isSelected = globalProgramSelections.has(programId) && globalProgramSelections.get(programId).selected;
+                    const orderValue = isSelected ? globalProgramSelections.get(programId).order : '';
+                    
+                    html += `
+                        <div class="program-checkbox-container ms-4" data-program-id="${programId}" data-agency-name="${program.agency_name}" data-program-name="${program.program_name}" data-program-number="${program.program_number || ''}">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input program-checkbox" 
+                                    id="program_${programId}" 
+                                    name="selected_program_ids[]" 
+                                    value="${programId}"
+                                    ${isSelected ? 'checked' : ''}>
+                                <label class="form-check-label" for="program_${programId}">
+                                    ${program.program_number ? `<span class="badge bg-info me-2" title="Program Number">${program.program_number}</span>` : ''}${program.program_name}
+                                </label>
+                            </div>
+                            <div class="program-order-badge ${isSelected ? 'active' : ''}" title="Click to edit order">
+                                ${isSelected ? orderValue : '#'}
+                            </div>
+                            <input type="number" min="1" class="program-order-input" 
+                                name="program_order_${programId}" 
+                                id="order_${programId}" 
+                                value="${isSelected ? orderValue : ''}"
+                                ${isSelected ? '' : 'style="display: none;"'}>
+                        </div>
+                    `;
+                });
+
+                html += '</div>'; // Close agency-group
+            });
+
+            html += '</div>'; // Close sector-group
+        });
+    }
+
+    programContainerElement.innerHTML = html;
+
+    // Re-attach event listeners
+    attachProgramEventListeners();
+    document.getElementById('viewSelectedProgramsBtn')?.addEventListener('click', showSelectedProgramsModal);
+    document.getElementById('clearAllSelectionsBtn')?.addEventListener('click', clearAllProgramSelections);
+}
+function selectAllVisiblePrograms() {
+    const visibleCheckboxes = document.querySelectorAll('.program-checkbox:not(:disabled)');
+    let selectedCount = 0;
+    
+    visibleCheckboxes.forEach(checkbox => {
+        if (!checkbox.checked) {
+            checkbox.checked = true;
+            
+            // Get program data from the container
+            const container = checkbox.closest('.program-checkbox-container');
+            if (container) {
                 const programId = parseInt(container.dataset.programId);
                 const programName = container.dataset.programName;
                 const programNumber = container.dataset.programNumber;
                 const agencyName = container.dataset.agencyName;
                 
+                // Calculate next available order
+                const currentlySelected = Array.from(globalProgramSelections.values()).filter(p => p.selected);
+                const nextOrder = currentlySelected.length + 1;
+                
+                // Add to global selections
+                globalProgramSelections.set(programId, {
+                    selected: true,
+                    order: nextOrder,
+                    program_name: programName,
+                    program_number: programNumber,
+                    agency: agencyName
+                });
+                
+                // Show order input
                 const orderInput = document.getElementById(`order_${programId}`);
                 const orderBadge = container.querySelector('.program-order-badge');
-                
-                if (this.checked) {
-                    // Calculate next available order
-                    const currentlySelected = Array.from(globalProgramSelections.values()).filter(p => p.selected);
-                    const nextOrder = currentlySelected.length + 1;
-                    
-                    // Program selected
-                    globalProgramSelections.set(programId, {
-                        selected: true,
-                        order: nextOrder,
-                        program_name: programName,
-                        program_number: programNumber,
-                        agency: agencyName
-                    });
-                    
-                    // Show order input and update badge
-                    if (orderInput && orderBadge) {
-                        orderInput.style.display = 'inline-block';
-                        orderInput.value = globalProgramSelections.get(programId).order;
-                        orderBadge.classList.add('active');
-                        orderBadge.textContent = globalProgramSelections.get(programId).order;
-                    }
-                } else {
-                    // Program deselected
-                    console.log(`=== DESELECTING PROGRAM ${programId} (attachProgramEventListeners) ===`);
-                    
-                    if (globalProgramSelections.has(programId)) {
-                        globalProgramSelections.set(programId, {
-                            ...globalProgramSelections.get(programId),
-                            selected: false
-                        });
-                    }
-                    
-                    // Hide order input and update badge
-                    if (orderInput && orderBadge) {
-                        orderInput.style.display = 'none';
-                        orderInput.value = '';
-                        orderBadge.classList.remove('active');
-                        orderBadge.textContent = '#';
-                    }
-                    
-                    // Renumber remaining selected programs after a small delay
-                    setTimeout(() => {
-                        console.log('Starting renumbering after deselection (attachProgramEventListeners)...');
-                        renumberSelectedPrograms();
-                    }, 50);
+                if (orderInput && orderBadge) {
+                    orderInput.style.display = 'inline-block';
+                    orderInput.value = globalProgramSelections.get(programId).order;
+                    orderBadge.classList.add('active');
+                    orderBadge.textContent = globalProgramSelections.get(programId).order;
                 }
-                applyAllFilters(); // Re-render to update the selected banner
+            }
+            selectedCount++;
+        }
+    });
+    
+    // Show success message
+    if (selectedCount > 0) {
+        showNotification(`Selected ${selectedCount} programs`, 'success');
+    } else {
+        showNotification('All visible programs are already selected', 'info');
+    }
+    applyAllFilters();
+    
+    // Load targets for newly selected programs
+    loadTargets();
+}
+    
+// Make clearAllProgramSelections globally accessible
+window.clearAllProgramSelections = function() {
+    // Clear global selections state
+    globalProgramSelections.clear();
+
+    // Update UI
+    const allCheckboxes = document.querySelectorAll('.program-checkbox');
+    let clearedCount = 0;
+    
+    allCheckboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+            checkbox.checked = false;
+            clearedCount++;
+            
+            // Get program data from the container
+            const container = checkbox.closest('.program-checkbox-container');
+            if (container) {
+                const programId = parseInt(container.dataset.programId);
                 
-                // Load targets when program selection changes
-                loadTargets();
-            });
-        });
-        
-        // Handle order input changes with immediate updates
-        orderInputs.forEach(input => {
-            let orderUpdateTimeout;
-            
-            input.addEventListener('input', function() {
-                const programId = this.id.replace('order_', '');
-                const newOrder = parseInt(this.value) || 1;
-                
-                console.log(`Manual order change: Program ${programId} → Order ${newOrder}`);
-                
-                // Clear previous timeout
-                if (orderUpdateTimeout) {
-                    clearTimeout(orderUpdateTimeout);
+                // Hide order input
+                const orderInput = document.getElementById(`order_${programId}`);
+                const orderBadge = container.querySelector('.program-order-badge');
+                if (orderInput && orderBadge) {
+                    orderInput.style.display = 'none';
+                    orderInput.value = '';
+                    orderBadge.classList.remove('active');
+                    orderBadge.textContent = '#';
                 }
-                
-                // Update immediately for visual feedback
-                if (globalProgramSelections.has(programId)) {
-                    const programData = globalProgramSelections.get(programId);
-                    programData.order = newOrder;
-                    globalProgramSelections.set(programId, programData);
-                    
-                    console.log(`Updated program ${programId} to order ${newOrder} in global state`);
-                    
-                    // Update badge immediately
-                    const container = this.closest('.program-checkbox-container');
-                    const orderBadge = container?.querySelector('.program-order-badge');
-                    if (orderBadge) {
-                        orderBadge.textContent = newOrder;
-                    }
-                } else {
-                    console.log(`Program ${programId} not found in global selections`);
-                }
-                
-                // Debounced validation to check for conflicts
-                orderUpdateTimeout = setTimeout(() => {
-                    console.log('Running conflict validation after manual order change');
-                    updateOrderNumbers();
-                }, 800);
-            });
-            
-            // Handle blur for immediate conflict resolution
-            input.addEventListener('blur', function() {
-                if (orderUpdateTimeout) {
-                    clearTimeout(orderUpdateTimeout);
-                }
-                console.log('Manual order input blur - running conflict validation');
-                updateOrderNumbers();
-            });
-        });
-        
-        // Function to validate and fix order conflicts without full renumbering
-        function validateAndFixOrderConflicts() {
-            const selectedPrograms = Array.from(globalProgramSelections.entries())
-                .filter(([id, data]) => data.selected)
-                .map(([id, data]) => ({ id, data }));
-            
-            const orderCounts = new Map();
-            const conflictedPrograms = [];
-            
-            // Count how many programs have each order number
-            selectedPrograms.forEach(({ id, data }) => {
-                const order = data.order;
-                if (orderCounts.has(order)) {
-                    orderCounts.set(order, orderCounts.get(order) + 1);
-                } else {
-                    orderCounts.set(order, 1);
-                }
-            });
-            
-            // Find programs with conflicting orders
-            selectedPrograms.forEach(({ id, data }) => {
-                if (orderCounts.get(data.order) > 1) {
-                    conflictedPrograms.push(id);
-                }
-            });
-            
-            // Only renumber if there are actual conflicts
-            if (conflictedPrograms.length > 0) {
-                console.log('Order conflicts detected, fixing...', conflictedPrograms);
-                updateOrderNumbers();
             }
         }
+    });
+    
+    if (clearedCount > 0) {
+        showNotification(`Cleared ${clearedCount} program selections`, 'info');
     }
+
+    // Refresh the program list and count
+    applyAllFilters();
+    
+    // Update target selection when programs are cleared
+    loadTargets();
+}
+function resetAllFilters() {
+    // Clear search
+    const searchInput = document.getElementById('programSearchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Reset agency filters
+    selectedAgencyIds = [];
+    const agencyButtons = document.querySelectorAll('.agency-filter-btn');
+    agencyButtons.forEach(btn => {
+        if (btn.dataset.agencyId === 'all') {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // Reapply filters
+    applyAllFilters();
+    
+    showNotification('All filters reset', 'info');
+}
+
+function showNotification(message, type = 'info') {
+    // Simple notification - you can enhance this with a toast library
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'warning' ? 'alert-warning' : 
+                      type === 'error' ? 'alert-danger' : 'alert-info';
+    
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 250px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Function to attach event listeners to program checkboxes and order inputs
+function attachProgramEventListeners() {
+    const programCheckboxes = document.querySelectorAll('.program-checkbox');
+    const orderInputs = document.querySelectorAll('.program-order-input');
+    
+    // Handle checkbox changes
+    programCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const container = this.closest('.program-checkbox-container');
+            if (!container) return;
+            
+            const programId = parseInt(container.dataset.programId);
+            const programName = container.dataset.programName;
+            const programNumber = container.dataset.programNumber;
+            const agencyName = container.dataset.agencyName;
+            
+            const orderInput = document.getElementById(`order_${programId}`);
+            const orderBadge = container.querySelector('.program-order-badge');
+            
+            if (this.checked) {
+                // Calculate next available order
+                const currentlySelected = Array.from(globalProgramSelections.values()).filter(p => p.selected);
+                const nextOrder = currentlySelected.length + 1;
+                
+                // Program selected
+                globalProgramSelections.set(programId, {
+                    selected: true,
+                    order: nextOrder,
+                    program_name: programName,
+                    program_number: programNumber,
+                    agency: agencyName
+                });
+                
+                // Show order input and update badge
+                if (orderInput && orderBadge) {
+                    orderInput.style.display = 'inline-block';
+                    orderInput.value = globalProgramSelections.get(programId).order;
+                    orderBadge.classList.add('active');
+                    orderBadge.textContent = globalProgramSelections.get(programId).order;
+                }
+            } else {
+                // Program deselected
+                console.log(`=== DESELECTING PROGRAM ${programId} (attachProgramEventListeners) ===`);
+                
+                if (globalProgramSelections.has(programId)) {
+                    globalProgramSelections.set(programId, {
+                        ...globalProgramSelections.get(programId),
+                        selected: false
+                    });
+                }
+                
+                // Hide order input and update badge
+                if (orderInput && orderBadge) {
+                    orderInput.style.display = 'none';
+                    orderInput.value = '';
+                    orderBadge.classList.remove('active');
+                    orderBadge.textContent = '#';
+                }
+                
+                // Renumber remaining selected programs after a small delay
+                setTimeout(() => {
+                    console.log('Starting renumbering after deselection (attachProgramEventListeners)...');
+                    renumberSelectedPrograms();
+                }, 50);
+            }
+            applyAllFilters(); // Re-render to update the selected banner
+            
+            // Load targets when program selection changes
+            loadTargets();
+        });
+    });
+    
+    // Handle order input changes with immediate updates
+    orderInputs.forEach(input => {
+        let orderUpdateTimeout;
+        
+        input.addEventListener('input', function() {
+            const programId = this.id.replace('order_', '');
+            const newOrder = parseInt(this.value) || 1;
+            
+            console.log(`Manual order change: Program ${programId} → Order ${newOrder}`);
+            
+            // Clear previous timeout
+            if (orderUpdateTimeout) {
+                clearTimeout(orderUpdateTimeout);
+            }
+            
+            // Update immediately for visual feedback
+            if (globalProgramSelections.has(programId)) {
+                const programData = globalProgramSelections.get(programId);
+                programData.order = newOrder;
+                globalProgramSelections.set(programId, programData);
+                
+                console.log(`Updated program ${programId} to order ${newOrder} in global state`);
+                
+                // Update badge immediately
+                const container = this.closest('.program-checkbox-container');
+                const orderBadge = container?.querySelector('.program-order-badge');
+                if (orderBadge) {
+                    orderBadge.textContent = newOrder;
+                }
+            } else {
+                console.log(`Program ${programId} not found in global selections`);
+            }
+            
+            // Debounced validation to check for conflicts
+            orderUpdateTimeout = setTimeout(() => {
+                console.log('Running conflict validation after manual order change');
+                updateOrderNumbers();
+            }, 800);
+        });
+        
+        // Handle blur for immediate conflict resolution
+        input.addEventListener('blur', function() {
+            if (orderUpdateTimeout) {
+                clearTimeout(orderUpdateTimeout);
+            }
+            console.log('Manual order input blur - running conflict validation');
+            updateOrderNumbers();
+        });
+    });
+    
+    // Function to validate and fix order conflicts without full renumbering
+    function validateAndFixOrderConflicts() {
+        const selectedPrograms = Array.from(globalProgramSelections.entries())
+            .filter(([id, data]) => data.selected)
+            .map(([id, data]) => ({ id, data }));
+        
+        const orderCounts = new Map();
+        const conflictedPrograms = [];
+        
+        // Count how many programs have each order number
+        selectedPrograms.forEach(({ id, data }) => {
+            const order = data.order;
+            if (orderCounts.has(order)) {
+                orderCounts.set(order, orderCounts.get(order) + 1);
+            } else {
+                orderCounts.set(order, 1);
+            }
+        });
+        
+        // Find programs with conflicting orders
+        selectedPrograms.forEach(({ id, data }) => {
+            if (orderCounts.get(data.order) > 1) {
+                conflictedPrograms.push(id);
+            }
+        });
+        
+        // Only renumber if there are actual conflicts
+        if (conflictedPrograms.length > 0) {
+            console.log('Order conflicts detected, fixing...', conflictedPrograms);
+            updateOrderNumbers();
+        }
+    }
+}
 
 // Integrated Agency Filtering Functions
-    function populateAgencyFilterButtons(programs) {
-        if (!agencyFilterContainer) return;
-        
-        // Extract unique agencies from programs
-        const agencies = new Set();
-        programs.forEach(program => {
-            if (program.agency_name && program.owner_agency_id) {
-                agencies.add(JSON.stringify({
-                    id: program.owner_agency_id,
-                    name: program.agency_name
-                }));
-            }
-        });
-        
-        // Convert back to objects and sort
-        allAvailableAgencies = Array.from(agencies)
-            .map(str => JSON.parse(str))
-            .sort((a, b) => a.name.localeCompare(b.name));
-        
-        // Build agency filter buttons HTML
-        let buttonsHtml = `
-            <button type="button" class="btn btn-outline-primary btn-sm me-1 mb-1 agency-filter-btn active" data-agency-id="all">
-                <i class="fas fa-globe me-1"></i>All Agencies
+function populateAgencyFilterButtons(programs) {
+    if (!agencyFilterContainer) return;
+    
+    // Extract unique agencies from programs
+    const agencies = new Set();
+    programs.forEach(program => {
+        if (program.agency_name && program.owner_agency_id) {
+            agencies.add(JSON.stringify({
+                id: program.owner_agency_id,
+                name: program.agency_name
+            }));
+        }
+    });
+    
+    // Convert back to objects and sort
+    allAvailableAgencies = Array.from(agencies)
+        .map(str => JSON.parse(str))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Build agency filter buttons HTML
+    let buttonsHtml = `
+        <button type="button" class="btn btn-outline-primary btn-sm me-1 mb-1 agency-filter-btn active" data-agency-id="all">
+            <i class="fas fa-globe me-1"></i>All Agencies
+        </button>
+    `;
+    
+    allAvailableAgencies.forEach(agency => {
+        buttonsHtml += `
+            <button type="button" class="btn btn-outline-secondary btn-sm me-1 mb-1 agency-filter-btn" 
+                    data-agency-id="${agency.id}" 
+                    title="Filter programs from ${agency.name}">
+                <i class="fas fa-building me-1"></i>${agency.name}
             </button>
         `;
-        
-        allAvailableAgencies.forEach(agency => {
-            buttonsHtml += `
-                <button type="button" class="btn btn-outline-secondary btn-sm me-1 mb-1 agency-filter-btn" 
-                        data-agency-id="${agency.id}" 
-                        title="Filter programs from ${agency.name}">
-                    <i class="fas fa-building me-1"></i>${agency.name}
-                </button>
-            `;
-        });
-        
-        agencyFilterContainer.innerHTML = buttonsHtml;
-        
-        // Attach event listeners to new buttons
-        attachAgencyFilterEventListeners();
-    }
+    });
     
-    function attachAgencyFilterEventListeners() {
-        const agencyButtons = document.querySelectorAll('.agency-filter-btn');
-        agencyButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const agencyId = this.dataset.agencyId;
-                
-                if (agencyId === 'all') {
-                    // Clear all agency filters
-                    selectedAgencyIds = [];
-                    agencyButtons.forEach(btn => {
-                        btn.classList.remove('active');
-                    });
+    agencyFilterContainer.innerHTML = buttonsHtml;
+    
+    // Attach event listeners to new buttons
+    attachAgencyFilterEventListeners();
+}
+    
+function attachAgencyFilterEventListeners() {
+    const agencyButtons = document.querySelectorAll('.agency-filter-btn');
+    agencyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const agencyId = this.dataset.agencyId;
+            
+            if (agencyId === 'all') {
+                // Clear all agency filters
+                selectedAgencyIds = [];
+                agencyButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+            } else {
+                // De-select the 'All' button if a specific agency is chosen
+                document.querySelector('.agency-filter-btn[data-agency-id="all"]').classList.remove('active');
+
+                // Toggle agency selection
+                const index = selectedAgencyIds.indexOf(agencyId);
+                if (index > -1) {
+                    selectedAgencyIds.splice(index, 1);
+                    this.classList.remove('active');
+                } else {
+                    selectedAgencyIds.push(agencyId);
                     this.classList.add('active');
-                } else {
-                    // De-select the 'All' button if a specific agency is chosen
-                    document.querySelector('.agency-filter-btn[data-agency-id="all"]').classList.remove('active');
-
-                    // Toggle agency selection
-                    const index = selectedAgencyIds.indexOf(agencyId);
-                    if (index > -1) {
-                        selectedAgencyIds.splice(index, 1);
-                        this.classList.remove('active');
-                    } else {
-                        selectedAgencyIds.push(agencyId);
-                        this.classList.add('active');
-                    }
-                    
-                    // If no specific agency is selected, re-select the 'All' button
-                    if (selectedAgencyIds.length === 0) {
-                        document.querySelector('.agency-filter-btn[data-agency-id="all"]').classList.add('active');
-                    }
                 }
                 
-                // Apply filters
-                applyAllFilters();
-            });
-        });
-    }
-    
-    function getSelectedAgencyIds() {
-        return selectedAgencyIds.length > 0 ? selectedAgencyIds : [];
-    }
-
-    
-    // Form submission handler
-    const reportForm = document.getElementById('reportGenerationForm');
-    if (reportForm) {
-        reportForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const selectedPrograms = getSelectedPrograms();
-            const selectedTargets = getSelectedTargets();
-            
-            // Add selected programs with their order
-            selectedPrograms.forEach((program, index) => {
-                formData.append(`selected_programs[${index}][program_id]`, program.program_id);
-                formData.append(`selected_programs[${index}][order]`, program.order || index + 1);
-            });
-            
-            // Add selected targets
-            for (const [programId, targetIds] of Object.entries(selectedTargets)) {
-                targetIds.forEach((targetId, index) => {
-                    formData.append(`selected_targets[${programId}][${index}]`, targetId);
-                });
-            }
-            
-            // Log for debugging
-            console.log('Form submission data:');
-            console.log('Selected programs:', selectedPrograms);
-            console.log('Selected targets:', selectedTargets);
-            
-            // Show loading state
-            const submitBtn = document.getElementById('generatePptxBtn');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
-            
-            // Submit to report generation endpoint
-            fetch(`${window.APP_URL}/app/api/generate_report.php`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Show success message
-                    showNotification('Report generated successfully!', 'success');
-                    
-                    // Reset form if needed
-                    // this.reset();
-                    // clearAllProgramSelections();
-                    // hideTargetSelection();
-                    
-                    // Optionally redirect or refresh reports list
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
-                } else {
-                    throw new Error(data.error || 'Failed to generate report');
+                // If no specific agency is selected, re-select the 'All' button
+                if (selectedAgencyIds.length === 0) {
+                    document.querySelector('.agency-filter-btn[data-agency-id="all"]').classList.add('active');
                 }
-            })
-            .catch(error => {
-                console.error('Error generating report:', error);
-                showNotification('Error generating report: ' + error.message, 'error');
-            })
-            .finally(() => {
-                // Reset button state
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            });
-        });
-    }
-
-    // Function to get selected programs data
-    function getSelectedPrograms() {
-        const selectedPrograms = [];
-        for (const [programId, data] of globalProgramSelections) {
-            if (data.selected) {
-                selectedPrograms.push({
-                    program_id: programId,
-                    order: data.order,
-                    agency: data.agency,
-                    program_name: data.program_name,
-                    program_number: data.program_number
-                });
             }
+            
+            // Apply filters
+            applyAllFilters();
+        });
+    });
+}
+    
+function getSelectedAgencyIds() {
+    return selectedAgencyIds.length > 0 ? selectedAgencyIds : [];
+}
+
+    
+// Form submission handler
+const reportForm = document.getElementById('reportGenerationForm');
+if (reportForm) {
+    reportForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const selectedPrograms = getSelectedPrograms();
+        const selectedTargets = getSelectedTargets();
+        
+        // Add selected programs with their order
+        selectedPrograms.forEach((program, index) => {
+            formData.append(`selected_programs[${index}][program_id]`, program.program_id);
+            formData.append(`selected_programs[${index}][order]`, program.order || index + 1);
+        });
+        
+        // Add selected targets
+        for (const [programId, targetIds] of Object.entries(selectedTargets)) {
+            targetIds.forEach((targetId, index) => {
+                formData.append(`selected_targets[${programId}][${index}]`, targetId);
+            });
         }
         
-        // Sort by order
-        selectedPrograms.sort((a, b) => (a.order || 0) - (b.order || 0));
-        return selectedPrograms;
+        // Log for debugging
+        console.log('Form submission data:');
+        console.log('Selected programs:', selectedPrograms);
+        console.log('Selected targets:', selectedTargets);
+        
+        // Show loading state
+        const submitBtn = document.getElementById('generatePptxBtn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+        
+        // Submit to report generation endpoint
+        fetch(`${window.APP_URL}/app/api/generate_report.php`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showNotification('Report generated successfully!', 'success');
+                
+                // Reset form if needed
+                // this.reset();
+                // clearAllProgramSelections();
+                // hideTargetSelection();
+                
+                // Optionally redirect or refresh reports list
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                throw new Error(data.error || 'Failed to generate report');
+            }
+        })
+        .catch(error => {
+            console.error('Error generating report:', error);
+            showNotification('Error generating report: ' + error.message, 'error');
+        })
+        .finally(() => {
+            // Reset button state
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    });
+}
+
+// Function to get selected programs data
+function getSelectedPrograms() {
+    const selectedPrograms = [];
+    for (const [programId, data] of globalProgramSelections) {
+        if (data.selected) {
+            selectedPrograms.push({
+                program_id: programId,
+                order: data.order,
+                agency: data.agency,
+                program_name: data.program_name,
+                program_number: data.program_number
+            });
+        }
     }
+    
+    // Sort by order
+    selectedPrograms.sort((a, b) => (a.order || 0) - (b.order || 0));
+    return selectedPrograms;
+}
 
 }); // End of DOMContentLoaded
 

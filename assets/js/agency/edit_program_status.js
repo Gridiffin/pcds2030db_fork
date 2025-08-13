@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadStatus();
                 bootstrap.Modal.getInstance(editModal).hide();
             } else {
-                
+                // No action needed for this case
             }
         });
     }

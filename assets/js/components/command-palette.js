@@ -210,10 +210,12 @@ class CommandPalette {
     handleKeydown(e) {
         if (!this.isVisible) return;
         
+        let maxIndex, selectedItem, commandId, command;
+        
         switch (e.key) {
             case 'ArrowDown':
                 e.preventDefault();
-                const maxIndex = document.querySelectorAll('.command-item').length - 1;
+                maxIndex = document.querySelectorAll('.command-item').length - 1;
                 this.selectedIndex = Math.min(this.selectedIndex + 1, maxIndex);
                 this.updateSelection();
                 break;
@@ -227,10 +229,10 @@ class CommandPalette {
             case 'Enter':
                 e.preventDefault();
                 if (this.selectedIndex >= 0) {
-                    const selectedItem = document.querySelectorAll('.command-item')[this.selectedIndex];
+                    selectedItem = document.querySelectorAll('.command-item')[this.selectedIndex];
                     if (selectedItem) {
-                        const commandId = selectedItem.dataset.commandId;
-                        const command = this.commands.find(cmd => cmd.id === commandId);
+                        commandId = selectedItem.dataset.commandId;
+                        command = this.commands.find(cmd => cmd.id === commandId);
                         if (command) {
                             this.executeCommand(command);
                         }

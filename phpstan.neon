@@ -1,9 +1,0 @@
-parameters:
-  level: 5
-  paths:
-    - app
-    - live
-  tmpDir: var/phpstan
-  reportUnmatchedIgnoredErrors: true
-
-

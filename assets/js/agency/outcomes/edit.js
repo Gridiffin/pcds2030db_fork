@@ -150,28 +150,28 @@ export class EditOutcome {
         }
 
         // Build table HTML
-        let tableHTML = '<div class=\"editable-table\">';
-        tableHTML += '<table class=\"table table-bordered\">';
+        let tableHTML = '<div class="editable-table">';
+        tableHTML += '<table class="table table-bordered">';
         
         // Header row
         tableHTML += '<thead><tr>';
-        tableHTML += '<th class=\"row-control\">Row</th>';
+        tableHTML += '<th class="row-control">Row</th>';
         
         this.structureManager.columns.forEach((column, colIndex) => {
             tableHTML += `
                 <th>
-                    <div class=\"metric-header\">
-                        <input type=\"text\" 
-                               class=\"metric-title\" 
-                               value=\"${this.escapeHtml(column.label)}\"
-                               data-column-index=\"${colIndex}\"
-                               placeholder=\"Column title\">
-                        <div class=\"metric-actions\">
-                            <button type=\"button\" 
-                                    class=\"metric-action-btn btn-danger\"
-                                    onclick=\"outcomesModule.editModule.removeColumn(${colIndex})\"
-                                    title=\"Remove column\">
-                                <i class=\"fas fa-times\"></i>
+                    <div class="metric-header">
+                        <input type="text" 
+                               class="metric-title" 
+                               value="${this.escapeHtml(column.label)}"
+                               data-column-index="${colIndex}"
+                               placeholder="Column title">
+                        <div class="metric-actions">
+                            <button type="button" 
+                                    class="metric-action-btn btn-danger"
+                                    onclick="outcomesModule.editModule.removeColumn(${colIndex})"
+                                    title="Remove column">
+                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
@@ -179,7 +179,7 @@ export class EditOutcome {
             `;
         });
         
-        tableHTML += '<th><button type=\"button\" class=\"btn-control btn-primary\" onclick=\"outcomesModule.editModule.addColumn()\"><i class=\"fas fa-plus\"></i></button></th>';
+        tableHTML += '<th><button type="button" class="btn-control btn-primary" onclick="outcomesModule.editModule.addColumn()"><i class="fas fa-plus"></i></button></th>';
         tableHTML += '</tr></thead>';
         
         // Body rows
@@ -187,18 +187,18 @@ export class EditOutcome {
         this.structureManager.rows.forEach((row, rowIndex) => {
             tableHTML += '<tr>';
             tableHTML += `
-                <td class=\"row-control\">
-                    <input type=\"text\" 
-                           class=\"cell-input\"
-                           value=\"${this.escapeHtml(row.label)}\"
-                           data-row-index=\"${rowIndex}\"
-                           placeholder=\"Row label\">
-                    <div class=\"row-actions\">
-                        <button type=\"button\" 
-                                class=\"row-action-btn btn-danger\"
-                                onclick=\"outcomesModule.editModule.removeRow(${rowIndex})\"
-                                title=\"Remove row\">
-                            <i class=\"fas fa-times\"></i>
+                <td class="row-control">
+                    <input type="text" 
+                           class="cell-input"
+                           value="${this.escapeHtml(row.label)}"
+                           data-row-index="${rowIndex}"
+                           placeholder="Row label">
+                    <div class="row-actions">
+                        <button type="button" 
+                                class="row-action-btn btn-danger"
+                                onclick="outcomesModule.editModule.removeRow(${rowIndex})"
+                                title="Remove row">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </td>
@@ -207,13 +207,13 @@ export class EditOutcome {
             this.structureManager.columns.forEach((column, colIndex) => {
                 const cellValue = row.data[column.id] || '';
                 tableHTML += `
-                    <td class=\"editable-cell\">
-                        <input type=\"text\" 
-                               class=\"cell-input\"
-                               value=\"${this.escapeHtml(cellValue)}\"
-                               data-row-index=\"${rowIndex}\"
-                               data-column-index=\"${colIndex}\"
-                               placeholder=\"Enter value\">
+                    <td class="editable-cell">
+                        <input type="text" 
+                               class="cell-input"
+                               value="${this.escapeHtml(cellValue)}"
+                               data-row-index="${rowIndex}"
+                               data-column-index="${colIndex}"
+                               placeholder="Enter value">
                     </td>
                 `;
             });
@@ -227,15 +227,15 @@ export class EditOutcome {
         
         // Add table controls
         const controlsHTML = `
-            <div class=\"table-controls\">
-                <div class=\"table-controls-left\">
-                    <button type=\"button\" class=\"btn-control btn-primary\" onclick=\"outcomesModule.editModule.addRow()\">
-                        <i class=\"fas fa-plus\"></i> Add Row
+            <div class="table-controls">
+                <div class="table-controls-left">
+                    <button type="button" class="btn-control btn-primary" onclick="outcomesModule.editModule.addRow()">
+                        <i class="fas fa-plus"></i> Add Row
                     </button>
                 </div>
-                <div class=\"table-controls-right\">
-                    <button type=\"button\" class=\"btn-control\" onclick=\"outcomesModule.editModule.previewChart()\">
-                        <i class=\"fas fa-chart-line\"></i> Preview Chart
+                <div class="table-controls-right">
+                    <button type="button" class="btn-control" onclick="outcomesModule.editModule.previewChart()">
+                        <i class="fas fa-chart-line"></i> Preview Chart
                     </button>
                 </div>
             </div>
@@ -529,7 +529,7 @@ export class EditOutcome {
         // Update UI to show unsaved state
         const saveBtn = document.getElementById('save-outcome');
         if (saveBtn) {
-            saveBtn.innerHTML = '<i class=\"fas fa-save\"></i> Save Changes*';
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes*';
             saveBtn.classList.add('btn-warning');
         }
     }
@@ -543,12 +543,12 @@ export class EditOutcome {
         // Update UI to show saved state
         const saveBtn = document.getElementById('save-outcome');
         if (saveBtn) {
-            saveBtn.innerHTML = '<i class=\"fas fa-check\"></i> Saved';
+            saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
             saveBtn.classList.remove('btn-warning');
             saveBtn.classList.add('btn-success');
             
             setTimeout(() => {
-                saveBtn.innerHTML = '<i class=\"fas fa-save\"></i> Save Changes';
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
                 saveBtn.classList.remove('btn-success');
             }, 2000);
         }

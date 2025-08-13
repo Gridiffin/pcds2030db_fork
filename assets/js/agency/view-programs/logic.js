@@ -177,6 +177,7 @@ export class ViewProgramsLogic {
         
         sortedPrograms.sort((a, b) => {
             let valueA, valueB;
+            let ratingA, ratingB;
             
             switch (column) {
                 case 'name':
@@ -190,8 +191,8 @@ export class ViewProgramsLogic {
                     break;
                     
                 case 'rating':
-                    const ratingA = this.getRatingConfig(a.rating || 'not_started');
-                    const ratingB = this.getRatingConfig(b.rating || 'not_started');
+                    ratingA = this.getRatingConfig(a.rating || 'not_started');
+                    ratingB = this.getRatingConfig(b.rating || 'not_started');
                     valueA = ratingA.order;
                     valueB = ratingB.order;
                     break;

@@ -1541,37 +1541,7 @@ slide.addText(statusText, {
             .replace(/\w\S*/g, txt => 
                 txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
             );
-    }return {
-        getThemeColors,
-        getDefaultFont,
-        defineReportMaster,
-        getSlideObjects,
-        createColorIndicator,
-        createTextBox,
-        createChartContainer,
-        createTotalValueBox,
-        createChartTitle,
-        getLineChartOptions,
-        calculateMajorUnit,
-        getChartSeriesColors,
-        createSectorBox,
-        addSectorIcon,
-        addSectorText,
-        createMudenrBox,
-        addMudenrOutcomes,
-        createQuarterBox,
-        addLegendTitle,
-        addLegendItem,
-        addYearIndicator,
-        createDraftText,
-        createKpiBox,
-        createErrorKpiBox,        
-        getDegradedAreaChartOptions,
-        addTotalDegradedAreaChart,
-        createProgramDataTable,
-        addTimberExportChart,
-        createProgramDataTable
-    };
+    }
 
     /**
      * Add a timber export line chart to the slide
@@ -1603,70 +1573,101 @@ slide.addText(statusText, {
         }
         const columns = timberData.columns || [];
         const rows = timberData.rows || [];
-        const labels = rows.map(row => row.month || row.label || '');
-        // Plot ALL years in columns, not just current/previous year
-        const yearsToShow = columns;
-        // Calculate total values for each year
-        const yearTotals = {};
-        yearsToShow.forEach(year => {
-            const vals = rows.map(row => {
-                const v = row[year];
-                return (v === 0 || v === '0' || v === null || v === undefined) ? null : v;
-            }).filter(v => v !== null && v !== undefined);
-            yearTotals[year] = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) : 0;
-        });
-        // Format the totals with adaptive precision and add RM prefix
-        const formatNumberWithSmartPrecision = (num) => {
-            if (num >= 10000000) { // Over 10 million
-                return num.toLocaleString('en-US', {maximumFractionDigits: 0}); // No decimals
-            } else if (num >= 1000000) { // 1-10 million
-                return num.toLocaleString('en-US', {maximumFractionDigits: 1}); // One decimal
-            } else {
-                return num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); // Two decimals
+        if (columns.length === 0 || rows.length === 0) {
+            createTextBox(slide, 'No data available for Timber Export Value.', {
+                x: container.x, y: container.y + 0.5, w: container.w, h: 0.5,
+                fontFace: defaultFont, fontSize: 12, color: themeColors.redStatus || 'FF0000',
+                align: 'center', valign: 'middle'
+            });
+            return;
+        }
+        const chartData = [];
+        const monthlyHeaders = columns.slice(1); // Skip first column (year/agency)
+        const monthlyData = {};
+        let maxMonthlyValue = 0;
+        rows.forEach(row => {
+            if (row && row.length > 1) {
+                const rowData = row.slice(1);
+                rowData.forEach((value, index) => {
+                    if (value !== null && value !== undefined && !isNaN(value)) {
+                        const month = monthlyHeaders[index];
+                        if (month && month !== 'Total') {
+                            if (!monthlyData[month]) monthlyData[month] = 0;
+                            monthlyData[month] += parseFloat(value);
+                            maxMonthlyValue = Math.max(maxMonthlyValue, monthlyData[month]);
+                        }
+                    }
+                });
             }
-        };
-        // Add total boxes for each year (up to 3, for layout)
-        yearsToShow.slice(0, 3).forEach((year, idx) => {
-            const abbr = "'" + year.toString().substring(2) + ' Total';
-            const formatted = `RM ${formatNumberWithSmartPrecision(yearTotals[year])}`;
-            createTotalValueBox(
-                slide,
-                pptx,
-                themeColors,
-                abbr,
-                formatted,
-                container.x + 0.10 + idx * 2.05, // space out horizontally
-                container.y + container.h - 0.38,
-                defaultFont
-            );
         });
-        // Build chart data for all years
-        const chartData = yearsToShow.map((year, idx) => ({
-            name: year,
-            labels: labels,
-            values: rows.map(row => {
-                const v = row[year];
-                return (v === 0 || v === '0' || v === null || v === undefined) ? null : v;
-            })
-        }));
-        // Find max value for axis scaling
-        const allValues = chartData.flatMap(series => series.values.filter(v => v !== null));
-        const maxMonthlyValue = Math.max(...allValues, 0);
-        const chartOptions = getLineChartOptions(container, themeColors, defaultFont);
+        if (Object.keys(monthlyData).length === 0) {
+            createTextBox(slide, 'No data available for Timber Export Value.', {
+                x: container.x, y: container.y + 0.5, w: container.w, h: 0.5,
+                fontFace: defaultFont, fontSize: 12, color: themeColors.redStatus || 'FF0000',
+                align: 'center', valign: 'middle'
+            });
+            return;
+        }
+        const sortedData = Object.entries(monthlyData).sort((a, b) => {
+            const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            return monthOrder.indexOf(a[0]) - monthOrder.indexOf(b[0]);
+        });
+        chartData.push({
+            name: 'Timber Export Value',
+            labels: sortedData.map(([month]) => month.substring(0, 3)),
+            values: sortedData.map(([, value]) => value)
+        });
+        const chartOptions = {
+            x: container.x, y: container.y + 0.7, w: container.w, h: container.h - 0.7,
+            chartColors: getChartSeriesColors(themeColors),
+            showLegend: false,
+            showValue: false,
+            valAxisMajorUnit: calculateMajorUnit(maxMonthlyValue * 1.1),
+            valAxisMinVal: 0,
+            valAxisMaxVal: maxMonthlyValue * 1.1,
+            chartType: 'line',
+            lineDataSymbol: 'circle',
+            lineDataSymbolSize: 6,
+            lineSmooth: true
+        };
         if (maxMonthlyValue > 0) {
-            chartOptions.valAxisMinVal = 0;
-            chartOptions.valAxisMaxVal = maxMonthlyValue * 1.1;
             chartOptions.valAxisMajorUnit = calculateMajorUnit(maxMonthlyValue * 1.1);
         }
         slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
     }
 
     return {
-        createErrorKpiBox: createErrorKpiBox,
-        getDegradedAreaChartOptions: getDegradedAreaChartOptions,
-        addTotalDegradedAreaChart: addTotalDegradedAreaChart,
-        createProgramDataTable: createProgramDataTable
+        getThemeColors,
+        getDefaultFont,
+        defineReportMaster,
+        getSlideObjects,
+        createColorIndicator,
+        createTextBox,
+        createChartContainer,
+        createTotalValueBox,
+        createChartTitle,
+        getLineChartOptions,
+        calculateMajorUnit,
+        getChartSeriesColors,
+        createSectorBox,
+        addSectorIcon,
+        addSectorText,
+        createMudenrBox,
+        addMudenrOutcomes,
+        createQuarterBox,
+        addLegendTitle,
+        addLegendItem,
+        addYearIndicator,
+        createDraftText,
+        createKpiBox,
+        createErrorKpiBox,        
+        getDegradedAreaChartOptions,
+        addTotalDegradedAreaChart,
+        createProgramDataTable,
+        addTimberExportChart
     };
 })();
 
 } // End ReportStyler guard
+

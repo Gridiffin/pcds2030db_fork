@@ -316,6 +316,8 @@ if (typeof TableStructureDesigner === 'undefined') {
     }
     
     getEffectiveRows() {
+        let currentYear;
+        
         switch (this.structureType) {
             case 'monthly':
                 return [
@@ -340,7 +342,7 @@ if (typeof TableStructureDesigner === 'undefined') {
                     {id: 'Q4', label: 'Q4', type: 'data'}
                 ];
             case 'yearly':
-                const currentYear = new Date().getFullYear();
+                currentYear = new Date().getFullYear();
                 return [
                     {id: (currentYear-2).toString(), label: (currentYear-2).toString(), type: 'data'},
                     {id: (currentYear-1).toString(), label: (currentYear-1).toString(), type: 'data'},
@@ -740,6 +742,30 @@ if (typeof TableStructureDesigner === 'undefined') {
             return;
         }
         
+        let sourceRows, formula, validation;
+        
+        switch (calculationType) {
+            case 'sum':
+            case 'average':
+                sourceRows = Array.from(document.getElementById('calc-source-rows').selectedOptions)
+                    .map(option => option.value);
+                if (sourceRows.length === 0) {
+                    alert('Please select at least one source row.');
+                    return;
+                }
+                break;
+            case 'percentage':
+                break;
+            case 'formula':
+                formula = document.getElementById('calc-formula').value;
+                validation = TableCalculationEngine.validateFormula(formula);
+                if (!validation.valid) {
+                    alert('Invalid formula: ' + validation.error);
+                    return;
+                }
+                break;
+        }
+        
         const calcId = 'calc_' + Date.now();
         let calculation = {
             id: calcId,
@@ -750,12 +776,6 @@ if (typeof TableStructureDesigner === 'undefined') {
         switch (calculationType) {
             case 'sum':
             case 'average':
-                const sourceRows = Array.from(document.getElementById('calc-source-rows').selectedOptions)
-                    .map(option => option.value);
-                if (sourceRows.length === 0) {
-                    alert('Please select at least one source row.');
-                    return;
-                }
                 calculation.sourceRows = sourceRows;
                 break;
             case 'percentage':
@@ -763,12 +783,6 @@ if (typeof TableStructureDesigner === 'undefined') {
                 calculation.denominatorRow = document.getElementById('calc-denominator-row').value;
                 break;
             case 'formula':
-                const formula = document.getElementById('calc-formula').value;
-                const validation = TableCalculationEngine.validateFormula(formula);
-                if (!validation.valid) {
-                    alert('Invalid formula: ' + validation.error);
-                    return;
-                }
                 calculation.formula = formula;
                 break;
         }
@@ -821,6 +835,8 @@ if (typeof TableStructureDesigner === 'undefined') {
     }
 }
 
+} // End of TableStructureDesigner class check
+
 // Global reference for easier access
 let tableDesigner = null;
 
@@ -829,5 +845,3 @@ function initTableStructureDesigner(options = {}) {
     tableDesigner = new TableStructureDesigner(options);
     return tableDesigner;
 }
-
-} // End of TableStructureDesigner class check

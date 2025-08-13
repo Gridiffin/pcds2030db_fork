@@ -569,45 +569,40 @@ class SubmissionSelectionModal {
     }
     
     async loadSubmissions(programId) {
-        try {
-            // Check if user has access to submission data (focal users only for finalization)
-            const isFocalUser = window.userRole === 'focal' || window.isFocalUser === true;
-            
-            if (!isFocalUser && this.isFinalizationMode) {
-                // Non-focal users shouldn't access finalization features
-                this.showErrorState('You do not have permission to access this feature.');
-                return;
-            }
-            
-            // Fetch all submissions for the program from the API
-            // Use a more robust URL construction method
-            const baseUrl = window.APP_URL || '';
-            const apiUrl = baseUrl ? `${baseUrl}/app/ajax/get_program_submissions.php` : '/app/ajax/get_program_submissions.php';
-            const response = await fetch(`${apiUrl}?program_id=${programId}`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (!data.success) {
-                throw new Error(data.error || 'Failed to load submissions');
-            }
-            
-            const submissions = data.submissions || [];
-            
-            if (submissions.length === 0) {
-                this.showEmptyState();
-                return;
-            }
-            
-            this.renderSubmissions(programId, submissions);
-            this.showListState();
-            
-        } catch (error) {
-            throw error;
+        // Check if user has access to submission data (focal users only for finalization)
+        const isFocalUser = window.userRole === 'focal' || window.isFocalUser === true;
+        
+        if (!isFocalUser && this.isFinalizationMode) {
+            // Non-focal users shouldn't access finalization features
+            this.showErrorState('You do not have permission to access this feature.');
+            return;
         }
+        
+        // Fetch all submissions for the program from the API
+        // Use a more robust URL construction method
+        const baseUrl = window.APP_URL || '';
+        const apiUrl = baseUrl ? `${baseUrl}/app/ajax/get_program_submissions.php` : '/app/ajax/get_program_submissions.php';
+        const response = await fetch(`${apiUrl}?program_id=${programId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load submissions');
+        }
+        
+        const submissions = data.submissions || [];
+        
+        if (submissions.length === 0) {
+            this.showEmptyState();
+            return;
+        }
+        
+        this.renderSubmissions(programId, submissions);
+        this.showListState();
     }
     
     renderSubmissions(programId, submissions) {

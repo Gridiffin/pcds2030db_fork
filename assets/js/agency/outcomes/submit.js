@@ -196,21 +196,21 @@ export class SubmitOutcomes {
         const formattedDate = updatedDate.toLocaleDateString();
         
         return `
-            <div class=\"outcome-card\" data-outcome-id=\"${outcome.id}\">
-                <div class=\"outcome-card-header\">
-                    <div class=\"outcome-code\">${this.escapeHtml(outcome.code)}</div>
-                    <h3 class=\"outcome-title\">${this.escapeHtml(outcome.title)}</h3>
+            <div class="outcome-card" data-outcome-id="${outcome.id}">
+                <div class="outcome-card-header">
+                    <div class="outcome-code">${this.escapeHtml(outcome.code)}</div>
+                    <h3 class="outcome-title">${this.escapeHtml(outcome.title)}</h3>
                 </div>
-                <div class=\"outcome-card-body\">
-                    <p class=\"outcome-description\">${this.escapeHtml(outcome.description || 'No description available.')}</p>
-                    <div class=\"outcome-meta\">
-                        <span class=\"outcome-type type-${outcome.type}\">${this.formatType(outcome.type)}</span>
-                        <span class=\"outcome-updated\">Updated ${formattedDate}</span>
+                <div class="outcome-card-body">
+                    <p class="outcome-description">${this.escapeHtml(outcome.description || 'No description available.')}</p>
+                    <div class="outcome-meta">
+                        <span class="outcome-type type-${outcome.type}">${this.formatType(outcome.type)}</span>
+                        <span class="outcome-updated">Updated ${formattedDate}</span>
                     </div>
-                    <div class=\"outcome-actions\">
-                        <a href=\"view_outcome.php?id=${outcome.id}\" 
-                           class=\"outcome-action-btn btn-primary\">
-                            <i class=\"fas fa-eye\"></i> View Details
+                    <div class="outcome-actions">
+                        <a href="view_outcome.php?id=${outcome.id}" 
+                           class="outcome-action-btn btn-primary">
+                            <i class="fas fa-eye"></i> View Details
                         </a>
                     </div>
                 </div>
@@ -223,13 +223,13 @@ export class SubmitOutcomes {
      */
     renderEmptyState(container) {
         container.innerHTML = `
-            <div class=\"outcomes-empty\">
-                <i class=\"fas fa-chart-bar\"></i>
+            <div class="outcomes-empty">
+                <i class="fas fa-chart-bar"></i>
                 <h3>No Outcomes Available</h3>
                 <p>No outcomes found for the selected period. Outcomes are created by administrators and assigned to reporting periods.</p>
-                <div class=\"outcomes-empty-actions\">
-                    <button type=\"button\" class=\"btn btn-primary\" onclick=\"location.reload()\">
-                        <i class=\"fas fa-refresh\"></i> Refresh
+                <div class="outcomes-empty-actions">
+                    <button type="button" class="btn btn-primary" onclick="location.reload()">
+                        <i class="fas fa-refresh"></i> Refresh
                     </button>
                 </div>
             </div>
@@ -269,7 +269,7 @@ export class SubmitOutcomes {
      */
     exportOutcomes() {
         try {
-            let csvContent = 'Code,Title,Type,Description,Last Updated\\n';
+            let csvContent = 'Code,Title,Type,Description,Last Updated\n';
             
             this.filteredOutcomes.forEach(outcome => {
                 const row = [
@@ -278,9 +278,9 @@ export class SubmitOutcomes {
                     outcome.type,
                     outcome.description || '',
                     outcome.updated_at
-                ].map(field => `\"${(field || '').toString().replace(/\"/g, '\"\"')}\"`);
+                ].map(field => `"${(field || '').toString().replace(/"/g, '""')}"`);
                 
-                csvContent += row.join(',') + '\\n';
+                csvContent += row.join(',') + '\n';
             });
             
             const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -310,9 +310,9 @@ export class SubmitOutcomes {
         
         if (loading) {
             container.innerHTML = `
-                <div class=\"outcomes-loading\">
-                    <i class=\"fas fa-spinner fa-spin\"></i>
-                    <span class=\"outcomes-loading-text\">Loading outcomes...</span>
+                <div class="outcomes-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span class="outcomes-loading-text">Loading outcomes...</span>
                 </div>
             `;
         }
@@ -325,8 +325,8 @@ export class SubmitOutcomes {
         const container = document.getElementById('outcomes-grid');
         if (container) {
             container.innerHTML = `
-                <div class=\"alert alert-danger\">
-                    <i class=\"fas fa-exclamation-triangle\"></i>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
                     ${message}
                 </div>
             `;

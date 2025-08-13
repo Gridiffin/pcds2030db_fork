@@ -90,17 +90,19 @@ export class ProgramsTable {
     }
     
     getCellValue(row, column) {
+        let nameCell, ratingCell, dateCell;
+        
         switch (column) {
             case 'name':
-                const nameCell = row.querySelector('td:first-child .fw-medium');
+                nameCell = row.querySelector('td:first-child .fw-medium');
                 return nameCell ? nameCell.textContent.trim() : '';
             
             case 'rating':
-                const ratingCell = row.querySelector('td:nth-child(2) .badge');
+                ratingCell = row.querySelector('td:nth-child(2) .badge');
                 return ratingCell ? ratingCell.textContent.trim() : '';
             
             case 'date':
-                const dateCell = row.querySelector('td:nth-child(3)');
+                dateCell = row.querySelector('td:nth-child(3)');
                 return dateCell ? dateCell.textContent.trim() : '';
             
             default:

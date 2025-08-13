@@ -1,0 +1,554 @@
+/**
+ * Admin Dashboard Modern Components
+ * Modern UI components inspired by agency dashboard but optimized for admin functionality
+ */
+
+/* Import base modern card system */
+@import 'cards.css';
+@import 'bento-grid.css';
+@import 'admin-stat-modal.css';
+
+/* === Modern Admin Cards === */
+.admin-card-modern {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-card-modern:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border-color: var(--forest-light);
+}
+
+.admin-card-modern-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--forest-deep);
+}
+
+.admin-card-modern-title {
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-semibold);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.admin-card-icon-modern {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+    background: var(--forest-deep);
+}
+
+.admin-card-modern-content {
+    flex: 1;
+}
+
+/* === Modern Stat Cards === */
+.admin-stat-card-modern {
+    background: linear-gradient(135deg, var(--forest-deep) 0%, var(--forest-medium) 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.admin-stat-card-modern:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-stat-card-modern:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+/* Clickable stat cards */
+.admin-stat-card-modern.admin-stat-clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.admin-stat-card-modern.admin-stat-clickable:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.admin-stat-click-hint {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.admin-stat-card-modern.admin-stat-clickable:hover .admin-stat-click-hint {
+    opacity: 1;
+}
+
+.admin-stat-card-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(30px, -30px);
+}
+
+.admin-stat-card-modern.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.admin-stat-card-modern.success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.admin-stat-card-modern.warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.admin-stat-card-modern.danger {
+    background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%);
+}
+
+.admin-stat-card-modern.info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.admin-stat-icon-modern {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+.admin-stat-value-modern {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.admin-stat-title-modern {
+    font-size: 1rem;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-bottom: 0.75rem;
+}
+
+.admin-stat-subtitle-modern {
+    font-size: 0.875rem;
+    opacity: 0.75;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* === Quick Actions Modern === */
+.admin-quick-actions-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.admin-action-card-modern {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle professional hover effects for admin interface */
+.admin-action-card-modern:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-color: var(--forest-medium);
+    text-decoration: none;
+    color: inherit;
+    background: rgba(17, 153, 142, 0.02);
+}
+
+.admin-action-card-modern:focus {
+    outline: 2px solid var(--forest-medium);
+    outline-offset: 2px;
+    border-color: var(--forest-medium);
+}
+
+.admin-action-icon-modern {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, var(--forest-deep) 0%, var(--forest-medium) 100%);
+    color: white;
+}
+
+.admin-action-title-modern {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+/* === Admin Bento Grid Customizations === */
+.admin-dashboard-bento {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    grid-auto-flow: dense; /* allow later elements to backfill holes */
+}
+
+.admin-bento-stats {
+    grid-column: span 12;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.admin-bento-quick-actions {
+    grid-column: span 12;
+}
+
+.admin-bento-programs {
+    grid-column: span 8;
+}
+
+.admin-bento-outcomes {
+    grid-column: span 4;
+}
+
+/* KPI card column placement */
+.admin-bento-kpis {
+    grid-column: span 12; /* Fill the left content column under Programs (red box) */
+    align-self: start;
+}
+
+.admin-bento-kpis .card-modern {
+    border: 1px solid rgb(226, 226, 226);
+    box-shadow: none;
+    border-radius: 12px; /* adjust px to how rounded you want it */
+    padding: 10px;
+}
+
+.admin-bento-kpis .card-modern:hover {
+    border-color: rgb(226, 226, 226);
+    box-shadow: none;
+}
+
+/* === Modern Progress Elements === */
+
+.admin-progress-bar-modern {
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+/* === Modern Table Styling === */
+.admin-table-modern {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.admin-table-modern thead th {
+    background: var(--forest-deep);
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 1rem;
+}
+
+.admin-table-modern tbody td {
+    padding: 1rem;
+    border-color: rgba(0, 0, 0, 0.06);
+    vertical-align: middle;
+}
+
+.admin-table-modern tbody tr:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+/* === Modern Badges === */
+.admin-badge-modern {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.admin-badge-modern.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.admin-badge-modern.success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+}
+
+.admin-badge-modern.warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.admin-badge-modern.info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+/* === Responsive Design === */
+@media (max-width: 1200px) {
+    .admin-dashboard-bento {
+        grid-template-columns: repeat(8, 1fr);
+    }
+    
+    .admin-bento-programs {
+        grid-column: span 8;
+    }
+    
+    .admin-bento-outcomes {
+        grid-column: span 8;
+    }
+    .admin-bento-kpis {
+        grid-column: span 8;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-dashboard-bento {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .admin-bento-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-bento-programs,
+    .admin-bento-outcomes,
+    .admin-bento-kpis {
+        grid-column: span 1;
+    }
+    
+    .admin-card-modern {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .admin-stat-card-modern {
+        padding: 1.5rem;
+    }
+    
+    .admin-quick-actions-modern {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === Loading States === */
+.admin-loading-modern {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.admin-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-gray-200);
+    border-top: 3px solid var(--forest-deep);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* === Empty States === */
+.admin-empty-state-modern {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+}
+
+.admin-empty-icon-modern {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    color: var(--color-gray-400);
+}
+
+.admin-empty-title-modern {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+}
+
+.admin-empty-description-modern {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* === Animation Classes === */
+.admin-fade-in {
+    animation: adminFadeInUp 0.6s ease-out;
+}
+
+@keyframes adminFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Stagger animations */
+.admin-card-modern:nth-child(1) { animation-delay: 0.1s; }
+.admin-card-modern:nth-child(2) { animation-delay: 0.2s; }
+.admin-card-modern:nth-child(3) { animation-delay: 0.3s; }
+.admin-card-modern:nth-child(4) { animation-delay: 0.4s; }
+.admin-card-modern:nth-child(5) { animation-delay: 0.5s; }
+
+/* === Accessibility Enhancements === */
+/* Focus styles for keyboard navigation */
+.admin-action-card-modern:focus,
+.admin-card-modern button:focus,
+.admin-card-modern a:focus {
+    outline: 3px solid var(--forest-medium);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgba(17, 153, 142, 0.3);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .admin-card-modern,
+    .admin-stat-card-modern {
+        border: 2px solid currentColor;
+    }
+    
+    .admin-stat-card-modern {
+        background: var(--color-white) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    .admin-badge-modern {
+        border: 1px solid currentColor;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .admin-card-modern,
+    .admin-stat-card-modern,
+    .admin-action-card-modern,
+    .admin-progress-bar-modern,
+    .admin-fade-in {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    .admin-card-modern:hover,
+    .admin-stat-card-modern:hover,
+    .admin-action-card-modern:hover {
+        transform: none !important;
+    }
+}
+
+/* Screen reader only content */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Skip to content link */
+
+/* Improved touch targets for mobile */
+@media (max-width: 768px) {
+    .admin-action-card-modern,
+    .admin-card-modern button,
+    .admin-card-modern a {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* Color accessibility - ensure sufficient contrast */
+.admin-stat-card-modern.primary {
+    background: linear-gradient(135deg, #4c63d2 0%, #5a4b8c 100%);
+}
+
+.admin-stat-card-modern.warning {
+    background: linear-gradient(135deg, #d63384 0%, #c13360 100%);
+}
+
+/* Print styles */
+@media print {
+    .admin-card-modern,
+    .admin-stat-card-modern {
+        background: transparent !important;
+        color: black !important;
+        box-shadow: none !important;
+        border: 1px solid black !important;
+        page-break-inside: avoid;
+    }
+    
+    .admin-action-card-modern {
+        display: none !important;
+    }
+    
+    .admin-fade-in {
+        animation: none !important;
+    }
+}
