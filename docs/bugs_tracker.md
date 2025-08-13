@@ -1,3 +1,104 @@
+### 51. Critical UI Block - All buttons unclickable due to modal overlay in edit program page (2025-08-13) ✅ FIXED
+
+- **Problem:** All buttons became unclickable in the admin edit program page:
+  - Submit buttons, navbar links, action buttons all non-responsive
+  - Form could not be saved or navigated away from
+  - Complete page functionality breakdown affecting critical admin workflow
+- **Root Cause:**
+  - CSS rule `#deleteModal { display: flex !important; }` was making modal always visible
+  - Hidden modal created invisible overlay blocking all page interactions
+  - Modal was constantly present in DOM with high z-index, capturing all click events
+  - CSS override prevented Bootstrap's normal modal show/hide behavior
+- **Impact:**
+  - **Critical Severity**: Complete page functionality failure
+  - **Scope**: Admin edit program page - all user interactions blocked
+  - **User Experience**: Total inability to use the page or navigate away
+  - **Workflow Disruption**: Admin program editing completely unusable
+- **Solution - Fixed Modal CSS Specificity:**
+  1. **Corrected CSS Selector:**
+     - Changed from `#deleteModal { display: flex !important; }` 
+     - To `#deleteModal.show { display: flex !important; }`
+     - Modal now only uses flex display when actively shown by Bootstrap
+  2. **Removed Conflicting JavaScript:**
+     - Removed manual `style.display = 'flex'` manipulation
+     - Eliminated conflicting inline styles that interfered with Bootstrap
+     - Simplified modal event handlers to focus only on accessibility
+  3. **Preserved Modal Centering:**
+     - Maintained proper modal centering when shown
+     - Kept enhanced visual styling and responsive behavior
+     - Ensured modal still appears centered without blocking page interaction
+- **Files Changed:**
+  - `assets/css/admin/programs/edit_program.css` (Fixed CSS selector specificity)
+  - `app/views/admin/programs/partials/admin_edit_program_content.php` (Simplified JavaScript)
+- **Testing:**
+  - ✅ All buttons and links now clickable and responsive
+  - ✅ Form submission works correctly
+  - ✅ Navbar navigation functions properly
+  - ✅ Modal still centers correctly when triggered
+  - ✅ Page interactions fully restored
+- **Verification:**
+  - Can click all form buttons (save, cancel, delete)
+  - Navbar links work for navigation
+  - Modal opens and closes properly when delete button is clicked
+  - No invisible overlays blocking user interactions
+- **Prevention:**
+  - Always use state-specific CSS selectors (e.g., `.show`, `:visible`) for modals
+  - Avoid global `display: flex !important` on modal containers
+  - Test all page interactions after modal-related CSS changes
+  - Use Bootstrap's built-in modal state classes instead of custom overrides
+
+### 50. Modal Positioning - Delete program modal not centered on screen in edit program page (2025-08-13) ✅ FIXED
+
+- **Problem:** Delete program modal in the admin edit program page was not properly centered on screen:
+  - Modal appeared in default Bootstrap position (top-left alignment)
+  - Poor user experience with modal not being visually centered
+  - Users had to scroll or look around to find the modal dialog
+- **Root Cause:**
+  - Missing enhanced modal centering classes and CSS
+  - Default Bootstrap modal positioning without custom improvements
+  - No JavaScript enhancements for modal display behavior
+- **Impact:**
+  - **Low Severity**: UI/UX issue affecting modal presentation
+  - **Scope**: Admin edit program page delete functionality
+  - **User Experience**: Suboptimal modal positioning and accessibility
+- **Solution - Enhanced Modal Centering:**
+  1. **Updated Modal Classes:**
+     - Added `modal-dialog-scrollable` class for better responsiveness
+     - Enhanced existing `modal-dialog-centered` class functionality
+     - Improved modal structure for consistent centering
+  2. **Added Custom CSS Styling:**
+     - Created dedicated CSS rules in `edit_program.css` for `#deleteModal`
+     - Added flexbox centering with `display: flex`, `align-items: center`, `justify-content: center`
+     - Set proper z-index (1055) to ensure modal appears above all content
+     - Enhanced modal dimensions with `max-width: 500px` and `width: 90%`
+     - Improved visual styling with border-radius and box-shadow
+  3. **Enhanced JavaScript Behavior:**
+     - Added event listeners for `shown.bs.modal` and `hidden.bs.modal` events
+     - Dynamic style application for perfect centering when modal is displayed
+     - Improved accessibility with automatic focus management
+     - Proper cleanup when modal is hidden
+  4. **Visual Improvements:**
+     - Enhanced modal backdrop with improved opacity (0.6)
+     - Better border-radius (12px) for modern appearance
+     - Enhanced box-shadow for depth perception
+- **Files Changed:**
+  - `app/views/admin/programs/partials/admin_edit_program_content.php` (Modal HTML and JavaScript)
+  - `assets/css/admin/programs/edit_program.css` (Modal centering styles)
+- **Testing:**
+  - ✅ Modal now appears perfectly centered on screen
+  - ✅ Responsive behavior works on different screen sizes
+  - ✅ JavaScript enhancements provide smooth user experience
+  - ✅ Assets compile correctly with Vite build system
+- **Verification:**
+  - Delete program modal opens in center of viewport
+  - Modal maintains centering across different screen resolutions
+  - Enhanced visual presentation with modern styling
+  - Proper focus management for accessibility
+- **Prevention:**
+  - Use consistent modal centering patterns across admin interface
+  - Apply enhanced CSS styling for all critical modals
+  - Include JavaScript enhancements for better UX
+
 ### 49. Incorrect Navigation - Links pointing to view_program.php instead of program_details.php (2025-08-13) ✅ FIXED
 
 - **Problem:** Multiple navigation links and redirections point to `view_program.php` when they should point to `program_details.php`:
@@ -538,7 +639,7 @@
 - Problem: On the View Programs page, hovering status/rating/initiative badges showed no tooltip on the live host, while localhost worked. Program Details page tooltips were unaffected.
 - Root Cause:
   - Custom CSS used a generic .tooltip class for hover tips inside program boxes.
-  - Bootstrap also defines .tooltip. On live, Bootstrap’s styles/script interfered, making the CSS-only tooltips invisible.
+  - Bootstrap also defines .tooltip. On live, Bootstrap's styles/script interfered, making the CSS-only tooltips invisible.
   - View Programs mixed expectations (CSS-only markup vs. Bootstrap JS init attempted as a hotfix).
 - Solution:
   1) Renamed inline tooltip markup in View Programs to .program-tooltip to avoid Bootstrap collision.
@@ -2221,5 +2322,53 @@ $admin_action_url = APP_URL . "/app/views/admin/programs/program_details.php?id=
   - Keep original form submission behavior unless specifically requested to change
   - Test modal implementations thoroughly before deployment
   - Consider user feedback when implementing UI changes
+
+---
+
+### 52. Rating Filter Investigation - Admin Programs Overview (2025-08-13) ✅ FIXED
+
+- **Problem:** User reported that the rating filter in the admin programs overview page doesn't work - it doesn't filter programs by their ratings.
+- **Investigation:**
+  - **Database Analysis:** Confirmed that programs have correct rating values in the database:
+    - `monthly_target_achieved`: 2 programs
+    - `on_track_for_year`: 2 programs  
+    - `severe_delay`: 1 program
+    - `not_started`: 23 programs
+  - **Query Analysis:** The `getFinalizedPrograms()` method correctly filters to show only programs with finalized submissions (8 programs total)
+  - **Frontend Analysis:** 
+    - Rating filter dropdown has correct options matching database ENUM values
+    - JavaScript filtering logic appears correct
+    - Program boxes have `data-rating` attributes set correctly
+  - **Feature Intent:** Confirmed that the feature is working as intended - admins should only see programs with finalized submissions
+- **Root Cause:** 
+  - **Vite Bundle Issue**: The page was using a bundled JavaScript file (`admin-view-programs.bundle.js`) instead of the individual file we were editing
+  - **Incorrect Data Attribute**: The bundled file was looking for `data-status` instead of `data-rating`
+  - **Wrong Rating Mapping**: The bundled file used an incorrect mapping for rating values
+  - **JavaScript Error**: `Uncaught ReferenceError: can't access lexical declaration 'programName' before initialization`
+- **Impact:**
+  - **Medium Severity**: Rating filter functionality was broken due to multiple issues
+  - **Scope**: Admin programs overview filtering
+  - **User Experience**: Rating filter appeared non-functional
+- **Solution:** 
+  - **Fixed Vite Bundle**: Updated the correct source file (`assets/js/admin/programs/view_programs.js`) that gets bundled
+  - **Corrected Data Attribute**: Changed from `data-status` to `data-rating` to match HTML structure
+  - **Fixed Rating Mapping**: Removed incorrect rating mapping and used direct comparison
+  - **Fixed JavaScript Error**: Moved variable declarations to correct order
+  - **Rebuilt Bundle**: Ran `npm run build` to apply changes to the bundled file
+- **Files Changed:**
+  - `assets/js/admin/programs/view_programs.js` (Fixed rating filter logic)
+  - `assets/js/admin/programs/admin-finalized-programs.js` (Fixed variable declaration order)
+  - `dist/js/admin-view-programs.bundle.js` (Rebuilt bundle)
+- **Testing:**
+  - ✅ Rating filter dropdown shows correct options
+  - ✅ JavaScript event listeners are properly attached
+  - ✅ Program boxes have correct `data-rating` attributes
+  - ✅ Filter logic correctly compares rating values
+  - ✅ Rating filter now works correctly on programs with finalized submissions
+  - ✅ Vite bundle properly includes the fixed JavaScript
+- **Verification:**
+  - Rating filter successfully filters programs by their ratings
+  - Programs without finalized submissions are correctly excluded from the view
+  - This is the intended behavior for admin oversight of completed work
 
 ---

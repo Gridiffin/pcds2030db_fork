@@ -167,15 +167,9 @@ function filterProgramBoxes() {
         
         // Rating filter
         if (ratingValue) {
-            const boxRating = box.getAttribute('data-status') || '';
-            const ratingMap = {
-                'target-achieved': 'monthly_target_achieved',
-                'on-track-yearly': 'on_track_for_year',
-                'severe-delay': 'severe_delay',
-                'not-started': 'not_started'
-            };
+            const boxRating = box.getAttribute('data-rating') || '';
             
-            if (ratingMap[ratingValue] !== boxRating) {
+            if (boxRating !== ratingValue) {
                 isVisible = false;
             }
         }

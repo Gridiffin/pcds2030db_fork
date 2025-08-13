@@ -29,7 +29,11 @@ function initializeFinalizedProgramFiltering() {
     const initiativeFilter = document.getElementById('finalizedInitiativeFilter');
     
     if (searchInput) searchInput.addEventListener('input', debounce(() => filterFinalizedPrograms(), 300));
-    if (ratingFilter) ratingFilter.addEventListener('change', () => filterFinalizedPrograms());
+    if (ratingFilter) {
+        ratingFilter.addEventListener('change', () => {
+            filterFinalizedPrograms();
+        });
+    }
     if (agencyFilter) agencyFilter.addEventListener('change', () => filterFinalizedPrograms());
     if (initiativeFilter) initiativeFilter.addEventListener('change', () => filterFinalizedPrograms());
 }
@@ -51,9 +55,10 @@ function filterFinalizedPrograms() {
     const selectedInitiative = initiativeFilter.value;
     
     const programBoxes = document.querySelectorAll('.admin-program-box');
+    
     let visibleCount = 0;
     
-    programBoxes.forEach(box => {
+    programBoxes.forEach((box, index) => {
         const rating = box.dataset.rating;
         const agencyId = box.dataset.agencyId;
         const initiativeId = box.dataset.initiativeId;

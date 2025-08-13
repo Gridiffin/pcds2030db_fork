@@ -266,3 +266,27 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Delete Modal Centering */
+#deleteModal.show {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    z-index: 1055;
+}
+
+#deleteModal .modal-dialog {
+    margin: auto;
+    max-width: 500px;
+    width: 90%;
+}
+
+#deleteModal .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Modal backdrop enhancement */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.6);
+}

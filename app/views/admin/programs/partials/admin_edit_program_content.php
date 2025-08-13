@@ -298,7 +298,7 @@
     <?php if ($can_delete): ?>
     <!-- Delete Program Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="deleteModalLabel">
@@ -341,6 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initDeleteButton() {
     const deleteButton = document.querySelector('.delete-program-btn');
+    const deleteModal = document.getElementById('deleteModal');
     
     if (deleteButton) {
         deleteButton.addEventListener('click', function(e) {
@@ -354,6 +355,17 @@ function initDeleteButton() {
             if (programNameDisplay && programIdInput) {
                 programNameDisplay.textContent = programName;
                 programIdInput.value = programId;
+            }
+        });
+    }
+    
+    // Enhance modal accessibility when shown
+    if (deleteModal) {
+        deleteModal.addEventListener('shown.bs.modal', function() {
+            // Focus on the first button for accessibility
+            const firstButton = this.querySelector('.btn-secondary');
+            if (firstButton) {
+                firstButton.focus();
             }
         });
     }
