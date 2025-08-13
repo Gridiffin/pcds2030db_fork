@@ -22,18 +22,10 @@ if (!isset($outcome_id) || !isset($outcome)) {
     <div class="card mb-4">
         <div class="card-header">
             <h5 class="card-title m-0">Edit Outcome</h5>
-            <p class="text-muted mb-0 small">Outcome ID: <?= $outcome_id ?> | Code: <?= htmlspecialchars($outcome['code']) ?></p>
+            <p class="text-muted mb-0 small">Outcome ID: <?= $outcome_id ?></p>
         </div>
         <div class="card-body">
             <form id="editOutcomeForm" method="post" action="">
-                <div class="mb-3">
-                    <label for="outcomeCodeInput" class="form-label">Outcome Code</label>
-                    <input type="text" class="form-control" id="outcomeCodeInput" name="code" required value="<?= htmlspecialchars($outcome['code']) ?>" />
-                </div>
-                <div class="mb-3">
-                    <label for="outcomeTypeInput" class="form-label">Outcome Type</label>
-                    <input type="text" class="form-control" id="outcomeTypeInput" name="type" required value="<?= htmlspecialchars($outcome['type']) ?>" />
-                </div>
                 <div class="mb-3">
                     <label for="outcomeTitleInput" class="form-label">Outcome Title</label>
                     <input type="text" class="form-control" id="outcomeTitleInput" name="title" required value="<?= htmlspecialchars($outcome['title']) ?>" />
