@@ -75,8 +75,13 @@ if (!empty($classes)) {
 }
 
 // Add theme class if specified
-if (isset($header_config['theme']) && in_array($header_config['theme'], ['light', 'dark', 'primary', 'secondary'])) {
+if (isset($header_config['theme']) && in_array($header_config['theme'], ['light', 'dark', 'primary', 'secondary', 'green'])) {
     $header_classes[] = 'page-header--' . $header_config['theme'];
+}
+
+// Add variant class if specified (backward compatibility)
+if (isset($header_config['variant']) && in_array($header_config['variant'], ['light', 'dark', 'primary', 'secondary', 'green'])) {
+    $header_classes[] = 'page-header--' . $header_config['variant'];
 }
 ?>
 

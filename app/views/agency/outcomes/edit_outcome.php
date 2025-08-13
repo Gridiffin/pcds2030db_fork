@@ -106,13 +106,13 @@ $header_config = [
             'url' => 'submit_outcomes.php',
             'text' => 'Back to Outcomes',
             'icon' => 'fas fa-arrow-left',
-            'class' => 'btn-outline-primary'
+            'class' => 'btn-light'
         ],
         [
             'url' => 'view_outcome.php?id=' . $outcome_id,
             'text' => 'View Outcome',
             'icon' => 'fas fa-eye',
-            'class' => 'btn-outline-info'
+            'class' => 'btn-light'
         ],
         [
             'html' => '<span class="badge ' . ($is_draft ? 'bg-warning text-dark' : 'bg-success') . '"><i class="fas ' . ($is_draft ? 'fa-edit' : 'fa-check') . ' me-1"></i>' . ($is_draft ? 'Draft' : 'Submitted') . '</span>'

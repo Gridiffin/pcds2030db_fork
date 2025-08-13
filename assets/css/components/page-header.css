@@ -214,6 +214,32 @@
     color: var(--forest-deep, #537D5D);
 }
 
+.page-header--green .btn-outline-primary {
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    color: white;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.page-header--green .btn-outline-primary:hover,
+.page-header--green .btn-outline-primary:focus {
+    background-color: white;
+    border-color: white;
+    color: var(--bs-primary);
+}
+
+.page-header--green .btn-outline-info {
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    color: white;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.page-header--green .btn-outline-info:hover,
+.page-header--green .btn-outline-info:focus {
+    background-color: white;
+    border-color: white;
+    color: var(--bs-info);
+}
+
 /* White header buttons */
 /* Button color/background styles have been centralized in components/buttons.css. Remove .page-header--white .btn-primary and .btn-outline-primary color/background overrides. Keep only layout/spacing/transition enhancements. */
 .page-header--white .btn {
