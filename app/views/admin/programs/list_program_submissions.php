@@ -296,7 +296,7 @@ require_once '../../layouts/page_header.php';
     <a href="programs.php" class="btn btn-secondary">
         <i class="fas fa-arrow-left me-1"></i> Back to Programs
     </a>
-    <a href="view_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-info ms-2">
+    <a href="program_details.php?id=<?php echo $program_id; ?>" class="btn btn-outline-info ms-2">
         <i class="fas fa-project-diagram me-1"></i> View Program Details
     </a>
 </div>

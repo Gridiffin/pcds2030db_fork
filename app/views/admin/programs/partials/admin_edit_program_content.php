@@ -16,9 +16,9 @@
                     </h6>
                     <p class="mb-0 text-muted">
                         <?php if (!empty($program['program_number'])): ?>
-                            <?php echo htmlspecialchars($program['program_number']); ?> - 
+                                                            <?php echo htmlspecialchars($program['program_number'] ?? ''); ?> - 
                         <?php endif; ?>
-                        <?php echo htmlspecialchars($program['program_name']); ?>
+                                                  <?php echo htmlspecialchars($program['program_name'] ?? ''); ?>
                     </p>
                 </div>
                 <div class="d-flex gap-2">
@@ -58,14 +58,14 @@
                                         Program Name <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control" id="program_name" name="program_name" 
-                                           value="<?php echo htmlspecialchars($program['program_name']); ?>" required>
+                                           value="<?php echo htmlspecialchars($program['program_name'] ?? ''); ?>" required>
                                     <div class="form-text">Enter the full name of the program</div>
                                 </div>
                                 
                                 <div class="col-md-6 mb-3">
                                     <label for="program_number" class="form-label">Program Number</label>
                                     <input type="text" class="form-control" id="program_number" name="program_number" 
-                                           value="<?php echo htmlspecialchars($program['program_number']); ?>"
+                                           value="<?php echo htmlspecialchars($program['program_number'] ?? ''); ?>"
                                            placeholder="e.g., P001, PROG-A">
                                     <div class="form-text">Optional program number for identification</div>
                                 </div>
@@ -98,9 +98,9 @@
                                         <?php foreach ($agencies as $agency): ?>
                                             <option value="<?php echo $agency['agency_id']; ?>" 
                                                     <?php echo ($agency['agency_id'] == $program['agency_id']) ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($agency['agency_name']); ?>
+                                                <?php echo htmlspecialchars($agency['agency_name'] ?? ''); ?>
                                                 <?php if (!empty($agency['agency_acronym'])): ?>
-                                                    (<?php echo htmlspecialchars($agency['agency_acronym']); ?>)
+                                                    (<?php echo htmlspecialchars($agency['agency_acronym'] ?? ''); ?>)
                                                 <?php endif; ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -119,9 +119,9 @@
                                             <option value="<?php echo $initiative['initiative_id']; ?>" 
                                                     <?php echo ($initiative['initiative_id'] == $program['initiative_id']) ? 'selected' : ''; ?>>
                                                 <?php if (!empty($initiative['initiative_number'])): ?>
-                                                    <?php echo htmlspecialchars($initiative['initiative_number']); ?> - 
+                                                    <?php echo htmlspecialchars($initiative['initiative_number'] ?? ''); ?> - 
                                                 <?php endif; ?>
-                                                <?php echo htmlspecialchars($initiative['initiative_name']); ?>
+                                                                                                  <?php echo htmlspecialchars($initiative['initiative_name'] ?? ''); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -195,7 +195,7 @@
                         <div class="card-body">
                             <dl class="row mb-0 small">
                                 <dt class="col-5">Current Agency:</dt>
-                                <dd class="col-7"><?php echo htmlspecialchars($agency_info['agency_name']); ?></dd>
+                                <dd class="col-7"><?php echo htmlspecialchars($agency_info['agency_name'] ?? ''); ?></dd>
                                 
                                 <dt class="col-5">Created:</dt>
                                 <dd class="col-7">
@@ -277,7 +277,7 @@
                                 <?php if ($can_delete): ?>
                                 <button type="button" class="btn btn-outline-danger btn-sm delete-program-btn" 
                                         data-id="<?php echo $program_id; ?>" 
-                                        data-name="<?php echo htmlspecialchars($program['program_name']); ?>"
+                                        data-name="<?php echo htmlspecialchars($program['program_name'] ?? ''); ?>"
                                         data-bs-toggle="modal" 
                                         data-bs-target="#deleteModal">
                                     <i class="fas fa-trash me-2"></i>Delete Program

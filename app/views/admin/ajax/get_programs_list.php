@@ -56,7 +56,7 @@ if (empty($programs)): ?>
         <tr>
             <td>
                 <div class="fw-medium">
-                    <a href="view_program.php?id=<?php echo $program['program_id']; ?>">
+                    <a href="program_details.php?id=<?php echo $program['program_id']; ?>">
                         <?php echo htmlspecialchars($program['program_name']); ?>
                     </a>
                     <?php if (isset($program['is_draft']) && $program['is_draft']): ?>
@@ -93,7 +93,7 @@ if (empty($programs)): ?>
             </td>
             <td class="text-center">
                 <div class="btn-group btn-group-sm d-flex flex-wrap justify-content-start">
-                    <a href="view_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
+                    <a href="program_details.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-primary" title="View Details">
                         <i class="fas fa-eye"></i>
                     </a>
                     <a href="edit_program.php?id=<?php echo $program['program_id']; ?>" class="btn btn-outline-secondary" title="Edit Program">

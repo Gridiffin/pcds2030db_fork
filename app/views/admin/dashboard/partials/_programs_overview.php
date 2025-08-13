@@ -38,7 +38,7 @@
                                     <?php foreach (array_slice($recent_programs, 0, 5) as $program): ?>
                                         <tr>
                                             <td class="text-truncate" title="<?php echo htmlspecialchars($program['program_name']); ?>">
-                                                <a href="<?php echo view_url('admin', 'programs/view_program.php', ['id' => $program['program_id']]); ?>" class="text-decoration-none">
+                                                <a href="<?php echo view_url('admin', 'programs/program_details.php', ['id' => $program['program_id']]); ?>" class="text-decoration-none">
                                                     <?php echo htmlspecialchars($program['program_name']); ?>
                                                 </a>
                                             </td>

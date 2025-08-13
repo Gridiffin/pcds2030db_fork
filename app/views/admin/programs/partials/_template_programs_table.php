@@ -165,7 +165,7 @@
                                 <!-- Admin Actions -->
                                 <td>
                                     <div class="btn-group btn-group-sm d-flex flex-nowrap" role="group" aria-label="Admin actions">
-                                        <a href="view_program.php?id=<?php echo $program['program_id']; ?>" 
+                                        <a href="program_details.php?id=<?php echo $program['program_id']; ?>" 
                                            class="btn btn-outline-secondary flex-fill" 
                                            title="View detailed program information"
                                            data-bs-toggle="tooltip" 

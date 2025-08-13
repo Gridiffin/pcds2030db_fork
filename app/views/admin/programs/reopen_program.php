@@ -57,7 +57,7 @@ $submission = $result->fetch_assoc();
 if ($submission['is_draft'] == 1) {
     $_SESSION['message'] = 'This submission is already in draft status and can be edited.';
     $_SESSION['message_type'] = 'info';
-    header('Location: view_program.php?id=' . $program_id);
+    header('Location: program_details.php?id=' . $program_id);
     exit;
 }
 
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $_SESSION['message'] = "Program \"{$submission['program_name']}\" for Q{$submission['quarter']}-{$submission['year']} has been successfully reopened for editing.";
         $_SESSION['message_type'] = 'success';
-        header('Location: view_program.php?id=' . $program_id);
+        header('Location: program_details.php?id=' . $program_id);
         exit;    } else {
         // Log failed program reopening
         log_audit_action('reopen_program_failed', "Program: {$submission['program_name']} | Submission ID: $submission_id | Error: " . $conn->error, 'failure', $_SESSION['user_id']);
@@ -122,7 +122,7 @@ $header_config = [
     'actions' => [
         [
             'text' => 'Back to Program',
-            'url' => 'view_program.php?id=' . $program_id,
+            'url' => 'program_details.php?id=' . $program_id,
             'class' => 'btn-outline-primary',
             'icon' => 'fas fa-arrow-left'
         ]
@@ -173,7 +173,7 @@ require_once '../../layouts/page_header.php';
                     </div>
                     
                     <div class="d-flex justify-content-end mt-4">
-                        <a href="view_program.php?id=<?php echo $program_id; ?>" class="btn btn-outline-secondary me-2">
+                        <a href="program_details.php?id=<?php echo $program_id; ?>" class="btn btn-outline-secondary me-2">
                             <i class="fas fa-times me-1"></i> Cancel
                         </a>
                         <button type="submit" class="btn btn-warning">

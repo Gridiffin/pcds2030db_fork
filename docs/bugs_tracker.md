@@ -1,3 +1,162 @@
+### 49. Incorrect Navigation - Links pointing to view_program.php instead of program_details.php (2025-08-13) ✅ FIXED
+
+- **Problem:** Multiple navigation links and redirections point to `view_program.php` when they should point to `program_details.php`:
+  - Related programs links in program details view
+  - Dashboard program overview links  
+  - Program table action buttons
+  - Admin navigation breadcrumbs and redirections
+- **Root Cause:**
+  - Inconsistent naming convention between `view_program.php` (legacy view) and `program_details.php` (modern interface)
+  - Links scattered across multiple files using old reference
+  - Admin interface should consistently use `program_details.php` for program viewing
+- **Impact:**
+  - **Medium Severity**: Navigation confusion, users sent to wrong page interface
+  - **Scope**: Admin program navigation throughout system
+  - **User Experience**: Inconsistent interface navigation between different entry points
+- **Solution - Update Navigation Links:**
+  1. **Fixed Related Programs Links:**
+     - Updated `app/views/admin/programs/partials/view_program_content.php`
+     - Changed internal program links to point to `program_details.php`
+     - Maintains consistent admin interface navigation
+  2. **Updated Dashboard Links:**
+     - Fixed `app/views/admin/dashboard/partials/_programs_overview_modern.php`
+     - Fixed `app/views/admin/dashboard/partials/_programs_overview.php`
+     - Dashboard now correctly routes to program details interface
+  3. **Fixed Program Table Actions:**
+     - Updated `app/views/admin/programs/partials/_draft_programs_table.php`
+     - Updated `app/views/admin/programs/partials/_template_programs_table.php`
+     - All "View Details" buttons now use correct target
+  4. **Updated Admin Navigation:**
+     - Fixed `app/views/admin/programs/list_program_submissions.php`
+     - Fixed `app/views/admin/programs/reopen_program.php` (breadcrumbs, redirections, cancel links)
+     - Fixed `app/views/admin/ajax/get_programs_list.php` (AJAX-loaded links)
+- **Files Changed:**
+  - `app/views/admin/programs/partials/view_program_content.php`
+  - `app/views/admin/dashboard/partials/_programs_overview_modern.php`
+  - `app/views/admin/dashboard/partials/_programs_overview.php`
+  - `app/views/admin/programs/list_program_submissions.php`
+  - `app/views/admin/programs/reopen_program.php`
+  - `app/views/admin/programs/partials/_draft_programs_table.php`
+  - `app/views/admin/programs/partials/_template_programs_table.php`
+  - `app/views/admin/ajax/get_programs_list.php`
+- **Testing:**
+  - ✅ All navigation links now point to correct program details interface
+  - ✅ Dashboard program links work correctly
+  - ✅ Related programs navigation functions properly
+  - ✅ Admin breadcrumbs and cancel actions route correctly
+- **Verification:**
+  - Consistent navigation experience across admin interface
+  - All program view actions use the same target page
+  - No broken links or wrong interface redirections
+- **Prevention:**
+  - Establish clear naming conventions for view vs details interfaces
+  - Use constants for common navigation targets to avoid scattered URLs
+
+### 48. Missing Handler - Non-existent save_program.php causing 404 error on program update (2025-08-13) ✅ FIXED
+
+- **Problem:** Admin program update form leads to non-existent page:
+  ```
+  http://localhost/pcds2030_dashboard_fork/app/handlers/admin/save_program.php
+  ```
+- **Root Cause:**
+  - Form in `admin_edit_program_content.php` has action pointing to `save_program.php`
+  - This file doesn't exist in the `app/handlers/admin/` directory
+  - Form submission fails with 404 error, preventing program updates
+  - JavaScript auto-save functionality also fails due to missing handler
+- **Impact:**
+  - **High Severity**: Complete failure of admin program editing functionality
+  - **Scope**: Admin program management interface
+  - **User Experience**: Cannot update programs, form submission fails
+- **Solution - Create Missing Handler:**
+  1. **Created save_program.php Handler:**
+     - Created new file `app/handlers/admin/save_program.php`
+     - Follows same pattern as existing `save_submission.php`
+     - Includes proper session handling, authentication, and error handling
+  2. **Handler Features:**
+     - Validates admin permissions
+     - Processes program data updates using existing `update_admin_program()` function
+     - Handles agency reassignment if provided
+     - Includes transaction management and rollback on errors
+     - Proper audit logging and error reporting
+  3. **Form Processing:**
+     - Validates required fields (program_id, program_name)
+     - Handles optional fields (program_number, description, dates, initiative_id, rating)
+     - Supports file uploads (placeholder for future implementation)
+     - Redirects back to edit page with success/error messages
+  4. **Security & Validation:**
+     - Admin-only access verification
+     - Input validation and sanitization
+     - Database transaction safety
+     - Proper error handling and logging
+- **Files Changed:**
+  - `app/handlers/admin/save_program.php` (Created new handler file)
+- **Testing:**
+  - ✅ Program update form now submits successfully
+  - ✅ Admin can edit and save program changes
+  - ✅ Proper validation and error handling
+  - ✅ Audit logging works correctly
+- **Verification:**
+  - Admin can update program information
+  - Form redirects back to edit page after successful update
+  - Error messages display correctly for validation failures
+  - No more 404 errors on form submission
+- **Prevention:**
+  - Always verify form action URLs exist before deployment
+  - Follow consistent naming patterns for handlers
+  - Test form submissions thoroughly
+  - Maintain handler file inventory
+
+### 47. PHP Deprecated - htmlspecialchars(): Passing null to parameter #1 ($string) in admin_edit_program_content.php (2025-08-13) ✅ FIXED
+
+- **Problem:** PHP Deprecated warning when editing programs:
+  ```
+  Deprecated: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\laragon\www\pcds2030_dashboard_fork\app\views\admin\programs\partials\admin_edit_program_content.php on line 68
+  ```
+- **Root Cause:**
+  - Database fields like `program_name`, `program_number`, `description`, etc. can be null
+  - `htmlspecialchars()` function was being called directly on these potentially null values
+  - PHP 8.1+ deprecated passing null to `htmlspecialchars()` parameter #1
+- **Impact:**
+  - **Low Severity**: Deprecated warnings in error logs, no functional impact
+  - **Scope**: Admin program editing interface
+  - **User Experience**: Form works but generates deprecated warnings
+- **Solution - Add Null Coalescing Operators:**
+  1. **Fixed All htmlspecialchars() Calls:**
+     - Added null coalescing operator (`??`) to all `htmlspecialchars()` calls
+     - Ensures empty string is passed instead of null when field is null
+     - Maintains backward compatibility and prevents warnings
+  2. **Updated Code Examples:**
+     ```php
+     // Before (causing deprecated warning)
+     value="<?php echo htmlspecialchars($program['program_name']); ?>"
+     
+     // After (fixed)
+     value="<?php echo htmlspecialchars($program['program_name'] ?? ''); ?>"
+     ```
+  3. **Fields Fixed:**
+     - `program_name` - Program name field
+     - `program_number` - Program number field  
+     - `description` - Program description field
+     - `remarks` - Program remarks field
+     - `agency_name` - Agency name in dropdowns
+     - `agency_acronym` - Agency acronym in dropdowns
+     - `initiative_name` - Initiative name in dropdowns
+     - `initiative_number` - Initiative number in dropdowns
+- **Files Changed:**
+  - `app/views/admin/programs/partials/admin_edit_program_content.php` (Fixed all htmlspecialchars calls)
+- **Testing:**
+  - ✅ No more deprecated warnings about null values
+  - ✅ Form fields display correctly with null values showing as empty
+  - ✅ All program editing functionality works as expected
+- **Verification:**
+  - Admin can edit programs without deprecated warnings
+  - Null database values are handled gracefully
+  - Form validation and submission work correctly
+- **Prevention:**
+  - Always use null coalescing operator (`??`) with `htmlspecialchars()`
+  - Test forms with null database values
+  - Follow PHP 8.1+ best practices for string handling
+
 ### 46. PHP Warning - Undefined array key "quarter" in delete_report.php (2025-08-13) ✅ FIXED
 
 - **Problem:** PHP Warning when deleting reports:
