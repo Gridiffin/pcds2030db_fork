@@ -121,6 +121,31 @@ function get_initiative_by_id($initiative_id) {
 }
 
 /**
+ * Get initiative number by ID
+ * @param int $initiative_id Initiative ID
+ * @return string|null Initiative number or null if not found
+ */
+function get_initiative_number($initiative_id) {
+    global $conn, $initiativesTable, $initiativeIdCol, $initiativeNumberCol;
+    
+    if (empty($initiative_id)) {
+        return null;
+    }
+    
+    $sql = "SELECT {$initiativeNumberCol} FROM {$initiativesTable} WHERE {$initiativeIdCol} = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('i', $initiative_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        return $row[$initiativeNumberCol];
+    }
+    
+    return null;
+}
+
+/**
  * Create new initiative
  */
 function create_initiative($data) {

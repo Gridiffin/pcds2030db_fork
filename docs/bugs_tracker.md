@@ -1,3 +1,60 @@
+### 44. Fatal Error - Call to undefined function get_initiative_number() (2025-08-13) ✅ FIXED
+
+- **Problem:** Fatal error when creating programs with selected initiatives:
+  ```
+  Fatal error: Uncaught Error: Call to undefined function get_initiative_number() 
+  in C:\laragon\www\pcds2030_dashboard_fork\app\lib\agencies\program_validation.php:220
+  Stack trace:
+  #0 C:\laragon\www\pcds2030_dashboard_fork\app\views\agency\programs\create_program.php(48): validate_program_data(Array)
+  #1 {main} thrown in C:\laragon\www\pcds2030_dashboard_fork\app\lib\agencies\program_validation.php on line 220
+  ```
+- **Root Cause:**
+  - Program validation code called `get_initiative_number($initiative_id)` function that didn't exist
+  - Function was needed to validate program numbers against initiative numbers
+  - Other initiative functions existed but not this specific one
+- **Impact:**
+  - **High Severity**: Complete failure when creating programs with initiatives
+  - **Scope**: All agency users trying to create programs with initiative assignments
+  - **User Experience**: PHP fatal error, program creation impossible
+- **Solution - Add Missing Function:**
+  1. **Created get_initiative_number() Function:**
+     - Added to `app/lib/initiative_functions.php` alongside other initiative functions
+     - Takes initiative_id parameter and returns initiative_number
+     - Uses same database connection patterns as existing functions
+     - Returns null for invalid/missing initiative_id
+  2. **Function Implementation:**
+     ```php
+     function get_initiative_number($initiative_id) {
+         global $conn, $initiativesTable, $initiativeIdCol, $initiativeNumberCol;
+         
+         if (empty($initiative_id)) {
+             return null;
+         }
+         
+         $sql = "SELECT {$initiativeNumberCol} FROM {$initiativesTable} WHERE {$initiativeIdCol} = ?";
+         $stmt = $conn->prepare($sql);
+         $stmt->bind_param('i', $initiative_id);
+         $stmt->execute();
+         $result = $stmt->get_result();
+         
+         if ($row = $result->fetch_assoc()) {
+             return $row[$initiativeNumberCol];
+         }
+         
+         return null;
+     }
+     ```
+- **Files Changed:**
+  - `app/lib/initiative_functions.php` (Added missing function)
+- **Testing:**
+  - ✅ No syntax errors in modified file
+  - ✅ Function follows existing code patterns and conventions
+  - ✅ Program validation can now access initiative numbers
+- **Prevention:**
+  - Always verify function existence before calling in validation code
+  - Include comprehensive function sets when implementing features
+  - Test program creation workflows with initiative assignments
+
 ### 43. Fatal Error - Missing program_agency_assignments Table (2025-01-09) ✅ FIXED
 
 - **Problem:** Admin program details page crashed with fatal error: "Table 'pcds2030_db.program_agency_assignments' doesn't exist"
