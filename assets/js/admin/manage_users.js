@@ -461,20 +461,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Delete User functionality
     function initializeDeleteButtons() {
         const deleteButtons = document.querySelectorAll('.delete-user-btn');
-        console.log('Found delete buttons:', deleteButtons.length);
         
-        deleteButtons.forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
+        if (deleteButtons.length === 0) {
+            // Retry once if buttons not found (timing issue)
+            setTimeout(initializeDeleteButtons, 100);
+            return;
+        }
+        
+        deleteButtons.forEach(function(btn, index) {
+            // Remove any existing listeners by cloning the button
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            newBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Delete button clicked');
                 
                 const userId = this.getAttribute('data-user-id');
                 const username = this.getAttribute('data-username');
                 
-                console.log('Delete user:', { userId, username });
-                
-                                // Show custom centered confirmation modal
+                // Show custom centered confirmation modal
                 showDeleteConfirmationModal(username, userId, this);
             });
         });
@@ -637,10 +643,35 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Handle modal hidden event to clean up
         modal.addEventListener('hidden.bs.modal', function() {
+            // Clean up modal
             modal.remove();
+            
+            // Force cleanup of any remaining modal artifacts
+            document.body.classList.remove('modal-open');
+            
+            // Remove any remaining backdrops
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            
+            // Reset body styles
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
         });
+        
+        // Add explicit cancel button handler for extra safety
+        const cancelBtn = modal.querySelector('[data-bs-dismiss="modal"]');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                bsModal.hide();
+            });
+        }
     }
     
     // Initialize delete buttons
     initializeDeleteButtons();
+    
+    // Also initialize after a short delay to catch any dynamically loaded content
+    setTimeout(() => {
+        initializeDeleteButtons();
+    }, 500);
 });

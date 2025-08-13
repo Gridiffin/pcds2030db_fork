@@ -339,7 +339,18 @@ function log_data_operation($operation, $entity, $entity_id, $changes = [], $use
     
     // If we have field changes and a valid audit log ID, log the field changes
     if ($audit_log_id && !empty($changes) && is_array($changes)) {
-        log_field_changes($audit_log_id, $changes);
+        // Convert simple changes array to proper field change format
+        $formatted_changes = [];
+        foreach ($changes as $field_name => $new_value) {
+            $formatted_changes[] = [
+                'field_name' => $field_name,
+                'field_type' => gettype($new_value),
+                'old_value' => '', // We don't have old values in this context
+                'new_value' => is_array($new_value) ? json_encode($new_value) : (string)$new_value,
+                'change_type' => 'update'
+            ];
+        }
+        log_field_changes($audit_log_id, $formatted_changes);
     }
     
     return $audit_log_id;

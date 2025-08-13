@@ -29,20 +29,32 @@ function UserTableManager(formManagerParam) {
             button.parentNode.replaceChild(newButton, button);
         });
         
-        // Now attach listeners to delete buttons
+        // Now attach listeners to delete buttons as backup
         document.querySelectorAll('.delete-user-btn').forEach(button => {
+            // Check if this button already has our listener
+            if (button.hasAttribute('data-listener-attached')) {
+                return; // Skip if already has listener
+            }
+            
             button.addEventListener('click', function(e) {
                 e.preventDefault();
+                
                 const userId = this.getAttribute('data-user-id');
                 const username = this.getAttribute('data-username');
                 
-                if (formManager) {
+                // Try to use the manage_users.js function first
+                if (typeof showDeleteConfirmationModal === 'function') {
+                    showDeleteConfirmationModal(username, userId, this);
+                } else if (formManager) {
                     formManager.showDeleteForm(userId, username);
                 } else {
-                    console.error('Form manager not available');
+                    console.error('No delete modal function available');
                     alert('Error: Could not initialize delete form');
                 }
             });
+            
+            // Mark as having listener attached
+            button.setAttribute('data-listener-attached', 'true');
         });
         
         // Add event listeners for status toggle buttons

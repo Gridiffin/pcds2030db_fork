@@ -436,6 +436,28 @@ function delete_user($user_id) {
     $conn->begin_transaction();
     
     try {
+        // First, delete related records that don't have CASCADE
+        // Delete notifications for this user
+        $delete_notifications = "DELETE FROM notifications WHERE user_id = ?";
+        $stmt = $conn->prepare($delete_notifications);
+        $stmt->bind_param("i", $user_id);
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to delete user notifications: " . $stmt->error);
+        }
+        
+        // Delete audit logs created by this user (if they exist)
+        $delete_audit_logs = "DELETE FROM audit_logs WHERE user_id = ?";
+        $stmt = $conn->prepare($delete_audit_logs);
+        $stmt->bind_param("i", $user_id);
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to delete user audit logs: " . $stmt->error);
+        }
+        
+        // Other related tables with foreign keys should have ON DELETE CASCADE
+        // but we'll be safe and handle them if needed
+        
         // Delete the user
         $delete_query = "DELETE FROM users WHERE user_id = ?";
         $stmt = $conn->prepare($delete_query);
