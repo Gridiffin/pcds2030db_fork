@@ -1,3 +1,60 @@
+### 45. Report Generator - Timber Export Chart Shows "No Data Available" (2025-08-13) ✅ FIXED
+
+- **Problem:** PowerPoint report generator shows "No data available for timber export value" despite actual data existing in database
+- **Root Cause:**
+  - Data format mismatch between API response and JavaScript chart processing
+  - API provides object-based data: `{month: "January", 2024: 276004972.69, 2025: 0}`
+  - Chart function expected array-based data: `["January", 276004972.69, 0]`
+  - Chart logic was using `columns.slice(1)` and `row.slice(1)` expecting tabular arrays
+  - Actual data structure has year keys as object properties, not array indices
+- **Error Analysis:**
+  - Timber export data exists in `outcomes` table with substantial 2024 values
+  - API correctly filters data for current/previous years (2024/2025)
+  - JavaScript `addTimberExportChart()` function incorrectly processed the data format
+  - Function failed to extract values, resulting in "No data available" message
+- **Impact:**
+  - **High Severity**: Reports showing incorrect "no data" message despite valid data
+  - **Scope**: All PowerPoint reports generated for forestry sector
+  - **User Experience**: Misleading reports suggesting missing timber export data
+- **Solution - Fix Data Processing Logic:**
+  1. **Updated addTimberExportChart() Function:**
+     - Modified to handle object-based data format correctly
+     - Process `row[year]` instead of `row.slice(1)[index]`
+     - Extract month names from `row.month` property
+     - Build separate data series for each year with non-zero values
+  2. **Improved Data Validation:**
+     - Check for `hasYearData` to only include years with actual values
+     - Properly validate `row.month` exists before processing
+     - Convert values to float and validate they're greater than 0
+  3. **Better Chart Series Creation:**
+     ```javascript
+     // Process each row (month)
+     rows.forEach(row => {
+         if (row && row.month) {
+             columns.forEach(year => {
+                 const value = parseFloat(row[year]) || 0;
+                 monthlyDataByYear[year].push(value);
+                 if (value > 0) hasAnyData = true;
+             });
+         }
+     });
+     ```
+- **Files Changed:**
+  - `assets/js/report-modules/report-slide-styler.js` (Fixed `addTimberExportChart()` function)
+- **Testing:**
+  - ✅ Data exists: 2024 has substantial values (Jan: 276M RM, May: 324M RM, etc.)
+  - ✅ API provides correct object-based data structure with columns and rows
+  - ✅ Fixed function properly processes object keys for year data
+  - ✅ Chart should now display 2024 timber export values instead of "no data"
+- **Verification:**
+  - Test data shows 9 months of 2024 with non-zero values (Jan-Sep)
+  - Values range from 191M to 324M RM per month
+  - Chart will display meaningful line chart for timber export trends
+- **Prevention:**
+  - Validate data format expectations when connecting API to frontend
+  - Test chart functions with actual API response structures
+  - Include data format validation in chart processing logic
+
 ### 44. Fatal Error - Call to undefined function get_initiative_number() (2025-08-13) ✅ FIXED
 
 - **Problem:** Fatal error when creating programs with selected initiatives:

@@ -1554,6 +1554,7 @@ slide.addText(statusText, {
     function addTimberExportChart(slide, pptx, themeColors, defaultFont, data) {
         const container = createChartContainer(slide, pptx, themeColors);
         createChartTitle(slide, 'Timber Export Value (RM)', container, themeColors, defaultFont);
+        
         if (!data || !data.charts || !data.charts.main_chart || !data.charts.main_chart.data) {
             createTextBox(slide, 'No data available for Timber Export Value.', {
                 x: container.x, y: container.y + 0.5, w: container.w, h: 0.5,
@@ -1562,6 +1563,7 @@ slide.addText(statusText, {
             });
             return;
         }
+        
         const timberData = data.charts.main_chart.data;
         if (!timberData.columns || !timberData.rows || timberData.columns.length === 0 || timberData.rows.length === 0) {
             createTextBox(slide, 'No data available for Timber Export Value.', {
@@ -1571,36 +1573,35 @@ slide.addText(statusText, {
             });
             return;
         }
+        
         const columns = timberData.columns || [];
         const rows = timberData.rows || [];
-        if (columns.length === 0 || rows.length === 0) {
-            createTextBox(slide, 'No data available for Timber Export Value.', {
-                x: container.x, y: container.y + 0.5, w: container.w, h: 0.5,
-                fontFace: defaultFont, fontSize: 12, color: themeColors.redStatus || 'FF0000',
-                align: 'center', valign: 'middle'
-            });
-            return;
-        }
-        const chartData = [];
-        const monthlyHeaders = columns.slice(1); // Skip first column (year/agency)
-        const monthlyData = {};
-        let maxMonthlyValue = 0;
+        
+        // Process the object-based data format correctly
+        const monthlyDataByYear = {};
+        let hasAnyData = false;
+        
+        // Initialize data structure for each year
+        columns.forEach(year => {
+            monthlyDataByYear[year] = [];
+        });
+        
+        // Process each row (month)
         rows.forEach(row => {
-            if (row && row.length > 1) {
-                const rowData = row.slice(1);
-                rowData.forEach((value, index) => {
-                    if (value !== null && value !== undefined && !isNaN(value)) {
-                        const month = monthlyHeaders[index];
-                        if (month && month !== 'Total') {
-                            if (!monthlyData[month]) monthlyData[month] = 0;
-                            monthlyData[month] += parseFloat(value);
-                            maxMonthlyValue = Math.max(maxMonthlyValue, monthlyData[month]);
-                        }
+            if (row && row.month) {
+                const monthName = row.month.substring(0, 3); // Convert "January" to "Jan"
+                
+                columns.forEach(year => {
+                    const value = parseFloat(row[year]) || 0;
+                    monthlyDataByYear[year].push(value);
+                    if (value > 0) {
+                        hasAnyData = true;
                     }
                 });
             }
         });
-        if (Object.keys(monthlyData).length === 0) {
+        
+        if (!hasAnyData) {
             createTextBox(slide, 'No data available for Timber Export Value.', {
                 x: container.x, y: container.y + 0.5, w: container.w, h: 0.5,
                 fontFace: defaultFont, fontSize: 12, color: themeColors.redStatus || 'FF0000',
@@ -1608,33 +1609,43 @@ slide.addText(statusText, {
             });
             return;
         }
-        const sortedData = Object.entries(monthlyData).sort((a, b) => {
-            const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'];
-            return monthOrder.indexOf(a[0]) - monthOrder.indexOf(b[0]);
+        
+        // Create chart data series for each year that has data
+        const chartDataSeries = [];
+        const monthLabels = rows.map(row => row.month ? row.month.substring(0, 3) : '').filter(Boolean);
+        
+        columns.forEach(year => {
+            const yearData = monthlyDataByYear[year];
+            const hasYearData = yearData.some(value => value > 0);
+            
+            if (hasYearData) {
+                chartDataSeries.push({
+                    name: year.toString(),
+                    labels: monthLabels,
+                    values: yearData
+                });
+            }
         });
-        chartData.push({
-            name: 'Timber Export Value',
-            labels: sortedData.map(([month]) => month.substring(0, 3)),
-            values: sortedData.map(([, value]) => value)
-        });
-        const chartOptions = {
-            x: container.x, y: container.y + 0.7, w: container.w, h: container.h - 0.7,
-            chartColors: getChartSeriesColors(themeColors),
-            showLegend: false,
-            showValue: false,
-            valAxisMajorUnit: calculateMajorUnit(maxMonthlyValue * 1.1),
-            valAxisMinVal: 0,
-            valAxisMaxVal: maxMonthlyValue * 1.1,
-            chartType: 'line',
-            lineDataSymbol: 'circle',
-            lineDataSymbolSize: 6,
-            lineSmooth: true
-        };
-        if (maxMonthlyValue > 0) {
-            chartOptions.valAxisMajorUnit = calculateMajorUnit(maxMonthlyValue * 1.1);
+        
+        if (chartDataSeries.length === 0) {
+            createTextBox(slide, 'No data available for Timber Export Value.', {
+                x: container.x, y: container.y + 0.5, w: container.w, h: 0.5,
+                fontFace: defaultFont, fontSize: 12, color: themeColors.redStatus || 'FF0000',
+                align: 'center', valign: 'middle'
+            });
+            return;
         }
-        slide.addChart(pptx.ChartType.line || 'line', chartData, chartOptions);
+        
+        // Get all values to determine max for scaling
+        const allValues = chartDataSeries.flatMap(series => series.values.filter(v => v > 0));
+        const maxValue = Math.max(...allValues);
+        
+        // Create chart options
+        const chartOptions = getLineChartOptions(container, themeColors, defaultFont, 'Timber Export Value (RM)', 'RM Million', maxValue);
+        
+        // Add the chart
+        slide.addChart(pptx.ChartType.line, chartDataSeries, chartOptions);
+        console.log("Timber export chart added to slide with", chartDataSeries.length, "data series");
     }
 
     return {

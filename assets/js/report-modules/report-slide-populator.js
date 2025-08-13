@@ -34,6 +34,7 @@ if (typeof window.ReportPopulator !== 'undefined') {
             try {
                 ReportStyler.addTimberExportChart(slide, pptx, themeColors, defaultFont, data);
             } catch (chartError) {
+                console.error("Error in timber export chart:", chartError);
                 // Add error text instead of chart
                 const container = ReportStyler.createChartContainer(slide, pptx, themeColors);
                 ReportStyler.createTextBox(slide, 'Error generating chart. Please check the data and try again.', {
