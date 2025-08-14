@@ -36,7 +36,7 @@ define('APP_NAME', 'PCDS2030 Dashboard Forestry Sector');
 if (!defined('APP_URL')) {
     // Check if we're running from command line
     if (php_sapi_name() === 'cli') {
-        define('APP_URL', 'https://www.sarawakforestry.com/pcds2030'); // Default for CLI
+        define('APP_URL', 'https://www.sarawakforestry.com/pcds30'); // Default for CLI
     } else {
         // Detect the correct APP_URL based on current request
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
@@ -44,7 +44,7 @@ if (!defined('APP_URL')) {
         // Production cPanel detection first
         if ($current_host === 'www.sarawakforestry.com' || $current_host === 'sarawakforestry.com') {
             // Force production path regardless of directory name
-            define('APP_URL', 'https://www.sarawakforestry.com/pcds2030');
+            define('APP_URL', 'https://www.sarawakforestry.com/pcds30');
         } else {
             // Local development detection
             $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
@@ -185,12 +185,12 @@ define('REPORT_PATH', ROOT_PATH . 'app/reports/');
 if (!defined('BASE_URL')) {
     // Check if we're running from command line
     if (php_sapi_name() === 'cli') {
-        define('BASE_URL', '/pcds2030'); // Production path for CLI
+        define('BASE_URL', '/pcds30'); // Production path for CLI
     } else {
         // Production cPanel detection first
         if ($current_host === 'www.sarawakforestry.com' || $current_host === 'sarawakforestry.com') {
             // Force production path regardless of directory name
-            define('BASE_URL', '/pcds2030');
+            define('BASE_URL', '/pcds30');
         } else {
             // Local development detection
             $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
