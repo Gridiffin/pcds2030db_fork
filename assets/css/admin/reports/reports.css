@@ -1,14 +1,14 @@
-/**
- * Admin Reports CSS Entry Point
- * Base + reports-specific components
- * Replaces main.css import for reports module (~90kB vs 352kB)
- */
-
 /* Import shared admin foundation */
 @import '../shared/base.css';
 
 /* Reports-specific components */
 @import '../../admin/reports-pagination.css';
+
+/**
+ * Admin Reports CSS Entry Point
+ * Base + reports-specific components
+ * Replaces main.css import for reports module (~90kB vs 352kB)
+ */
 
 /* Report generation interface */
 .report-generator {

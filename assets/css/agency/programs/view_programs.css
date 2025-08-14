@@ -1,11 +1,72 @@
+/* Import shared base styles */
+@import '../shared/base.css';
+@import '../../components/programs-modern-box.css';
+
 /**
  * View Programs Page Styles
  * Styles for the programs listing page
  */
 
-/* Import shared base styles */
-@import '../shared/base.css';
-@import '../../components/programs-modern-box.css';
+/* Pill Tabs Design - Forest Theme */
+.pill-tabs-container {
+    background: rgba(210, 208, 160, 0.3); /* Fallback */
+    background: rgba(var(--forest-pale-rgb), 0.3);
+    border: 1px solid rgba(158, 188, 138, 0.4); /* Fallback */
+    border: 1px solid rgba(var(--forest-light-rgb), 0.4);
+    border-radius: 0.5rem;
+    padding: 0.375rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    width: 100%;
+}
+
+.pill-tabs-container .nav-tabs-pill .nav-link {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(158, 188, 138, 0.3);
+    color: rgba(74, 103, 65, 0.9);
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.pill-tabs-container .nav-tabs-pill .nav-link:hover {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(158, 188, 138, 0.5);
+    color: rgba(74, 103, 65, 1);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(74, 103, 65, 0.1);
+}
+
+.pill-tabs-container .nav-tabs-pill .nav-link.active {
+    background: linear-gradient(135deg, rgba(74, 103, 65, 0.9), rgba(158, 188, 138, 0.9));
+    border-color: rgba(74, 103, 65, 0.8);
+    color: white;
+    box-shadow: 0 2px 8px rgba(74, 103, 65, 0.3);
+    transform: translateY(-1px);
+}
+
+.pill-tabs-container .simple-badge {
+    background: rgba(74, 103, 65, 0.8);
+    color: white;
+    border-radius: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.375rem;
+    vertical-align: top;
+    display: inline-block;
+    line-height: 1.2;
+}
+
+/* View Programs specific styles - ensures CSS bundle generation */
+.view-programs-page {
+    /* Placeholder to ensure CSS bundle generation */
+    min-height: 100vh;
+}
 
 /* Programs table styling */
 .programs-table {
@@ -170,6 +231,60 @@ button.nav-link.active {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+/* Ensure pagination buttons have proper Bootstrap styling */
+.pagination .page-link {
+    position: relative;
+    display: block;
+    padding: 0.5rem 0.75rem;
+    margin-left: -1px;
+    line-height: 1.25;
+    color: #0d6efd;
+    text-decoration: none;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.pagination .page-link:hover {
+    z-index: 2;
+    color: #0a58ca;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.pagination .page-link:focus {
+    z-index: 3;
+    color: #0a58ca;
+    background-color: #e9ecef;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.pagination .page-item:first-child .page-link {
+    margin-left: 0;
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.pagination .page-item:last-child .page-link {
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
+.pagination .page-item.active .page-link {
+    z-index: 3;
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
 }
 
 /* Search and filter styling */

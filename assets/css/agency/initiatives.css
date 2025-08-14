@@ -1,11 +1,11 @@
-/**
- * Agency Initiatives Module Styles
- * Main CSS file that imports all initiative-related styles
- */
-
 /* Import base styles */
 @import './initiatives/base.css';
 
 /* Import component-specific styles */
 @import './initiatives/listing.css';
 @import './initiatives/view.css';
+
+/**
+ * Agency Initiatives Module Styles
+ * Main CSS file that imports all initiative-related styles
+ */

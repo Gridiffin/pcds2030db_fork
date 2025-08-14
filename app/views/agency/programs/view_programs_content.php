@@ -164,8 +164,9 @@
                             </div>
                             
                             <!-- Pagination for Draft Programs -->
-                            <div class="mt-4" id="draftProgramsPagination"></div>
-                            <div class="text-muted small mt-2" id="draftProgramsCounter"></div>
+                            <div class="pagination-wrapper mt-4 d-flex justify-content-center align-items-center flex-column" id="draftProgramsPagination">
+                                <div class="text-muted small mb-2" id="draftProgramsCounter"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -205,8 +206,9 @@
                             </div>
                             
                             <!-- Pagination for Finalized Programs -->
-                            <div class="mt-4" id="finalizedProgramsPagination"></div>
-                            <div class="text-muted small mt-2" id="finalizedProgramsCounter"></div>
+                            <div class="pagination-wrapper mt-4 d-flex justify-content-center align-items-center flex-column" id="finalizedProgramsPagination">
+                                <div class="text-muted small mb-2" id="finalizedProgramsCounter"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -245,8 +247,9 @@
                             </div>
                             
                             <!-- Pagination for Empty Programs -->
-                            <div class="mt-4" id="emptyProgramsPagination"></div>
-                            <div class="text-muted small mt-2" id="emptyProgramsCounter"></div>
+                            <div class="pagination-wrapper mt-4 d-flex justify-content-center align-items-center flex-column" id="emptyProgramsPagination">
+                                <div class="text-muted small mb-2" id="emptyProgramsCounter"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -265,6 +268,45 @@
         <!-- Simple Finalize Modal (New Implementation) -->
         <?php require_once __DIR__ . '/partials/simple_finalize_modal.php'; ?>
         
+        <!-- Pagination Styling -->
+        <style>
+        .pagination-wrapper {
+            padding: 1rem 0;
+            border-top: 1px solid #e9ecef;
+            margin-top: 1.5rem !important;
+        }
+        
+        .pagination-wrapper .pagination {
+            margin: 0;
+        }
+        
+        .pagination-wrapper .pagination .page-link {
+            font-size: 0.95rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            margin: 0 0.2rem;
+            border: 1px solid #dee2e6;
+            transition: all 0.2s ease;
+        }
+        
+        .pagination-wrapper .pagination .page-item.active .page-link {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        
+        .pagination-wrapper .pagination .page-link:hover:not(.disabled) {
+            background-color: #f8f9fa;
+            border-color: #28a745;
+            color: #28a745;
+        }
+        
+        .pagination-wrapper .pagination .page-item.disabled .page-link {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        </style>
+
         <!-- JavaScript data -->
         <script>
             // Make program data available to JavaScript
