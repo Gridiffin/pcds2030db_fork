@@ -84,6 +84,17 @@ try {
         exit;
     }
 
+    // Prepare submission data early so it is available to all flows
+    $description = isset($_POST['description']) ? trim($_POST['description']) : '';
+
+    // Determine submission mode - default is draft; override on finalize
+    $is_draft = true;
+    $is_submitted = false;
+    if (isset($_POST['finalize_submission']) && $_POST['finalize_submission'] == '1') {
+        $is_draft = false;
+        $is_submitted = true;
+    }
+
     // If updating, verify submission exists and user has access
     if ($is_update) {
         $submission_query = "SELECT * FROM program_submissions 
@@ -98,11 +109,7 @@ try {
             echo json_encode(['error' => 'Submission not found or access denied.']);
             exit;
         }
-        // Update the submission and set updated_at = NOW()
-        $update_query = "UPDATE program_submissions SET description = ?, is_draft = ?, is_submitted = ?, updated_at = NOW() WHERE submission_id = ?";
-        $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("siii", $description, $is_draft, $is_submitted, $submission_id);
-        $stmt->execute();
+        // No DB update here yet; updates are handled later after transaction starts
     }
 
     // Handle deleted attachments
@@ -127,8 +134,7 @@ try {
         }
     }
 
-    // Prepare submission data
-    $description = $_POST['description'] ?? '';
+    // Targets will be populated below
     $targets = [];
     
     // Handle targets from JSON
@@ -157,13 +163,7 @@ try {
         }
     }
 
-    // Determine submission mode - always save as draft from edit page
-    $is_draft = true;
-    $is_submitted = false;
-    if (isset($_POST['finalize_submission']) && $_POST['finalize_submission'] == '1') {
-        $is_draft = false;
-        $is_submitted = true;
-    }
+    // is_draft and is_submitted already computed above
 
     // Start transaction
     $conn->begin_transaction();
@@ -197,11 +197,22 @@ try {
         }
 
         if ($is_update) {
-            // Update submission status (is_draft, is_submitted) when editing
-            $update_status_query = "UPDATE program_submissions SET is_draft = ?, is_submitted = ?, updated_at = NOW() WHERE submission_id = ?";
-            $stmt = $conn->prepare($update_status_query);
-            $stmt->bind_param("iii", $is_draft, $is_submitted, $submission_id);
-            $stmt->execute();
+            // Update submission description and status
+            if ($is_submitted) {
+                $update_status_query = "UPDATE program_submissions 
+                    SET description = ?, is_draft = ?, is_submitted = ?, submitted_by = ?, submitted_at = NOW(), updated_at = NOW()
+                    WHERE submission_id = ?";
+                $stmt = $conn->prepare($update_status_query);
+                $stmt->bind_param("siiii", $description, $is_draft, $is_submitted, $_SESSION['user_id'], $submission_id);
+                $stmt->execute();
+            } else {
+                $update_status_query = "UPDATE program_submissions 
+                    SET description = ?, is_draft = ?, is_submitted = ?, updated_at = NOW()
+                    WHERE submission_id = ?";
+                $stmt = $conn->prepare($update_status_query);
+                $stmt->bind_param("siii", $description, $is_draft, $is_submitted, $submission_id);
+                $stmt->execute();
+            }
             // Get existing targets for comparison
             $existing_targets_query = "SELECT * FROM program_targets WHERE submission_id = ? AND is_deleted = 0 ORDER BY target_id ASC";
             $stmt = $conn->prepare($existing_targets_query);
