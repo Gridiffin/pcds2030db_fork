@@ -13,6 +13,8 @@ import '../utilities/pagination.js';
 
 // Import main utilities including showToast
 import '../main.js';
+// Ensure focal-only unsubmit helper is available globally when needed
+import './unsubmit_submission.js';
 
 // Global toggle dropdown function for custom dropdowns
 window.toggleDropdown = function(button) {

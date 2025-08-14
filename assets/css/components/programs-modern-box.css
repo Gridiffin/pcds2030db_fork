@@ -41,11 +41,11 @@
 
 /* Ensure program boxes with open dropdowns override hover states */
 .program-box.dropdown-active {
-    z-index: 9997 !important;
+    z-index: 1000 !important;
 }
 
 .program-box.dropdown-active:hover {
-    z-index: 9997 !important;
+    z-index: 1000 !important;
 }
 
 .program-box-content {
@@ -306,7 +306,7 @@
     border-radius: var(--radius-base);
     box-shadow: var(--shadow-lg);
     min-width: 200px;
-    z-index: 9999;
+    z-index: 1051; /* below Bootstrap modal (1055) */
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
@@ -320,17 +320,11 @@
 }
 
 /* Ensure dropdown parent has higher z-index when dropdown is shown */
-.action-info:has(.dropdown-menu-custom.show) {
-    z-index: 9998;
-}
+.action-info:has(.dropdown-menu-custom.show) { z-index: 1001; }
 
 /* Alternative for browsers that don't support :has() */
-.dropdown-active .action-info {
-    z-index: 9998;
-}
-.dropdown-active .program-box {
-    z-index: 9997;
-}
+.dropdown-active .action-info { z-index: 1001; }
+.dropdown-active .program-box { z-index: 1000; }
 
 /* Prevent other program boxes from interfering when dropdown is open */
 body:has(.dropdown-menu-custom.show) .program-box:not(.dropdown-active):hover {

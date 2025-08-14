@@ -1222,15 +1222,36 @@ function handleFormSubmission(form, submitter) {
         showToast("Success", data.message, "success");
         refreshReportingPeriodsDropdown();
         if (submitter && submitter.name === "save_and_exit") {
-          // Redirect based on user role
-          if (window.currentUserRole === "admin") {
-            window.location.href =
-              window.APP_URL + "/app/views/admin/programs/programs.php";
-          } else {
-            // Redirect to view programs for agency users
-            window.location.href =
-              window.APP_URL + "/app/views/agency/programs/view_programs.php";
-          }
+          // Show success modal then redirect to programs list based on role
+          const redirectUrl =
+            window.currentUserRole === "admin"
+              ? window.APP_URL + "/app/views/admin/programs/programs.php"
+              : window.APP_URL + "/app/views/agency/programs/view_programs.php";
+          showActionSuccessModal(
+            "Changes Saved",
+            "Redirecting to programs list...",
+            "fas fa-save text-primary",
+            redirectUrl,
+            1500
+          );
+          return;
+        }
+        if (submitter && submitter.name === "save_as_draft") {
+          // Informational modal without redirect
+          showActionSuccessModal(
+            "Draft Saved",
+            "You can still continue editing this or safely exit.",
+            "fas fa-save text-primary",
+            null,
+            1500
+          );
+        }
+        if (submitter && submitter.name === "finalize_submission") {
+          // After finalizing from Edit Submission, show success modal then redirect
+          showFinalizeSuccessModal(
+            "Submission Finalized Successfully!",
+            window.APP_URL + "/app/views/agency/programs/view_programs.php"
+          );
           return;
         }
         // Show loading spinner and refresh all submission data (including attachments)
@@ -1323,6 +1344,78 @@ function formatFileSize(bytes) {
   const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
+/**
+ * Generic success modal utility
+ * If redirectUrl is provided, redirect after delay; otherwise auto-close only
+ */
+function showActionSuccessModal(title, subtitle, iconClass = "fas fa-check-circle text-success", redirectUrl = null, delayMs = 1500) {
+  try {
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = `
+      <div class="modal fade" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-body text-center py-4">
+              <i class="${iconClass}" style="font-size: 3rem;"></i>
+              <h5 class="mt-3">${title}</h5>
+              ${subtitle ? `<p class="text-muted">${subtitle}</p>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(wrapper);
+    const modalEl = wrapper.querySelector(".modal");
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    setTimeout(() => {
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        modal.hide();
+      }
+    }, delayMs);
+  } catch (e) {
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+    }
+  }
+}
+
+/**
+ * Show a success modal and redirect after a short delay
+ * @param {string} title Title/message to show
+ * @param {string} redirectUrl Where to navigate after closing
+ */
+function showFinalizeSuccessModal(title, redirectUrl) {
+  try {
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = `
+      <div class="modal fade" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-body text-center py-4">
+              <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+              <h5 class="mt-3">${title}</h5>
+              <p class="text-muted">Redirecting to programs page...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(wrapper);
+    const modalEl = wrapper.querySelector(".modal");
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 2000);
+  } catch (e) {
+    // Fallback: direct redirect if modal fails
+    window.location.href = redirectUrl;
+  }
 }
 
 /**

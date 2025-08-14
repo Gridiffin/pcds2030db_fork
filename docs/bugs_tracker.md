@@ -1,3 +1,9 @@
+### [2025-08-14] Edit Submission – redirect after finalizing goes back to edit instead of programs list
+
+- Problem: From `agency/programs/edit_submission.php`, when users click Finalize Submission, they remain on the edit page or only reload data.
+- Cause: Client code handled success by refreshing current form unless Save and Exit was used; no branch for finalize button.
+- Fix: In `assets/js/agency/edit_submission.js`, after a successful response where `submitter.name === "finalize_submission"`, redirect to `APP_URL/app/views/agency/programs/view_programs.php`.
+- Result: Finalizing from Edit Submission now returns users to the programs list, consistent with the Finalize action on `view_submissions.php` which already redirects.
 ### [2025-08-14] Profile page – repeated validation messages on input
 
 - Context: On `agency/users/profile` page, under Change Password, messages like "Password is good" and "Passwords match" were appearing multiple times while typing.

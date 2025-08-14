@@ -1,10 +1,23 @@
 // Unsubmit finalized submission (focal users only)
 function unsubmitSubmission(submissionId, btn) {
-    if (!confirm('Are you sure you want to return this finalized submission to draft status?')) return;
-    
+    // Close any open program dropdowns to avoid z-index overlap
+    try {
+        document.querySelectorAll('.dropdown-menu-custom.show').forEach(function(menu) {
+            menu.classList.remove('show');
+            const box = menu.closest('.program-box');
+            if (box) box.classList.remove('dropdown-active');
+        });
+        document.body.classList.remove('dropdown-open');
+    } catch (e) { /* noop */ }
+
+    // Show a Bootstrap confirmation modal instead of window.confirm
+    showUnsubmitConfirmModal(() => performUnsubmit(submissionId, btn));
+}
+
+function performUnsubmit(submissionId, btn) {
     // Debug: Check if APP_URL is defined
     console.log('APP_URL:', window.APP_URL);
-    
+
     // Get the base URL for AJAX requests
     let appUrl = window.APP_URL;
     if (!appUrl) {
@@ -15,13 +28,15 @@ function unsubmitSubmission(submissionId, btn) {
         appUrl = window.location.origin + basePath;
         console.log('Fallback APP_URL:', appUrl);
     }
-    
+
     if (!appUrl) {
-        showToast('Error', 'Configuration error: APP_URL not defined', 'danger');
+        if (typeof showToast === 'function') {
+            showToast('Error', 'Configuration error: APP_URL not defined', 'danger');
+        }
         return;
     }
-    
-    btn.disabled = true;
+
+    if (btn) btn.disabled = true;
     fetch(appUrl + '/app/ajax/unsubmit_submission.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -35,27 +50,98 @@ function unsubmitSubmission(submissionId, btn) {
     .then(data => {
         console.log('Response data:', data);
         if (data.success) {
-            showToast('Success', 'Submission returned to draft status.', 'success');
-            console.log('Unsubmit successful, reloading page in 1.2 seconds...');
-            setTimeout(() => {
-                console.log('Reloading page now...');
+            showUnsubmitSuccessModal('Submission Returned to Draft', () => {
                 window.location.reload();
-            }, 1200);
+            });
         } else {
             let errorMsg = data.error || 'Failed to unsubmit.';
             if (data.debug) {
                 console.log('Debug info:', data.debug);
                 errorMsg += ' (Check console for details)';
             }
-            showToast('Error', errorMsg, 'danger');
-            btn.disabled = false;
+            if (typeof showToast === 'function') {
+                showToast('Error', errorMsg, 'danger');
+            }
+            if (btn) btn.disabled = false;
         }
     })
     .catch((error) => {
         console.error('Fetch error:', error);
-        showToast('Error', 'Network error: ' + error.message, 'danger');
-        btn.disabled = false;
+        if (typeof showToast === 'function') {
+            showToast('Error', 'Network error: ' + error.message, 'danger');
+        }
+        if (btn) btn.disabled = false;
     });
+}
+
+// Show a Bootstrap confirmation modal before unsubmit
+function showUnsubmitConfirmModal(onConfirm) {
+    try {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `
+            <div class="modal fade" tabindex="-1" id="unsubmitConfirmModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="fas fa-undo me-2 text-warning"></i>Return Submission to Draft?</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                This will move the finalized submission back to Draft. You can edit it again afterwards.
+                            </div>
+                            <p class="mb-0">Are you sure you want to continue?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-warning" id="confirmUnsubmitBtn"><i class="fas fa-undo me-1"></i>Unsubmit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrapper);
+        const modalEl = wrapper.querySelector('#unsubmitConfirmModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        modalEl.querySelector('#confirmUnsubmitBtn').addEventListener('click', () => {
+            modal.hide();
+            setTimeout(() => onConfirm && onConfirm(), 200);
+        });
+    } catch (e) {
+        // Fallback to simple confirm
+        if (window.confirm('Are you sure you want to return this finalized submission to draft status?')) {
+            onConfirm && onConfirm();
+        }
+    }
+}
+
+// Success modal after unsubmit
+function showUnsubmitSuccessModal(title, onDone) {
+    try {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `
+            <div class="modal fade" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-body text-center py-4">
+                            <i class="fas fa-undo text-warning" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3">${title}</h5>
+                            <p class="text-muted">Reloading the page...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(wrapper);
+        const modalEl = wrapper.querySelector('.modal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        setTimeout(() => {
+            if (typeof onDone === 'function') onDone();
+        }, 1500);
+    } catch (e) {
+        if (typeof onDone === 'function') onDone();
+    }
 }
 
 // Ensure the function is available globally
