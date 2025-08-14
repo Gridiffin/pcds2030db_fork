@@ -79,7 +79,7 @@ $header_config = [
             'url' => 'submit_outcomes.php',
             'text' => 'Back to Outcomes',
             'icon' => 'fas fa-arrow-left',
-            'class' => 'btn-outline-secondary'
+                'class' => 'btn-light'
         ],
         // Add edit button based on outcome type
         (

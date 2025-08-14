@@ -100,17 +100,17 @@ function update_user_profile($conn, $user_id, $data) {
             $types .= 's';
         }
         
-        // Update password if provided
-        if (isset($data['password']) && !empty($data['password'])) {
-            if (strlen($data['password']) < 8) {
-                throw new Exception('Password must be at least 8 characters long');
+            // Update password if provided
+            if (isset($data['password']) && !empty($data['password'])) {
+                if (strlen($data['password']) < 8) {
+                    throw new Exception('Password must be at least 8 characters long');
+                }
+                
+                $hashed_password = password_hash($data['password'], PASSWORD_DEFAULT);
+                $update_fields[] = 'pw = ?';
+                $values[] = $hashed_password;
+                $types .= 's';
             }
-            
-            $hashed_password = password_hash($data['password'], PASSWORD_DEFAULT);
-            $update_fields[] = 'pw = ?';
-            $values[] = $hashed_password;
-            $types .= 's';
-        }
         
         if (empty($update_fields)) {
             throw new Exception('No data to update');
