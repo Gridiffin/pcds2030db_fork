@@ -1,3 +1,10 @@
+### [2025-08-14] Profile page – repeated validation messages on input
+
+- Context: On `agency/users/profile` page, under Change Password, messages like "Password is good" and "Passwords match" were appearing multiple times while typing.
+- Cause: JS selected only `.invalid-feedback` nodes. When state flipped between valid/invalid, a new node could be created, leading to duplicates and repeated text rendering.
+- Fix: Added `getFeedbackElement(parent)` in `assets/js/agency/users/profile.js` to always re-use an existing `.invalid-feedback` or `.valid-feedback` element, creating one only if none exists. Updated all validators and server-error rendering to use this helper.
+- Result: Only one feedback line is shown per field; messages update without repetition.
+
 ### 51. Critical UI Block - All buttons unclickable due to modal overlay in edit program page (2025-08-13) ✅ FIXED
 
 - **Problem:** All buttons became unclickable in the admin edit program page:

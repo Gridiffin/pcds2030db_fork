@@ -59,8 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function validateUsername() {
         const value = usernameInput.value.trim();
-        const feedback = usernameInput.parentNode.querySelector('.invalid-feedback') || 
-                        createFeedbackElement(usernameInput.parentNode);
+        const feedback = getFeedbackElement(usernameInput.parentNode);
         
         // Clear previous validation state
         clearValidationState(usernameInput, feedback);
@@ -93,8 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function validateEmail() {
         const value = emailInput.value.trim();
-        const feedback = emailInput.parentNode.querySelector('.invalid-feedback') || 
-                        createFeedbackElement(emailInput.parentNode);
+        const feedback = getFeedbackElement(emailInput.parentNode);
         
         // Clear previous validation state
         clearValidationState(emailInput, feedback);
@@ -121,8 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function validatePassword() {
         const value = passwordInput.value;
-        const feedback = passwordInput.parentNode.querySelector('.invalid-feedback') || 
-                        createFeedbackElement(passwordInput.parentNode);
+        const feedback = getFeedbackElement(passwordInput.parentNode);
         
         // Clear previous validation state
         clearValidationState(passwordInput, feedback);
@@ -159,8 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateConfirmPassword() {
         const value = confirmPasswordInput.value;
         const passwordValue = passwordInput.value;
-        const feedback = confirmPasswordInput.parentNode.querySelector('.invalid-feedback') || 
-                        createFeedbackElement(confirmPasswordInput.parentNode);
+        const feedback = getFeedbackElement(confirmPasswordInput.parentNode);
         
         // Clear previous validation state
         clearValidationState(confirmPasswordInput, feedback);
@@ -317,6 +313,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return feedback;
     }
     
+    function getFeedbackElement(parent) {
+        // Re-use existing feedback element whether it's currently valid or invalid
+        return parent.querySelector('.invalid-feedback, .valid-feedback') || createFeedbackElement(parent);
+    }
+    
     function isFormValid() {
         return Object.values(validationState).every(valid => valid);
     }
@@ -394,8 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     Object.keys(data.errors).forEach(field => {
                         const input = document.getElementById(field);
                         if (input) {
-                            const feedback = input.parentNode.querySelector('.invalid-feedback') || 
-                                           createFeedbackElement(input.parentNode);
+                            const feedback = getFeedbackElement(input.parentNode);
                             setInvalidState(input, feedback, data.errors[field]);
                             validationState[field] = false;
                         }
