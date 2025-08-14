@@ -1,8 +1,3 @@
-/**
- * Agency Shared Base Styles
- * Core styles needed across all agency pages
- */
-
 /* Base foundation styles - CRITICAL */
 @import '../../design-tokens.css';         /* Modern design tokens */
 @import '../../base/variables.css';        /* CSS custom properties */
@@ -26,17 +21,11 @@
 @import '../../components/tables-modern.css';    /* NEW: Modern tables */
 @import '../../components/alerts-modern.css';    /* NEW: Modern alerts */
 @import '../../components/modals-modern.css';    /* NEW: Modern modals */
-@import '../../components/pagination-modern.css'; /* NEW: Modern pagination */
 
 /* Essential components for all agency pages */
 @import '../../components/dashboard-cards.css';
 @import '../../components/progress.css';
 @import '../../components/footer.css';
-
-/* ✅ LEGACY CSS SUCCESSFULLY REMOVED - PHASE 4 COMPLETE
-   All legacy component imports have been eliminated.
-   System now uses 100% modern component architecture.
-*/
 
 /* Layout essentials */
 @import '../../layout/navigation.css';
@@ -49,4 +38,14 @@
 /* Common components */
 @import '../../components/rating-indicators.css';
 @import '../../components/notifications.css';
-@import '../../components/programs-modern-box.css'; 
+@import '../../components/programs-modern-box.css';
+
+/**
+ * Agency Shared Base Styles
+ * Core styles needed across all agency pages
+ */
+
+/* ✅ LEGACY CSS SUCCESSFULLY REMOVED - PHASE 4 COMPLETE
+   All legacy component imports have been eliminated.
+   System now uses 100% modern component architecture.
+*/ 

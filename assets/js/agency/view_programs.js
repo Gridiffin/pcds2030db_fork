@@ -4,11 +4,12 @@
  */
 
 // Import CSS for programs view
-import '../../css/agency/programs/view_programs.css';
+import '../../css/agency/programs/view_programs_entry.css';
 
 // Import essential utilities
 import '../utilities/initialization.js';
 import '../utilities/dropdown_init.js';
+import '../utilities/pagination.js';
 
 // Import main utilities including showToast
 import '../main.js';
@@ -354,47 +355,64 @@ function debounce(func, wait) {
  * Initialize pagination for program containers
  */
 function initializePagination() {
+    console.log('🔧 [DEBUG] Starting pagination initialization...');
+    
     // Check if TablePagination is available
     if (typeof TablePagination === 'undefined') {
-        console.error('TablePagination class is not available. Make sure pagination.js is loaded first.');
+        console.error('❌ [DEBUG] TablePagination class is not available. Make sure pagination.js is loaded first.');
         return;
     }
+    console.log('✅ [DEBUG] TablePagination class is available');
     
     // Initialize pagination for draft programs container
     const draftContainer = document.getElementById('draftProgramsContainer');
+    const draftPrograms = draftContainer ? draftContainer.querySelectorAll('.program-box') : [];
+    console.log(`🔧 [DEBUG] Draft container found: ${!!draftContainer}, Programs: ${draftPrograms.length}`);
     if (draftContainer) {
         window.tablePaginations = window.tablePaginations || {};
         window.tablePaginations['draftProgramsContainer'] = new TablePagination('draftProgramsContainer', {
-            itemsPerPage: 5,
+            itemsPerPage: 10,
             paginationContainerId: 'draftProgramsPagination',
             counterElementId: 'draftProgramsCounter',
-            itemSelector: '.program-box' // Use program boxes instead of table rows
+            itemSelector: '.program-box', // Use program boxes instead of table rows
+            enableSmoothTransitions: true // Enable smooth pagination
         });
+        console.log('✅ [DEBUG] Draft pagination initialized');
     }
     
     // Initialize pagination for finalized programs container
     const finalizedContainer = document.getElementById('finalizedProgramsContainer');
+    const finalizedPrograms = finalizedContainer ? finalizedContainer.querySelectorAll('.program-box') : [];
+    console.log(`🔧 [DEBUG] Finalized container found: ${!!finalizedContainer}, Programs: ${finalizedPrograms.length}`);
     if (finalizedContainer) {
         window.tablePaginations = window.tablePaginations || {};
         window.tablePaginations['finalizedProgramsContainer'] = new TablePagination('finalizedProgramsContainer', {
-            itemsPerPage: 5,
+            itemsPerPage: 10,
             paginationContainerId: 'finalizedProgramsPagination',
             counterElementId: 'finalizedProgramsCounter',
-            itemSelector: '.program-box' // Use program boxes instead of table rows
+            itemSelector: '.program-box', // Use program boxes instead of table rows
+            enableSmoothTransitions: true // Enable smooth pagination
         });
+        console.log('✅ [DEBUG] Finalized pagination initialized');
     }
     
     // Initialize pagination for empty programs container  
     const emptyContainer = document.getElementById('emptyProgramsContainer');
+    const emptyPrograms = emptyContainer ? emptyContainer.querySelectorAll('.program-box') : [];
+    console.log(`🔧 [DEBUG] Templates container found: ${!!emptyContainer}, Programs: ${emptyPrograms.length}`);
     if (emptyContainer) {
         window.tablePaginations = window.tablePaginations || {};
         window.tablePaginations['emptyProgramsContainer'] = new TablePagination('emptyProgramsContainer', {
-            itemsPerPage: 5,
+            itemsPerPage: 10,
             paginationContainerId: 'emptyProgramsPagination',
             counterElementId: 'emptyProgramsCounter',
-            itemSelector: '.program-box' // Use program boxes instead of table rows
+            itemSelector: '.program-box', // Use program boxes instead of table rows
+            enableSmoothTransitions: true // Enable smooth pagination
         });
+        console.log('✅ [DEBUG] Templates pagination initialized');
     }
+    
+    console.log('🔧 [DEBUG] Pagination initialization complete');
 }
 
 /**
@@ -876,3 +894,4 @@ function selectSubmission(submissionId, periodId, programId) {
     // Redirect to edit_submission.php with the selected submission
     window.location.href = `edit_submission.php?program_id=${programId}&period_id=${periodId}`;
 }
+

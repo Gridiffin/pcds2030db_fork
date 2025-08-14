@@ -1,9 +1,3 @@
-/**
- * Admin Dashboard CSS Entry Point - Modernized
- * Modern design system inspired by agency dashboard
- * Maintains functionality while improving UX
- */
-
 /* Import shared admin foundation */
 @import '../shared/base.css';
 
@@ -12,6 +6,12 @@
 @import '../../components/dashboard-cards.css';
 @import '../../components/cards.css';
 @import '../../components/cards-modern.css';
+
+/**
+ * Admin Dashboard CSS Entry Point - Modernized
+ * Modern design system inspired by agency dashboard
+ * Maintains functionality while improving UX
+ */
 
 /* Dashboard stats and quick actions */
 .dashboard-stats {

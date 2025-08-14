@@ -1,8 +1,3 @@
-/**
- * Agency Notifications CSS
- * Main entry point for all notifications-related styles
- */
-
 /* Import shared base */
 @import '../shared/base.css';
 
@@ -11,6 +6,11 @@
 @import 'partials/item.css';
 @import 'partials/header.css';
 @import 'partials/pagination.css';
+
+/**
+ * Agency Notifications CSS
+ * Main entry point for all notifications-related styles
+ */
 
 /* Fixed navbar offset for notifications page */
 body.notifications-page {
