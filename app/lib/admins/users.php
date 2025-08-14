@@ -309,7 +309,7 @@ function update_user($data) {
                 return ['error' => 'Passwords do not match'];
             }
             
-            $update_fields[] = "password = ?";
+            $update_fields[] = "pw = ?";
             $bind_params[] = password_hash($data['password'], PASSWORD_DEFAULT);
             $param_types .= "s";
         }
