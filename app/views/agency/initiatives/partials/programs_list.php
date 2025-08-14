@@ -30,14 +30,14 @@
                                 <div class="fw-medium mb-1">
                                     <?php if (!empty($program['program_number'])): ?>
                                         <span class="badge bg-info me-2" style="font-size: 0.7em;">
-                                            <?php echo htmlspecialchars($program['program_number']); ?>
+                                            <?php echo htmlspecialchars((string)($program['program_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                                         </span>
                                     <?php endif; ?>
-                                    <?php echo htmlspecialchars($program['program_name']); ?>
+                                     <?php echo htmlspecialchars((string)($program['program_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                                 </div>
                                 <div class="small text-muted mb-2">
                                     <i class="fas fa-building me-1"></i>
-                                    <?php echo htmlspecialchars($program['agency_name']); ?>
+                                     <?php echo htmlspecialchars((string)($program['agency_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                                 </div>
                                 <?php if ($program['is_owned_by_agency']): ?>
                                     <span class="badge bg-primary mb-2" style="font-size: 0.7em;">

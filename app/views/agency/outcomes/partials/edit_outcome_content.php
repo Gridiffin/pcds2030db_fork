@@ -35,6 +35,10 @@ if (!isset($outcome_id) || !isset($outcome)) {
                     <textarea class="form-control" id="outcomeDescriptionInput" name="description" rows="3"><?= htmlspecialchars($outcome['description']) ?></textarea>
                 </div>
 
+                <!-- Preserve required immutable fields for update -->
+                <input type="hidden" name="code" id="outcomeCodeInput" value="<?= htmlspecialchars($outcome['code']) ?>" />
+                <input type="hidden" name="type" id="outcomeTypeInput" value="<?= htmlspecialchars($outcome['type']) ?>" />
+
                 <div class="mb-3">
                     <button type="button" class="btn btn-primary" id="addColumnBtn">
                         <i class="fas fa-plus me-1"></i> Add Column
@@ -172,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 data[trimmedName][col] = 0;
             });
             
-            renderTable();
+            renderTable(true);
         }
     }
 
@@ -184,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (data[rowName] !== undefined) {
             delete data[rowName];
-            renderTable();
+            renderTable(true);
         }
     }
 
@@ -204,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 data[rowLabel][trimmedName] = 0;
             });
             
-            renderTable();
+            renderTable(true);
         }
     }
 
@@ -220,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            renderTable();
+            renderTable(true);
         }
     }
 

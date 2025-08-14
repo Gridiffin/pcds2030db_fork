@@ -53,8 +53,8 @@ if ($outcome['type'] === 'kpi') {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $code = isset($_POST['code']) ? trim($_POST['code']) : '';
-    $type = isset($_POST['type']) ? trim($_POST['type']) : '';
+    $postedCode = isset($_POST['code']) ? trim($_POST['code']) : '';
+    $postedType = isset($_POST['type']) ? trim($_POST['type']) : '';
     $title = isset($_POST['title']) ? trim($_POST['title']) : '';
     $description = isset($_POST['description']) ? trim($_POST['description']) : '';
     $post_data = [];
@@ -64,7 +64,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $post_data = $decoded;
         }
     }
-    
+
+    // Fallback to existing values if not provided
+    $code = $postedCode !== '' ? $postedCode : (isset($outcome['code']) ? $outcome['code'] : '');
+    $type = $postedType !== '' ? $postedType : (isset($outcome['type']) ? $outcome['type'] : '');
+
+    // Sanitize type against enum
+    $allowedTypes = ['graph', 'kpi'];
+    if (!in_array($type, $allowedTypes, true)) {
+        $type = isset($outcome['type']) ? $outcome['type'] : 'graph';
+    }
+
     $update_result = update_outcome_full($outcome_id, $code, $type, $title, $description, $post_data);
     if ($update_result) {
         header('Location: view_outcome.php?id=' . $outcome_id . '&saved=1');

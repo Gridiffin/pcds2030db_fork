@@ -54,10 +54,7 @@
                         <div class="bento-card-footer">
                             <div class="bento-card-actions">
                                 <a href="../outcomes/submit_outcomes.php" class="btn btn-success">
-                                    <i class="fas fa-upload me-1"></i> Submit Outcomes
-                                </a>
-                                <a href="../outcomes/create_outcome_flexible.php" class="btn btn-primary">
-                                    <i class="fas fa-plus-circle me-1"></i> Create New
+                                    <i class="fas fa-eye me-1"></i> View Outcomes
                                 </a>
                             </div>
                         </div>
