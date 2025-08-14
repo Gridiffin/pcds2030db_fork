@@ -89,3 +89,12 @@ Stack trace:
 [UPDATE SUCCESS] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname","password"]}
 [FINAL RESPONSE] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname","password"]}
 [ACCIDENTAL OUTPUT] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname","password"]}
+[START] profile_handler.php
+[INCLUDED FILES]
+[POST DATA] {"csrf_token":"ea5523814e180977fb0ea527c897b8ab7a57d95f067064389efdcb6218acfc63","username":"users","email":"user@test.gov.my","fullname":"test agencys","password":"90123lol","confirm_password":"90123lol"}
+[TRY BLOCK ENTERED]
+[VALIDATION COMPLETE] []
+[UPDATING PROFILE] {"username":"users","email":"user@test.gov.my","fullname":"test agencys","password":"90123lol"}
+[UPDATE SUCCESS] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname","password"]}
+[FINAL RESPONSE] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname","password"]}
+[ACCIDENTAL OUTPUT] {"success":true,"message":"Profile updated successfully","errors":[],"updated_fields":["username","email","fullname","password"]}
