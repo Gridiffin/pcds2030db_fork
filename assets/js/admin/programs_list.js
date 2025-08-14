@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (programsTable && typeof $.fn.DataTable === 'function') {
         dataTable = $(programsTable).DataTable({
             "paging": true,
-            "pageLength": 25,
+            "pageLength": 10,
             "lengthChange": true,
             "searching": false, // We have our own search
             "ordering": true,
