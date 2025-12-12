@@ -2,6 +2,10 @@
 // This file serves as a base admin bundle for common admin functionality
 
 // Import CSS
+// Import shared admin foundation (includes navbar, base layout, etc.)
+import '../../css/admin/shared/base.css';
+
+// Import component styles
 import '../../css/components/admin-common.css';
 import '../../css/pages/admin.css';
 import '../../css/components/tables.css';

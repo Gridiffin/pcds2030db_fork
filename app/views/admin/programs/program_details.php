@@ -126,6 +126,13 @@ $header_config['actions'][] = [
     'class' => 'btn-success'
 ];
 
+$header_config['actions'][] = [
+    'url' => 'list_program_submissions.php?program_id=' . $program_id,
+    'text' => 'Manage Submissions',
+    'icon' => 'fas fa-list',
+    'class' => 'btn-info'
+];
+
 // Add Edit Submission action - links to period selection
 $header_config['actions'][] = [
     'url' => 'edit_submission.php?program_id=' . $program_id,

@@ -101,18 +101,40 @@ $rating_map = [
     ]
 ];
 
-// Include header
-require_once '../../layouts/header.php';
+// Set page title and bundles
+$pageTitle = 'Program Submissions - ' . htmlspecialchars($program['program_name']);
+$cssBundle = 'admin-programs';
+$jsBundle = 'admin-programs';
 
 // Configure modern page header
 $header_config = [
     'title' => 'Program Submissions',
     'subtitle' => 'All submissions for: ' . htmlspecialchars($program['program_name']),
-    'variant' => 'info'
+    'variant' => 'info',
+    'actions' => [
+        [
+            'url' => 'programs.php',
+            'text' => 'Back to Programs',
+            'icon' => 'fas fa-arrow-left',
+            'class' => 'btn-outline-secondary'
+        ],
+        [
+            'url' => 'program_details.php?id=' . $program_id,
+            'text' => 'Program Details',
+            'icon' => 'fas fa-project-diagram',
+            'class' => 'btn-outline-info'
+        ],
+        [
+            'url' => 'add_submission.php?program_id=' . $program_id,
+            'text' => 'Add New Submission',
+            'icon' => 'fas fa-plus',
+            'class' => 'btn-primary'
+        ]
+    ]
 ];
 
-// Include modern page header
-require_once '../../layouts/page_header.php';
+// Start output buffering for content
+ob_start();
 ?>
 
 <!-- Breadcrumb Navigation -->
@@ -280,6 +302,12 @@ require_once '../../layouts/page_header.php';
                                            data-bs-toggle="tooltip">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <a href="delete_submission.php?submission_id=<?php echo $submission['submission_id']; ?>&program_id=<?php echo $program_id; ?>" 
+                                           class="btn btn-outline-danger" 
+                                           title="Delete this submission"
+                                           data-bs-toggle="tooltip">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -291,17 +319,21 @@ require_once '../../layouts/page_header.php';
     </div>
 </div>
 
-<!-- Back Navigation -->
-<div class="mt-4">
-    <a href="programs.php" class="btn btn-secondary">
-        <i class="fas fa-arrow-left me-1"></i> Back to Programs
-    </a>
-    <a href="program_details.php?id=<?php echo $program_id; ?>" class="btn btn-outline-info ms-2">
-        <i class="fas fa-project-diagram me-1"></i> View Program Details
-    </a>
-</div>
+
 
 <?php
-// Include footer
-require_once '../../layouts/footer.php';
+// Capture content
+$content = ob_get_clean();
+
+// Write to temporary content file
+$contentFile = __DIR__ . '/partials/list_submissions_content_temp.php';
+file_put_contents($contentFile, $content);
+
+// Include base layout
+require_once PROJECT_ROOT_PATH . 'app/views/layouts/base_admin.php';
+
+// Clean up temporary file
+if (file_exists($contentFile)) {
+    unlink($contentFile);
+}
 ?>

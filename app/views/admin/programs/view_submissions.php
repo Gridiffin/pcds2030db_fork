@@ -139,6 +139,13 @@ if ($submission) {
         'icon' => 'fas fa-edit',
         'class' => 'btn-primary'
     ];
+
+    $header_config['actions'][] = [
+        'url' => 'delete_submission.php?submission_id=' . $submission['submission_id'],
+        'text' => 'Delete Submission',
+        'icon' => 'fas fa-trash',
+        'class' => 'btn-outline-danger'
+    ];
 }
 
 // Set content file for base layout
